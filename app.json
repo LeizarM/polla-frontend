@@ -24,7 +24,6 @@
       },
       "package": "com.leizarm.mundial2026",
       "versionCode": 1,
-      "googleServicesFile": "$GOOGLE_SERVICES_JSON",
       "permissions": [
         "NOTIFICATIONS",
         "POST_NOTIFICATIONS"
