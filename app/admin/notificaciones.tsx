@@ -274,79 +274,364 @@ function ScheduleFormModal({ theme, editing, onClose, onSaved }: any) {
     onError: (e: any) => showToast('error', e?.response?.data?.message ?? 'Error'),
   });
 
+  const targetOptions = [
+    {
+      value: 'non_bettors' as const,
+      icon: 'alert-circle' as const,
+      color: '#F59E0B',
+      title: 'Solo los que NO apostaron',
+      desc: 'Recomendado. Avisa solo a quien aún no hizo su quiniela.',
+    },
+    {
+      value: 'tournament_participants' as const,
+      icon: 'people' as const,
+      color: '#3B82F6',
+      title: 'Inscritos del torneo',
+      desc: 'Todos los que están en el torneo, hayan apostado o no.',
+    },
+    {
+      value: 'all' as const,
+      icon: 'megaphone' as const,
+      color: '#8B5CF6',
+      title: 'Todos los usuarios',
+      desc: 'Broadcast a cualquiera con la app instalada.',
+    },
+  ];
+
   return (
     <Modal visible onClose={onClose} title={isEdit ? 'Editar programación' : 'Nueva programación'}>
-      <ScrollView style={{ maxHeight: 500 }}>
+      <ScrollView
+        style={{ maxHeight: 560 }}
+        contentContainerStyle={{ paddingBottom: 8 }}
+        showsVerticalScrollIndicator
+      >
+        {/* ── Nombre ─────────────────────────────────────────── */}
         <Text style={styles.label}>Nombre interno</Text>
-        <TextInput value={name} onChangeText={setName} style={styles.input}
-          placeholder='Ej. "Recordatorio 1h antes"' placeholderTextColor={theme.colors.textMuted} />
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+          placeholder='Ej. "Recordatorio 1h antes"'
+          placeholderTextColor={theme.colors.textMuted}
+        />
 
-        <Text style={[styles.label, { marginTop: 12 }]}>Tipo</Text>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
+        {/* ── Tipo (cards horizontales) ──────────────────────── */}
+        <Text style={[styles.label, { marginTop: 16 }]}>Tipo</Text>
+        <View style={modalStyles.row2}>
           <Pressable
-            style={[styles.kindBtn, kind === 'pre_match' && { backgroundColor: '#10B98120', borderColor: '#10B981' }]}
+            style={[
+              modalStyles.bigCard,
+              kind === 'pre_match' && { backgroundColor: '#10B98115', borderColor: '#10B981' },
+              { borderColor: kind === 'pre_match' ? '#10B981' : theme.colors.border },
+            ]}
             onPress={() => setKind('pre_match')}
           >
-            <Ionicons name="football" size={14} color={kind === 'pre_match' ? '#10B981' : theme.colors.textMuted} />
-            <Text style={[styles.kindBtnText, { color: kind === 'pre_match' ? '#10B981' : theme.colors.textSecondary }]}>Antes de cada partido</Text>
+            <Ionicons name="football" size={20} color={kind === 'pre_match' ? '#10B981' : theme.colors.textMuted} />
+            <Text style={[modalStyles.bigCardTitle, { color: kind === 'pre_match' ? '#10B981' : theme.colors.textPrimary }]}>
+              Antes de cada partido
+            </Text>
+            <Text style={[modalStyles.bigCardDesc, { color: theme.colors.textMuted }]}>
+              N minutos antes del kickoff
+            </Text>
           </Pressable>
           <Pressable
-            style={[styles.kindBtn, kind === 'cron' && { backgroundColor: '#3B82F620', borderColor: '#3B82F6' }]}
+            style={[
+              modalStyles.bigCard,
+              kind === 'cron' && { backgroundColor: '#3B82F615', borderColor: '#3B82F6' },
+              { borderColor: kind === 'cron' ? '#3B82F6' : theme.colors.border },
+            ]}
             onPress={() => setKind('cron')}
           >
-            <Ionicons name="time" size={14} color={kind === 'cron' ? '#3B82F6' : theme.colors.textMuted} />
-            <Text style={[styles.kindBtnText, { color: kind === 'cron' ? '#3B82F6' : theme.colors.textSecondary }]}>Hora fija (cron)</Text>
+            <Ionicons name="time" size={20} color={kind === 'cron' ? '#3B82F6' : theme.colors.textMuted} />
+            <Text style={[modalStyles.bigCardTitle, { color: kind === 'cron' ? '#3B82F6' : theme.colors.textPrimary }]}>
+              Hora fija (cron)
+            </Text>
+            <Text style={[modalStyles.bigCardDesc, { color: theme.colors.textMuted }]}>
+              Diario / semanal / custom
+            </Text>
           </Pressable>
         </View>
 
+        {/* ── Offset / Cron ──────────────────────────────────── */}
         {kind === 'pre_match' ? (
           <>
-            <Text style={[styles.label, { marginTop: 12 }]}>Minutos antes del partido</Text>
-            <TextInput value={offset} onChangeText={setOffset} keyboardType="numeric" style={styles.input} placeholder="60" placeholderTextColor={theme.colors.textMuted} />
-            <Text style={styles.hint}>Ejemplos: 15 (15 min antes), 60 (1h antes), 1440 (1 día antes)</Text>
+            <Text style={[styles.label, { marginTop: 16 }]}>Minutos antes del partido</Text>
+            <TextInput
+              value={offset}
+              onChangeText={setOffset}
+              keyboardType="numeric"
+              style={styles.input}
+              placeholder="60"
+              placeholderTextColor={theme.colors.textMuted}
+            />
+            <View style={modalStyles.quickRow}>
+              {[15, 30, 60, 1440].map((m) => (
+                <Pressable
+                  key={m}
+                  onPress={() => setOffset(String(m))}
+                  style={[
+                    modalStyles.quickChip,
+                    Number(offset) === m && { backgroundColor: '#10B98120', borderColor: '#10B981' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      modalStyles.quickChipText,
+                      { color: Number(offset) === m ? '#10B981' : theme.colors.textSecondary },
+                    ]}
+                  >
+                    {m === 1440 ? '1 día' : m < 60 ? `${m} min` : `${m / 60}h`}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </>
         ) : (
           <>
-            <Text style={[styles.label, { marginTop: 12 }]}>Expresión cron</Text>
-            <TextInput value={cronExpr} onChangeText={setCronExpr} style={styles.input} placeholder="0 9 * * *" placeholderTextColor={theme.colors.textMuted} />
+            <Text style={[styles.label, { marginTop: 16 }]}>Expresión cron</Text>
+            <TextInput
+              value={cronExpr}
+              onChangeText={setCronExpr}
+              style={styles.input}
+              placeholder="0 9 * * *"
+              placeholderTextColor={theme.colors.textMuted}
+            />
             <Text style={styles.hint}>
-              "0 9 * * *" = 9:00 AM diario · "0 */6 * * *" = cada 6h · "0 18 * * 5" = viernes 18:00
+              "0 9 * * *" = 9 AM diario · "0 */6 * * *" = cada 6h · "0 18 * * 5" = viernes 6 PM
             </Text>
           </>
         )}
 
-        <Text style={[styles.label, { marginTop: 12 }]}>Destinatarios</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {(['non_bettors', 'tournament_participants', 'all'] as const).map(t => (
-            <Pressable
-              key={t}
-              style={[styles.kindBtn, { flex: 0, paddingHorizontal: 10 }, target === t && { backgroundColor: theme.colors.primaryLight + '20', borderColor: theme.colors.primaryLight }]}
-              onPress={() => setTarget(t)}
-            >
-              <Text style={[styles.kindBtnText, { color: target === t ? theme.colors.primaryLight : theme.colors.textSecondary }]}>
-                {t === 'non_bettors' ? 'Solo los que NO han apostado' : t === 'tournament_participants' ? 'Inscritos del torneo' : 'Todos los usuarios'}
-              </Text>
-            </Pressable>
-          ))}
+        {/* ── Destinatarios (cards verticales) ───────────────── */}
+        <Text style={[styles.label, { marginTop: 16 }]}>Destinatarios</Text>
+        <View style={{ gap: 8 }}>
+          {targetOptions.map((opt) => {
+            const active = target === opt.value;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => setTarget(opt.value)}
+                style={[
+                  modalStyles.targetCard,
+                  {
+                    borderColor: active ? opt.color : theme.colors.border,
+                    backgroundColor: active ? opt.color + '12' : 'transparent',
+                  },
+                ]}
+              >
+                <View style={[modalStyles.targetIcon, { backgroundColor: opt.color + '25' }]}>
+                  <Ionicons name={opt.icon} size={18} color={opt.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[modalStyles.targetTitle, { color: active ? opt.color : theme.colors.textPrimary }]}>
+                    {opt.title}
+                  </Text>
+                  <Text style={[modalStyles.targetDesc, { color: theme.colors.textMuted }]}>
+                    {opt.desc}
+                  </Text>
+                </View>
+                {active && (
+                  <Ionicons name="checkmark-circle" size={22} color={opt.color} />
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
-        <Text style={[styles.label, { marginTop: 12 }]}>Título</Text>
-        <TextInput value={title} onChangeText={setTitle} style={styles.input} maxLength={60} placeholderTextColor={theme.colors.textMuted} />
+        {/* ── Título / Mensaje ──────────────────────────────── */}
+        <Text style={[styles.label, { marginTop: 16 }]}>Título</Text>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+          maxLength={60}
+          placeholder='Ej. "⚽ ¡No te olvides!"'
+          placeholderTextColor={theme.colors.textMuted}
+        />
+        <Text style={styles.hint}>{title.length}/60</Text>
 
         <Text style={[styles.label, { marginTop: 12 }]}>Mensaje</Text>
-        <TextInput value={body} onChangeText={setBody} style={[styles.input, { height: 80 }]} multiline maxLength={180} placeholderTextColor={theme.colors.textMuted} />
-        <Text style={styles.hint}>Variables: {'{team_a}'} {'{team_b}'} {'{minutes}'} {'{matchday}'}</Text>
+        <TextInput
+          value={body}
+          onChangeText={setBody}
+          style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
+          multiline
+          maxLength={180}
+          placeholderTextColor={theme.colors.textMuted}
+        />
+        <Text style={styles.hint}>{body.length}/180</Text>
 
-        <View style={{ height: 14 }} />
+        {/* ── Variables disponibles ─────────────────────────── */}
+        <View style={[modalStyles.varsBox, { backgroundColor: theme.colors.primaryLight + '0F', borderColor: theme.colors.primaryLight + '40' }]}>
+          <Ionicons name="code-slash" size={14} color={theme.colors.primaryLight} />
+          <Text style={[modalStyles.varsText, { color: theme.colors.textSecondary }]}>
+            Variables: <Text style={modalStyles.varCode}>{'{team_a}'}</Text>{' '}
+            <Text style={modalStyles.varCode}>{'{team_b}'}</Text>{' '}
+            <Text style={modalStyles.varCode}>{'{minutes}'}</Text>{' '}
+            <Text style={modalStyles.varCode}>{'{matchday}'}</Text>
+          </Text>
+        </View>
+
+        {/* ── Preview ───────────────────────────────────────── */}
+        <View style={[modalStyles.preview, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
+          <Text style={[modalStyles.previewLabel, { color: theme.colors.textMuted }]}>VISTA PREVIA</Text>
+          <View style={modalStyles.previewBubble}>
+            <View style={modalStyles.previewIcon}>
+              <Text style={{ fontSize: 16 }}>⚽</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={modalStyles.previewTitle} numberOfLines={1}>{title || 'Título…'}</Text>
+              <Text style={modalStyles.previewBody} numberOfLines={3}>
+                {body
+                  ? body.replace(/\{team_a\}/g, 'Brasil').replace(/\{team_b\}/g, 'Argentina').replace(/\{minutes\}/g, offset).replace(/\{matchday\}/g, 'J1')
+                  : 'Mensaje…'}
+              </Text>
+              <Text style={modalStyles.previewMeta}>Mundial 2026 · ahora</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ height: 18 }} />
         <Button
           title={save.isPending ? 'Guardando…' : (isEdit ? 'Guardar cambios' : 'Crear programación')}
           onPress={() => save.mutate()}
-          disabled={!name.trim() || !title.trim() || !body.trim()}
+          disabled={!name.trim() || !title.trim() || !body.trim() || save.isPending}
         />
       </ScrollView>
     </Modal>
   );
 }
+
+// ── Estilos solo del modal ─────────────────────────────────────────────
+const modalStyles = StyleSheet.create({
+  row2: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  bigCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'flex-start',
+    gap: 6,
+    minHeight: 86,
+  },
+  bigCardTitle: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.2,
+  },
+  bigCardDesc: {
+    fontSize: 10.5,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 14,
+  },
+  quickRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  quickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(120,120,120,0.3)',
+  },
+  quickChipText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+  },
+  targetCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  targetIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  targetTitle: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.2,
+  },
+  targetDesc: {
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+    marginTop: 2,
+    lineHeight: 14,
+  },
+  varsBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  varsText: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+    lineHeight: 16,
+  },
+  varCode: {
+    fontFamily: 'Poppins_700Bold',
+    color: '#10B981',
+    fontSize: 10.5,
+  },
+  preview: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  previewLabel: {
+    fontSize: 9.5,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  previewBubble: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10,
+  },
+  previewIcon: {
+    width: 32, height: 32, borderRadius: 8,
+    backgroundColor: '#FFD70025',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  previewTitle: {
+    fontSize: 12.5,
+    fontFamily: 'Poppins_700Bold',
+    color: '#fff',
+    letterSpacing: -0.2,
+  },
+  previewBody: {
+    fontSize: 11.5,
+    fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  previewMeta: {
+    fontSize: 9.5,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.45)',
+    marginTop: 4,
+  },
+});
 
 // ════════════════════════════════════════════════════════════════════════
 //  Tab "Stats"
