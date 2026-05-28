@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * CSS Custom Properties — Runtime Palette Switching
+ * These vars are overwritten by ThemeContext whenever the user changes palette.
+ * NativeWind reads these on web; on native, React Native CSS Interop handles them.
+ */
+:root {
+  /* ── Default: Mundial Clásico ── */
+  --color-bg:               #0D1B2E;
+  --color-surface:          #162540;
+  --color-surface-elevated: #1E3050;
+  --color-surface-glass:    rgba(22,37,64,0.88);
+  --color-border:           #2A4060;
+  --color-border-glow:      #3B82F6;
+
+  --color-primary:          #1D4ED8;
+  --color-primary-light:    #3B82F6;
+  --color-accent:           #E11D48;
+  --color-accent-light:     #FB4570;
+
+  --color-success:          #10B981;
+  --color-warning:          #F59E0B;
+  --color-error:            #EF4444;
+  --color-gold:             #FFD700;
+  --color-silver:           #94A3B8;
+
+  --color-text-primary:     #F1F5FF;
+  --color-text-secondary:   #94A3B8;
+  --color-text-muted:       #546882;
+  --color-input-bg:         #1A2E4A;
+}
+
+@layer base {
+  /* Poppins via @expo-google-fonts — available as font-family utilities */
+  .font-regular   { font-family: 'Poppins_400Regular', system-ui, sans-serif; }
+  .font-medium    { font-family: 'Poppins_500Medium',  system-ui, sans-serif; }
+  .font-semibold  { font-family: 'Poppins_600SemiBold', system-ui, sans-serif; }
+  .font-bold      { font-family: 'Poppins_700Bold',    system-ui, sans-serif; }
+  .font-extrabold { font-family: 'Poppins_800ExtraBold', system-ui, sans-serif; }
+}
+
+@layer utilities {
+  /* Glass morphism utility */
+  .glass {
+    background-color: var(--color-surface-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Glow shadow utility */
+  .shadow-glow {
+    box-shadow: 0 0 16px 0 var(--color-border-glow);
+  }
+
+  /* Text utilities */
+  .text-balance { text-wrap: balance; }
+}

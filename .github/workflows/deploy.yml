@@ -1,0 +1,89 @@
+# ════════════════════════════════════════════════════════════════════════
+#  CI/CD del frontend (Expo Web + APK)
+#
+#  Trigger: push a `main`
+#  Flujo:
+#    1) Lint/build de Expo Web
+#    2) Push del dist/ a la rama `web-build` (de donde Plesk hace pull)
+#    3) (Opcional) build APK con EAS
+#
+#  Variables/Secrets necesarios:
+#    Repo es público → NINGUNO obligatorio para el deploy web.
+#    APK:   EXPO_TOKEN  (de expo.dev → Access Tokens)
+# ════════════════════════════════════════════════════════════════════════
+name: Build & Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  EXPO_PUBLIC_API_URL: https://app.esppapel.com:9443
+
+jobs:
+  # ─── 1. Build Web + push a `web-build` (lo que Plesk pulea) ──────────
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install deps
+        run: yarn install --immutable
+
+      - name: Generar iconos PWA (opcional — solo si cambias el SVG)
+        run: |
+          npm i -D sharp >/dev/null
+          node scripts/build-icons.js
+        continue-on-error: true
+
+      - name: Build Expo Web (static export)
+        env:
+          EXPO_PUBLIC_API_URL: ${{ env.EXPO_PUBLIC_API_URL }}
+        run: npx expo export --platform web --output-dir dist
+
+      - name: Subir artifact (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: dist/
+
+      # ── Force-push dist/ a la rama web-build ───────────────────────
+      - name: Push to web-build branch
+        run: |
+          cd dist
+          git init -q
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b web-build
+          git add -A
+          git commit -q -m "build: ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" web-build
+
+  # ─── 2. APK con EAS (solo si EXPO_TOKEN está configurado) ────────────
+  build-apk:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.EXPO_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: corepack enable
+      - run: yarn install --immutable
+      - name: Build APK (preview profile)
+        env:
+          EXPO_PUBLIC_API_URL: ${{ env.EXPO_PUBLIC_API_URL }}
+        run: eas build --platform android --profile preview --non-interactive --no-wait

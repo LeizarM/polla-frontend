@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#312E81"/>
+    </linearGradient>
+    <linearGradient id="one" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#DC2626"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" ry="14" fill="url(#bg)"/>
+  <g transform="translate(32 42) scale(0.30) translate(-71.5 -71.5)">
+    <g transform="translate(0,143) scale(0.066667,-0.066667)" fill="url(#flame)" stroke="none">
+      <path d="M1159 1990 c-204 -198 -163 -460 143 -927 183 -280 207 -394 131 -622 -49 -144 -48 -156 8 -103 165 158 245 316 246 487 1 161 -11 183 -239 455 -273 326 -322 478 -227 703 33 77 12 79 -62 7z"/>
+      <path d="M818 1439 c-62 -195 -55 -319 27 -488 153 -313 170 -399 92 -450 -141 -93 -317 148 -333 455 -9 172 -13 177 -72 99 -316 -413 83 -1122 534 -951 183 69 262 189 262 399 0 166 -8 184 -208 528 -171 292 -216 384 -230 471 -13 86 -29 72 -72 -63z"/>
+    </g>
+  </g>
+  <text x="32" y="40"
+        text-anchor="middle"
+        font-family="Impact, 'Arial Black', sans-serif"
+        font-weight="900"
+        font-size="44"
+        fill="url(#one)"
+        stroke="#7C2D12"
+        stroke-width="1.2">1</text>
+</svg>

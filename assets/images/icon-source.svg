@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- ─── Gradients ──────────────────────────────────────────────── -->
+  <defs>
+    <!-- Background: vibrant Mundial-style sweep -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#0F172A"/>
+      <stop offset="50%"  stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#312E81"/>
+    </linearGradient>
+
+    <!-- Flame: warm fiery sweep (orange → red → magenta) -->
+    <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#DC2626"/>
+      <stop offset="40%"  stop-color="#F97316"/>
+      <stop offset="75%"  stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#FEF3C7"/>
+    </linearGradient>
+
+    <!-- Inner flame: brighter highlight -->
+    <linearGradient id="flameGrad2" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#F59E0B"/>
+      <stop offset="60%"  stop-color="#FCD34D"/>
+      <stop offset="100%" stop-color="#FFFBEB"/>
+    </linearGradient>
+
+    <!-- "1" gold gradient -->
+    <linearGradient id="oneGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FEF3C7"/>
+      <stop offset="50%"  stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </linearGradient>
+
+    <!-- Trophy ring -->
+    <radialGradient id="ringGrad" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%"   stop-color="#FFD700" stop-opacity="0.0"/>
+      <stop offset="70%"  stop-color="#FFD700" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFD700" stop-opacity="0.0"/>
+    </radialGradient>
+
+    <!-- Soft glow filter for flames -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ─── Background ─────────────────────────────────────────────── -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bgGrad)"/>
+
+  <!-- Subtle radial glow behind everything -->
+  <circle cx="512" cy="540" r="380" fill="url(#ringGrad)"/>
+
+  <!-- ─── Flame paths (from user's SVG, scaled & colored) ────────
+       Pushed up slightly so the bottom banner has clean space. -->
+  <g transform="translate(512 640) scale(4.0) translate(-71.5 -71.5)" filter="url(#glow)">
+    <g transform="translate(0,143) scale(0.066667,-0.066667)" fill="url(#flameGrad)" stroke="none">
+      <path d="M1159 1990 c-204 -198 -163 -460 143 -927 183 -280 207 -394 131 -622 -49 -144 -48 -156 8 -103 165 158 245 316 246 487 1 161 -11 183 -239 455 -273 326 -322 478 -227 703 33 77 12 79 -62 7z"/>
+      <path d="M818 1439 c-62 -195 -55 -319 27 -488 153 -313 170 -399 92 -450 -141 -93 -317 148 -333 455 -9 172 -13 177 -72 99 -316 -413 83 -1122 534 -951 183 69 262 189 262 399 0 166 -8 184 -208 528 -171 292 -216 384 -230 471 -13 86 -29 72 -72 -63z"/>
+    </g>
+  </g>
+
+  <!-- Inner brighter highlight flame -->
+  <g transform="translate(512 640) scale(2.8) translate(-71.5 -71.5)" opacity="0.7">
+    <g transform="translate(0,143) scale(0.066667,-0.066667)" fill="url(#flameGrad2)" stroke="none">
+      <path d="M818 1439 c-62 -195 -55 -319 27 -488 153 -313 170 -399 92 -450 -141 -93 -317 148 -333 455 -9 172 -13 177 -72 99 -316 -413 83 -1122 534 -951 183 69 262 189 262 399 0 166 -8 184 -208 528 -171 292 -216 384 -230 471 -13 86 -29 72 -72 -63z"/>
+    </g>
+  </g>
+
+  <!-- ─── Big golden "1" centered on top of flames ─────────────── -->
+  <g transform="translate(512 460)">
+    <!-- Drop shadow -->
+    <text x="0" y="0"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-family="Impact, 'Arial Black', sans-serif"
+          font-weight="900"
+          font-size="500"
+          fill="#000000" opacity="0.35"
+          transform="translate(8 12)">1</text>
+    <!-- Main "1" with gold gradient -->
+    <text x="0" y="0"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-family="Impact, 'Arial Black', sans-serif"
+          font-weight="900"
+          font-size="500"
+          fill="url(#oneGrad)"
+          stroke="#7C2D12"
+          stroke-width="6">1</text>
+  </g>
+
+  <!-- ─── "MUNDIAL 2026" banner at the bottom (solid bg for legibility) ── -->
+  <g transform="translate(512 925)">
+    <rect x="-280" y="-36" width="560" height="72" rx="36" ry="36"
+          fill="#0A0E1A" stroke="#FFD700" stroke-width="3" opacity="0.95"/>
+    <text x="0" y="6"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-family="Arial, sans-serif"
+          font-weight="900"
+          font-size="46"
+          letter-spacing="6"
+          fill="#FFD700">MUNDIAL 2026</text>
+  </g>
+
+  <!-- ─── Small accent stars ────────────────────────────────────── -->
+  <g fill="#FCD34D" opacity="0.9">
+    <polygon points="180,200 195,235 232,239 204,265 213,302 180,284 147,302 156,265 128,239 165,235"/>
+    <polygon points="844,200 859,235 896,239 868,265 877,302 844,284 811,302 820,265 792,239 829,235"/>
+  </g>
+</svg>
