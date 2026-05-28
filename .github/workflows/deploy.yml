@@ -1,13 +1,5 @@
 # ════════════════════════════════════════════════════════════════════════
 #  CI/CD del frontend (Expo Web)
-#
-#  Trigger: push a `main`
-#  Flujo:
-#    1) Build de Expo Web (estático)
-#    2) Push del `dist/` a la rama `web-build` (de donde Plesk hace pull)
-#
-#  Para builds de APK, ver workflow separado: apk.yml (se activa solo si
-#  está configurado el secret EXPO_TOKEN).
 # ════════════════════════════════════════════════════════════════════════
 name: Build & Deploy Frontend
 
@@ -31,26 +23,52 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Enable corepack
-        run: corepack enable
+      # ── Yarn 4 via corepack ──────────────────────────────────────
+      - name: Setup Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.13.0 --activate
+          yarn --version
 
-      - name: Install deps
-        run: yarn install --immutable
+      # ── Instalar deps. Si no hay yarn.lock o se desincronizó,
+      #    cae a install normal (no --immutable) ──────────────────
+      - name: Install dependencies
+        run: |
+          if [ -f yarn.lock ]; then
+            yarn install --immutable || yarn install
+          else
+            yarn install
+          fi
 
-      - name: Build Expo Web (static export)
+      # ── Diagnóstico antes del export ─────────────────────────────
+      - name: Debug info
+        run: |
+          node --version
+          yarn --version
+          npx --version
+          ls -la
+          cat package.json | head -50
+
+      # ── Build Expo Web ───────────────────────────────────────────
+      - name: Build Expo Web
         env:
           EXPO_PUBLIC_API_URL: ${{ env.EXPO_PUBLIC_API_URL }}
-        run: npx expo export --platform web --output-dir dist
+          CI: true
+        run: |
+          npx expo export --platform web --output-dir dist
+          echo "── dist/ contents ──"
+          ls -la dist/
 
-      - name: Subir artifact (debug)
+      # ── Subir artifact (siempre, aunque luego falle el push) ─────
+      - name: Upload artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: web-dist
           path: dist/
+          if-no-files-found: warn
 
-      # ── Force-push dist/ a la rama web-build ───────────────────────
-      # Plesk pulea esa rama y despliega el contenido en
-      # /apuestamundial.impexpap.com/
+      # ── Force-push dist/ a la rama web-build ─────────────────────
       - name: Push to web-build branch
         run: |
           cd dist
