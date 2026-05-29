@@ -210,14 +210,32 @@ export default function AdminDashboard() {
     },
   });
 
+  // Tickets propios del admin (también participa) → suma prize_won = Total Ganado.
+  // Mismo cálculo que en el dashboard del usuario para consistencia.
+  const { data: myTickets, refetch: refetchMyTickets } = useQuery({
+    queryKey: ['admin-my-tickets'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/tickets/me');
+        return res?.data ?? [];
+      } catch { return []; }
+    },
+  });
+
+  const myTotalWon = useMemo(() => {
+    if (!Array.isArray(myTickets)) return 0;
+    return myTickets.reduce((sum: number, t: any) => sum + Number(t?.prize_won ?? 0), 0);
+  }, [myTickets]);
+
   useFocusEffect(useCallback(() => {
     refetchStats();
     refetchPending();
+    refetchMyTickets();
   }, []));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchStats(), refetchPending()]);
+    await Promise.all([refetchStats(), refetchPending(), refetchMyTickets()]);
     setRefreshing(false);
   };
 
@@ -304,20 +322,15 @@ export default function AdminDashboard() {
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
-                icon="cash"
-                // Pasamos número plano para que el AnimatedCounter cuente,
-                // y `formatMoney` ya añade el prefijo "Bs ".
-                value={stats?.total_distributed ?? 0}
+                icon={myTotalWon > 0 ? 'cash' : 'wallet-outline'}
+                // El admin también compite: muestra SU total ganado personal,
+                // igual que ven los usuarios en su dashboard.
+                value={myTotalWon}
                 formatter={(n) => formatMoney(n)}
-                label="Repartido"
-                color="#CA8A04"
-                bg="rgba(202,138,4,0.12)"
+                label="Total Ganado"
+                color={myTotalWon > 0 ? '#10B981' : '#CA8A04'}
+                bg={myTotalWon > 0 ? 'rgba(16,185,129,0.12)' : 'rgba(202,138,4,0.12)'}
                 loading={statsLoading}
-                hint={
-                  (stats?.total_pool ?? 0) > 0
-                    ? `+ ${formatMoney(stats?.total_pool ?? 0)} activo`
-                    : undefined
-                }
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem

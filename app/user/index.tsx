@@ -30,9 +30,12 @@ import { fonts }         from '../../constants/theme';
 import api               from '../../services/api';
 import { parseBackendDate } from '../../utils/date';
 import { useBreakpoint }   from '../../hooks/useBreakpoint';
+import { formatMoney }     from '../../utils/currency';
 
+// Wrapper para mantener compatibilidad con código existente.
+// formatMoney es smart: "Bs 30" cuando entero, "Bs 7.50" cuando fraccional.
 function formatCurrency(amount: number, currency = 'Bs'): string {
-  return `${currency} ${Number(amount ?? 0).toFixed(2)}`;
+  return formatMoney(amount, currency);
 }
 
 // ─── Quick Action ──────────────────────────────────────────────────────────────
@@ -280,6 +283,24 @@ export default function HomeScreen() {
     },
   });
 
+  // Mis tickets de todos los torneos → suma `prize_won` = total ganado acumulado.
+  // Coincide con la columna "Ganado" del PDF de Reporte Acumulado.
+  const { data: myTickets, refetch: refetchMyTickets } = useQuery({
+    queryKey: ['my-tickets-home'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/tickets/me');
+        return res?.data ?? [];
+      } catch { return []; }
+    },
+  });
+
+  // Total acumulado ganado = suma de prize_won de todos mis tickets.
+  const totalWon = useMemo(() => {
+    if (!Array.isArray(myTickets)) return 0;
+    return myTickets.reduce((sum: number, t: any) => sum + Number(t?.prize_won ?? 0), 0);
+  }, [myTickets]);
+
   const { data: enrollments, refetch: refetchEnrollments } = useQuery({
     queryKey: ['my-enrollments-home'],
     queryFn: async () => {
@@ -320,6 +341,7 @@ export default function HomeScreen() {
         refetchMatchdays(),
         refetchEnrollments(),
         refetchTournamentList(),
+        refetchMyTickets(),
       ]);
     } catch {}
     setRefreshing(false);
@@ -392,14 +414,23 @@ export default function HomeScreen() {
               style={styles.heroCardLine}
             />
             <View style={styles.heroCardRow}>
-              {/* Saldo */}
+              {/* Total Ganado — premios acumulados en todas las jornadas/torneos.
+                  Cambia color a verde cuando hay ganancias para destacar. */}
               <View style={styles.heroCardStat}>
-                <View style={[styles.heroCardIcon, { backgroundColor: theme.colors.primaryLight + '18' }]}>
-                  <Ionicons name="wallet-outline" size={18} color={theme.colors.primaryLight} />
+                <View style={[styles.heroCardIcon, {
+                  backgroundColor: totalWon > 0 ? '#10B98118' : theme.colors.primaryLight + '18',
+                }]}>
+                  <Ionicons
+                    name={totalWon > 0 ? 'cash' : 'wallet-outline'}
+                    size={18}
+                    color={totalWon > 0 ? '#10B981' : theme.colors.primaryLight}
+                  />
                 </View>
-                <Text style={[styles.heroCardLabel, { color: theme.colors.textSecondary }]}>Saldo</Text>
-                <Text style={[styles.heroCardVal, { color: theme.colors.textPrimary }]}>
-                  {formatCurrency(Number(user?.balance ?? 0))}
+                <Text style={[styles.heroCardLabel, { color: theme.colors.textSecondary }]}>Total Ganado</Text>
+                <Text style={[styles.heroCardVal, {
+                  color: totalWon > 0 ? '#10B981' : theme.colors.textPrimary,
+                }]}>
+                  {formatCurrency(totalWon)}
                 </Text>
               </View>
 
