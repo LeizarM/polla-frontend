@@ -38,9 +38,28 @@ export default function AdminPollaScreen() {
   // ── Visibilidad pública de la Polla Final ─────────────────────────────────
   // Cuando está OFF, los usuarios NO ven la pestaña en su tab bar / sidebar.
   // El admin sí la sigue viendo siempre para poder reactivarla.
-  const { enabled: pollaEnabled, isLoading: pollaSettingLoading } = usePollaFinalEnabled();
+  //
+  // ⚠️ El Switch usa ESTADO LOCAL para responder al instante. Si la query
+  // remota cambia (otro admin lo tocó), sincronizamos. Si el server falla,
+  // revertimos el estado local. Sin doble-tap.
+  const { enabled: pollaEnabledQuery, isLoading: pollaSettingLoading } = usePollaFinalEnabled();
   const updateSetting = useUpdateAppSetting();
+  const [pollaEnabledLocal, setPollaEnabledLocal] = useState<boolean | null>(null);
+
+  // Sincroniza local cuando la query trae datos frescos (mount, focus, refresh)
+  React.useEffect(() => {
+    if (!pollaSettingLoading) {
+      setPollaEnabledLocal(pollaEnabledQuery);
+    }
+  }, [pollaEnabledQuery, pollaSettingLoading]);
+
+  // Lo que el Switch muestra: local si ya está sincronizado, sino el de la query
+  const pollaEnabled = pollaEnabledLocal ?? pollaEnabledQuery;
+
   const togglePolla = (next: boolean) => {
+    // 1. Cambio visual INSTANTÁNEO
+    setPollaEnabledLocal(next);
+    // 2. Mutación en background
     updateSetting.mutate(
       { polla_final_enabled: next ? 'true' : 'false' },
       {
@@ -48,6 +67,8 @@ export default function AdminPollaScreen() {
           showToast('success', next ? 'Polla Final visible para usuarios' : 'Polla Final oculta');
         },
         onError: (e: any) => {
+          // Revertir si falla
+          setPollaEnabledLocal(!next);
           showToast('error', e?.response?.data?.message ?? 'No se pudo actualizar');
         },
       },
