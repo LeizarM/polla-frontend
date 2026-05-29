@@ -1,6 +1,14 @@
-﻿/**
- * Login — Premium dark auth screen
- * Split-screen desktop · Animated orbs · Glass card · Haptic feedback · World Cup 2026
+/**
+ * Login — Premium centered auth screen
+ *
+ *  Layout responsivo único (sin split):
+ *   - Móvil:     Logo XL + título + card centrada vertical
+ *   - Tablet:    Logo XL + título + card más ancha (max 480px)
+ *   - Desktop:   Logo XXL + título grande + card max 460px, aún centrado
+ *
+ *  Sin chips de features (recortadas/feas). Sin hairline visible en card.
+ *  Card "glass" con borde sutil + sombra profunda + halo brand.
+ *  Fondo oscuro con 3 orbs animados (azul/morado/cyan), pulso suave.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -25,6 +33,7 @@ import Animated, {
   withDelay,
   FadeInDown,
   FadeIn,
+  ZoomIn,
 } from 'react-native-reanimated';
 import { Input }    from '../../components/ui/Input';
 import { Button }   from '../../components/ui/Button';
@@ -37,114 +46,87 @@ const LOGO_EMOJI    = '⚽';
 
 // ─── Animated background orbs ────────────────────────────────────────────────
 function AnimatedOrbs() {
-  const orb1 = useSharedValue(0.12);
-  const orb2 = useSharedValue(0.08);
+  const orb1 = useSharedValue(0.18);
+  const orb2 = useSharedValue(0.12);
+  const orb3 = useSharedValue(0.05);
   useEffect(() => {
-    orb1.value = withRepeat(withTiming(0.22, { duration: 3800 }), -1, true);
-    orb2.value = withDelay(1800, withRepeat(withTiming(0.15, { duration: 4500 }), -1, true));
+    orb1.value = withRepeat(withTiming(0.28, { duration: 3800 }), -1, true);
+    orb2.value = withDelay(1500, withRepeat(withTiming(0.20, { duration: 4500 }), -1, true));
+    orb3.value = withDelay(2200, withRepeat(withTiming(0.09, { duration: 5200 }), -1, true));
   }, []);
   const s1 = useAnimatedStyle(() => ({ opacity: orb1.value }));
   const s2 = useAnimatedStyle(() => ({ opacity: orb2.value }));
+  const s3 = useAnimatedStyle(() => ({ opacity: orb3.value }));
   return (
     <>
+      {/* Azul arriba-izquierda */}
       <Animated.View pointerEvents="none" style={[{
-        position: 'absolute', width: 420, height: 420,
-        top: -140, left: -100, borderRadius: 210, backgroundColor: '#1D4ED8',
+        position: 'absolute', width: 520, height: 520,
+        top: -180, left: -180, borderRadius: 260, backgroundColor: '#1D4ED8',
       }, s1]} />
+      {/* Morado abajo-derecha */}
       <Animated.View pointerEvents="none" style={[{
-        position: 'absolute', width: 360, height: 360,
-        bottom: -100, right: -80, borderRadius: 180, backgroundColor: '#7C3AED',
+        position: 'absolute', width: 460, height: 460,
+        bottom: -160, right: -160, borderRadius: 230, backgroundColor: '#7C3AED',
       }, s2]} />
-      <View pointerEvents="none" style={{
-        position: 'absolute', width: 180, height: 180,
-        top: '38%', left: '35%', borderRadius: 90,
-        backgroundColor: '#0EA5E9', opacity: 0.05,
-      }} />
+      {/* Cyan centro (sutil) */}
+      <Animated.View pointerEvents="none" style={[{
+        position: 'absolute', width: 280, height: 280,
+        top: '40%', left: '38%', borderRadius: 140,
+        backgroundColor: '#0EA5E9',
+      }, s3]} />
     </>
   );
 }
 
-// ─── Logo with glow ring ──────────────────────────────────────────────────────
-function LogoBadge({ logoUrl, size = 100 }: { logoUrl: string | null; size?: number }) {
+// ─── Logo with halo + double ring ─────────────────────────────────────────────
+function LogoBadge({ logoUrl, size = 140 }: { logoUrl: string | null; size?: number }) {
+  // Animated subtle pulse on the halo
+  const halo = useSharedValue(0.55);
+  useEffect(() => {
+    halo.value = withRepeat(withTiming(0.85, { duration: 2200 }), -1, true);
+  }, []);
+  const haloStyle = useAnimatedStyle(() => ({ shadowOpacity: halo.value }));
+
   const r = Math.round(size * 0.28);
   return (
-    <View style={{
-      shadowColor: '#2563EB', shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.7, shadowRadius: 28, elevation: 12,
-    }}>
+    <Animated.View style={[{
+      shadowColor: '#3B82F6',
+      shadowOffset: { width: 0, height: 0 },
+      shadowRadius: 44,
+      elevation: 18,
+    }, haloStyle]}>
       <LinearGradient
-        colors={['#1D4ED8', '#7C3AED']}
+        colors={['#1D4ED8', '#7C3AED', '#0EA5E9']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ width: size, height: size, borderRadius: r, padding: 2.5 }}
+        style={{ width: size, height: size, borderRadius: r, padding: 3 }}
       >
         <LinearGradient
           colors={['#0A1020', '#111827']}
-          style={{ flex: 1, borderRadius: r - 2, alignItems: 'center', justifyContent: 'center' }}
+          style={{ flex: 1, borderRadius: r - 3, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
         >
+          {/* Subtle inner top highlight */}
+          <LinearGradient
+            colors={['rgba(255,255,255,0.08)', 'transparent']}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: size * 0.45 }}
+            pointerEvents="none"
+          />
           {logoUrl ? (
             <Image
               source={{ uri: logoUrl }}
-              style={{ width: size * 0.64, height: size * 0.64, borderRadius: r * 0.6 }}
+              style={{ width: size * 0.66, height: size * 0.66, borderRadius: r * 0.6 }}
               contentFit="contain"
               transition={300}
             />
           ) : (
-            <Text style={{ fontSize: size * 0.46 }}>{LOGO_EMOJI}</Text>
+            <Text style={{ fontSize: size * 0.48 }}>{LOGO_EMOJI}</Text>
           )}
         </LinearGradient>
       </LinearGradient>
-    </View>
+    </Animated.View>
   );
 }
 
-// ─── Desktop hero panel ───────────────────────────────────────────────────────
-function HeroPanel({ appTitle, logoUrl }: { appTitle: string; logoUrl: string | null }) {
-  return (
-    <View style={{
-      flex: 1, justifyContent: 'center', alignItems: 'flex-start',
-      paddingHorizontal: 56, paddingVertical: 40,
-      borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.06)',
-    }}>
-      <View style={{ marginBottom: 28 }}>
-        <LogoBadge logoUrl={logoUrl} size={120} />
-      </View>
-      <Text style={{
-        fontSize: 40, fontFamily: 'Poppins_800ExtraBold', color: '#FFFFFF',
-        letterSpacing: -1.2, lineHeight: 48, marginBottom: 14,
-      }}>
-        {appTitle}
-      </Text>
-      <Text style={{
-        fontSize: 15, fontFamily: 'Poppins_400Regular',
-        color: 'rgba(148,163,184,0.7)', lineHeight: 25, maxWidth: 380, marginBottom: 36,
-      }}>
-        Predice resultados, competí con amigos y ganá premios en la quiniela
-        más emocionante del Mundial 2026.
-      </Text>
-      {([
-        { icon: '🏆', label: 'Torneos grupales con amigos' },
-        { icon: '⚽', label: '64 partidos del Mundial 2026' },
-        { icon: '🎯', label: 'Predicciones en tiempo real' },
-        { icon: '💰', label: 'Premios por aciertos' },
-      ] as const).map(({ icon, label }) => (
-        <View key={label} style={{
-          flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10,
-          backgroundColor: 'rgba(255,255,255,0.04)',
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-          borderRadius: 50, paddingHorizontal: 18, paddingVertical: 8,
-          alignSelf: 'flex-start',
-        }}>
-          <Text style={{ fontSize: 16 }}>{icon}</Text>
-          <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(203,213,225,0.8)' }}>
-            {label}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Login form card ──────────────────────────────────────────────────────────
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -155,9 +137,18 @@ export default function LoginScreen() {
 
   const { login }     = useAuthStore();
   const { showToast } = useToast();
-  const { width }     = useWindowDimensions();
-  const isDesktop     = Platform.OS === 'web' && width >= 1024;
+  const { width, height } = useWindowDimensions();
   const passwordRef   = useRef<any>(null);
+
+  // Tamaños responsivos (móvil, tablet, desktop, ultra-wide)
+  const isPhone   = width < 600;
+  const isTablet  = width >= 600 && width < 1024;
+  const isDesktop = width >= 1024;
+
+  const logoSize  = isPhone ? 120 : isTablet ? 160 : 190;
+  const titleSize = isPhone ? 26  : isTablet ? 36  : 42;
+  const subtitleSize = isPhone ? 13 : isTablet ? 15 : 16;
+  const cardMaxWidth = isPhone ? '100%' : isTablet ? 460 : 480;
 
   useEffect(() => {
     (async () => {
@@ -206,165 +197,206 @@ export default function LoginScreen() {
     }
   };
 
-  const cardDelay = isDesktop ? 0 : 100;
-
-  const FormCard = (
-    <Animated.View entering={FadeInDown.delay(cardDelay).duration(500).springify()}>
-      <View style={{
-        backgroundColor: 'rgba(10,16,32,0.82)',
-        borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-        overflow: 'hidden',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.5, shadowRadius: 28, elevation: 18,
-      }}>
-        <LinearGradient
-          colors={['#2563EB', '#7C3AED', 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={{ height: 1.5 }}
-        />
-        <View style={{ padding: 28 }}>
-          {isDesktop && (
-            <>
-              <Text style={{
-                fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#fff',
-                letterSpacing: -0.4, marginBottom: 4,
-              }}>
-                Bienvenido de vuelta
-              </Text>
-              <Text style={{
-                fontSize: 13, fontFamily: 'Poppins_400Regular',
-                color: 'rgba(148,163,184,0.6)', marginBottom: 20,
-              }}>
-                Inicia sesión para continuar
-              </Text>
-            </>
-          )}
-          <Input
-            label="Usuario"
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Tu nombre de usuario"
-            icon="person-outline"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-            onSubmitEditing={() => passwordRef.current?.focus()}
-          />
-          <Input
-            label="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Tu contraseña"
-            type="password"
-            icon="lock-closed-outline"
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-          />
-          <View style={{ marginTop: 8, marginBottom: 4 }}>
-            <Button
-              title="Iniciar Sesión" onPress={handleLogin}
-              variant="primary" size="lg" fullWidth
-              loading={loading} disabled={loading}
-              icon="arrow-forward" iconPosition="right"
-            />
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
-            <Text style={{
-              fontSize: 12, color: 'rgba(148,163,184,0.5)',
-              marginHorizontal: 12, fontFamily: 'Poppins_400Regular',
-            }}>
-              ¿Primera vez?
-            </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
-          </View>
-          <Link href="/auth/register" asChild>
-            <Pressable style={{ alignItems: 'center', paddingVertical: 4 }}>
-              <Text style={{
-                fontSize: 14, color: 'rgba(148,163,184,0.75)',
-                fontFamily: 'Poppins_400Regular', textAlign: 'center',
-              }}>
-                ¿No tienes cuenta?{'  '}
-                <Text style={{ color: '#60A5FA', fontFamily: 'Poppins_600SemiBold' }}>
-                  Regístrate →
-                </Text>
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
-      </View>
-    </Animated.View>
-  );
-
   return (
     <LinearGradient
-      colors={['#020818', '#060D22', '#030B18']}
+      colors={['#020818', '#060D22', '#020610']}
       locations={[0, 0.5, 1]}
       style={{ flex: 1 }}
     >
       <AnimatedOrbs />
 
-      {isDesktop ? (
-        /* ── Desktop: split-screen ──────────────────────────────────────── */
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <HeroPanel appTitle={appTitle} logoUrl={logoUrl} />
-          <View style={{
-            width: 500, justifyContent: 'center',
-            paddingHorizontal: 40, paddingVertical: 40,
-          }}>
-            {FormCard}
-            <Animated.View entering={FadeIn.delay(300)} style={{ marginTop: 18, alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, color: 'rgba(100,116,139,0.45)', fontFamily: 'Poppins_400Regular' }}>
-                v1.0 · Mundial 2026
-              </Text>
-            </Animated.View>
-          </View>
-        </View>
-      ) : (
-        /* ── Mobile: single-column ──────────────────────────────────────── */
-        <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingHorizontal: isPhone ? 20 : 32,
+              paddingVertical: 32,
+              minHeight: height,
+            }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <ScrollView
-              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 32 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              {/* Logo + title */}
+            {/* ── Bloque centrado con max-width para no estirarse infinito ── */}
+            <View style={{ width: '100%', maxWidth: cardMaxWidth, alignSelf: 'center' }}>
+
+              {/* Logo + Título */}
               <Animated.View
-                entering={FadeInDown.duration(500).springify()}
-                style={{ alignItems: 'center', marginBottom: 32 }}
+                entering={FadeInDown.duration(550).springify()}
+                style={{ alignItems: 'center', marginBottom: isPhone ? 28 : 36 }}
               >
-                <View style={{ marginBottom: 20 }}>
-                  <LogoBadge logoUrl={logoUrl} size={100} />
-                </View>
+                <Animated.View entering={ZoomIn.duration(700).springify()} style={{ marginBottom: 22 }}>
+                  <LogoBadge logoUrl={logoUrl} size={logoSize} />
+                </Animated.View>
+
                 <Text style={{
-                  fontSize: 26, fontFamily: 'Poppins_800ExtraBold', color: '#FFFFFF',
-                  letterSpacing: -0.8, textAlign: 'center', marginBottom: 4,
-                }}>
+                  fontSize: titleSize,
+                  fontFamily: 'Poppins_800ExtraBold',
+                  color: '#FFFFFF',
+                  letterSpacing: -0.8,
+                  textAlign: 'center',
+                  marginBottom: 8,
+                  lineHeight: titleSize * 1.15,
+                }} numberOfLines={2}>
                   {appTitle}
                 </Text>
+
                 <Text style={{
-                  fontSize: 13, color: 'rgba(148,163,184,0.8)',
-                  fontFamily: 'Poppins_400Regular', textAlign: 'center', letterSpacing: 0.2,
+                  fontSize: subtitleSize,
+                  color: 'rgba(148,163,184,0.75)',
+                  fontFamily: 'Poppins_400Regular',
+                  textAlign: 'center',
+                  letterSpacing: 0.2,
+                  maxWidth: 340,
+                  lineHeight: subtitleSize * 1.5,
                 }}>
-                  Inicia sesión para continuar
+                  Inicia sesión para continuar al panel
                 </Text>
               </Animated.View>
 
-              {FormCard}
+              {/* ── Card del formulario ─────────────────────────────────── */}
+              <Animated.View entering={FadeInDown.delay(120).duration(500).springify()}>
+                <View style={{
+                  backgroundColor: 'rgba(10,16,32,0.78)',
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: 'rgba(96,165,250,0.15)',
+                  overflow: 'hidden',
+                  // Halo brand sutil alrededor de la card
+                  shadowColor: '#1D4ED8',
+                  shadowOffset: { width: 0, height: 20 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 40,
+                  elevation: 20,
+                }}>
+                  {/* Highlight superior interno (premium glass) */}
+                  <LinearGradient
+                    colors={['rgba(255,255,255,0.06)', 'transparent']}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 80 }}
+                    pointerEvents="none"
+                  />
 
-              <Animated.View entering={FadeIn.delay(300)} style={{ marginTop: 24, alignItems: 'center' }}>
-                <Text style={{ fontSize: 11, color: 'rgba(100,116,139,0.5)', fontFamily: 'Poppins_400Regular' }}>
-                  v1.0 · Mundial 2026
+                  <View style={{ padding: isPhone ? 24 : 32 }}>
+                    <Text style={{
+                      fontSize: 20,
+                      fontFamily: 'Poppins_700Bold',
+                      color: '#FFFFFF',
+                      letterSpacing: -0.4,
+                      marginBottom: 4,
+                    }}>
+                      Bienvenido de vuelta
+                    </Text>
+                    <Text style={{
+                      fontSize: 12.5,
+                      fontFamily: 'Poppins_400Regular',
+                      color: 'rgba(148,163,184,0.6)',
+                      marginBottom: 22,
+                    }}>
+                      Ingresa tus credenciales
+                    </Text>
+
+                    <Input
+                      label="Usuario"
+                      value={username}
+                      onChangeText={setUsername}
+                      placeholder="Tu nombre de usuario"
+                      icon="person-outline"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      onSubmitEditing={() => passwordRef.current?.focus()}
+                    />
+                    <Input
+                      label="Contraseña"
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Tu contraseña"
+                      type="password"
+                      icon="lock-closed-outline"
+                      returnKeyType="done"
+                      onSubmitEditing={handleLogin}
+                    />
+
+                    <View style={{ marginTop: 12 }}>
+                      <Button
+                        title="Iniciar Sesión"
+                        onPress={handleLogin}
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        loading={loading}
+                        disabled={loading}
+                        icon="arrow-forward"
+                        iconPosition="right"
+                      />
+                    </View>
+
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      marginVertical: 22,
+                    }}>
+                      <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
+                      <Text style={{
+                        fontSize: 11,
+                        color: 'rgba(148,163,184,0.5)',
+                        marginHorizontal: 14,
+                        fontFamily: 'Poppins_500Medium',
+                        letterSpacing: 0.5,
+                        textTransform: 'uppercase',
+                      }}>
+                        ¿Primera vez?
+                      </Text>
+                      <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
+                    </View>
+
+                    <Link href="/auth/register" asChild>
+                      <Pressable style={{
+                        alignItems: 'center',
+                        paddingVertical: 8,
+                      }}>
+                        <Text style={{
+                          fontSize: 13.5,
+                          color: 'rgba(148,163,184,0.85)',
+                          fontFamily: 'Poppins_400Regular',
+                          textAlign: 'center',
+                        }}>
+                          ¿No tienes cuenta?{'  '}
+                          <Text style={{
+                            color: '#60A5FA',
+                            fontFamily: 'Poppins_700Bold',
+                          }}>
+                            Regístrate →
+                          </Text>
+                        </Text>
+                      </Pressable>
+                    </Link>
+                  </View>
+                </View>
+              </Animated.View>
+
+              {/* ── Footer version ──────────────────────────────────────── */}
+              <Animated.View
+                entering={FadeIn.delay(380)}
+                style={{ marginTop: 22, alignItems: 'center' }}
+              >
+                <Text style={{
+                  fontSize: 10.5,
+                  color: 'rgba(100,116,139,0.45)',
+                  fontFamily: 'Poppins_500Medium',
+                  letterSpacing: 0.8,
+                }}>
+                  v1.0 · MUNDIAL 2026
                 </Text>
               </Animated.View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
