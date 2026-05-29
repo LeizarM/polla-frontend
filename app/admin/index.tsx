@@ -19,6 +19,8 @@ import { Input }    from '../../components/ui/Input';
 import { Button }   from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal }    from '../../components/ui/Modal';
+import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
+import { PressableScale }  from '../../components/ui/PressableScale';
 import { useAuthStore }    from '../../store/authStore';
 import { useToast }        from '../../components/ui/Toast';
 import { useTheme }        from '../../contexts/ThemeContext';
@@ -42,21 +44,31 @@ function StatItem({
   badge?: boolean;
   onPress?: () => void;
 }) {
+  // Si el valor es numérico → animated counter (efecto premium).
+  // Si es string (ej. "Bs 1,234.50") lo mostramos plano.
+  const isNumeric = typeof value === 'number';
   const inner = (
     <View style={si.wrap}>
       <View style={[si.iconBox, { backgroundColor: bg }]}>
         <Ionicons name={icon} size={19} color={color} />
         {badge && <View style={si.dot} />}
       </View>
-      {loading
-        ? <Skeleton width={38} height={18} style={{ marginVertical: 2, borderRadius: 6 }} />
-        : <Text style={[si.value, { color }]}>{value}</Text>
-      }
+      {loading ? (
+        <Skeleton width={38} height={18} style={{ marginVertical: 2, borderRadius: 6 }} />
+      ) : isNumeric ? (
+        <AnimatedCounter
+          value={value as number}
+          duration={900}
+          style={[si.value, { color }]}
+        />
+      ) : (
+        <Text style={[si.value, { color }]}>{value}</Text>
+      )}
       <Text style={si.label}>{label}</Text>
     </View>
   );
   return onPress
-    ? <Pressable onPress={onPress}>{inner}</Pressable>
+    ? <PressableScale onPress={onPress} haptic="light">{inner}</PressableScale>
     : inner;
 }
 
@@ -84,9 +96,11 @@ function AdminAction({
 }) {
   return (
     <Animated.View entering={ZoomIn.delay(delay).duration(300).springify()} style={[ac.outer, isDesktop && ac.outerDesktop]}>
-      <Pressable
+      <PressableScale
         onPress={() => router.push(route as any)}
-        style={({ pressed }) => [ac.pressable, pressed && { opacity: 0.88 }]}
+        haptic="medium"
+        scale={0.94}
+        style={ac.pressable}
       >
         <LinearGradient
           colors={gradient}
@@ -94,6 +108,13 @@ function AdminAction({
           end={{ x: 1.2, y: 1 }}
           style={ac.grad}
         >
+          {/* Subtle inner highlight (premium glass-like top edge) */}
+          <LinearGradient
+            colors={['rgba(255,255,255,0.15)', 'transparent']}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 50 }}
+            pointerEvents="none"
+          />
+
           {/* Badge */}
           {(badge ?? 0) > 0 && (
             <View style={ac.badge}>
@@ -103,13 +124,13 @@ function AdminAction({
 
           {/* Icon */}
           <View style={ac.iconWrap}>
-            <Ionicons name={icon} size={26} color="rgba(255,255,255,0.9)" />
+            <Ionicons name={icon} size={26} color="rgba(255,255,255,0.95)" />
           </View>
 
           <Text style={ac.label}>{label}</Text>
           <Text style={ac.sub}>{sub}</Text>
         </LinearGradient>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
@@ -271,22 +292,22 @@ export default function AdminDashboard() {
             <View style={styles.statsRow}>
               <StatItem
                 icon="people" value={stats?.total_users ?? 0} label="Usuarios"
-                color="#3B82F6" bg="rgba(59,130,246,0.12)" loading={statsLoading}
+                color="#2563EB" bg="rgba(37,99,235,0.12)" loading={statsLoading}
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
                 icon="trophy" value={stats?.active_tournaments ?? 0} label="Torneos"
-                color="#10B981" bg="rgba(16,185,129,0.12)" loading={statsLoading}
+                color="#059669" bg="rgba(5,150,105,0.12)" loading={statsLoading}
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
                 icon="cash" value={formatMoney(stats?.total_pool ?? 0)} label="En pozo"
-                color="#FFD700" bg="rgba(255,215,0,0.10)" loading={statsLoading}
+                color="#CA8A04" bg="rgba(202,138,4,0.12)" loading={statsLoading}
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
                 icon="notifications" value={pendingCount ?? 0} label="Pendientes"
-                color="#F59E0B" bg="rgba(245,158,11,0.12)"
+                color="#D97706" bg="rgba(217,119,6,0.12)"
                 badge={(pendingCount ?? 0) > 0}
                 onPress={() => router.push('/admin/torneos' as any)}
               />
@@ -297,17 +318,18 @@ export default function AdminDashboard() {
         {/* ── Pending alert ────────────────────────────────────────────── */}
         {(pendingCount ?? 0) > 0 && (
           <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.alertWrap}>
-            <Pressable
+            <PressableScale
               onPress={() => router.push('/admin/torneos' as any)}
+              haptic="light"
               style={styles.alertCard}
             >
               <View style={styles.alertPulse} />
-              <Ionicons name="notifications" size={17} color="#F59E0B" />
+              <Ionicons name="notifications" size={17} color="#D97706" />
               <Text style={styles.alertText}>
                 {pendingCount} solicitud{(pendingCount ?? 0) !== 1 ? 'es' : ''} de inscripción pendiente{(pendingCount ?? 0) !== 1 ? 's' : ''}
               </Text>
-              <Ionicons name="chevron-forward" size={15} color="#F59E0B" />
-            </Pressable>
+              <Ionicons name="chevron-forward" size={15} color="#D97706" />
+            </PressableScale>
           </Animated.View>
         )}
 
@@ -514,22 +536,22 @@ function makeStyles(t: typeof staticTheme) {
     alertCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(245,158,11,0.07)',
+      backgroundColor: 'rgba(217,119,6,0.07)',
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: 'rgba(245,158,11,0.3)',
+      borderColor: 'rgba(217,119,6,0.3)',
       padding: 13,
       gap: 9,
     },
     alertPulse: {
       width: 8, height: 8, borderRadius: 4,
-      backgroundColor: '#F59E0B',
+      backgroundColor: '#D97706',
     },
     alertText: {
       flex: 1,
       fontSize: 12,
       fontFamily: 'Poppins_600SemiBold',
-      color: '#F59E0B',
+      color: '#D97706',
     },
 
     section: { marginTop: 26, paddingHorizontal: 18 },

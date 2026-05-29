@@ -277,14 +277,26 @@ export default function MatchdayDetailScreen() {
   ) => {
     const selected = picks[matchId] === value;
     const disabled = locked || !canEdit;
+    const onPress = () => {
+      if (disabled) return;
+      // Haptic medio cuando seleccionas pick — confirma la decisión
+      if (Platform.OS !== 'web') {
+        import('expo-haptics')
+          .then(H => H.impactAsync(H.ImpactFeedbackStyle.Medium))
+          .catch(() => {});
+      }
+      handlePick(matchId, value);
+    };
     return (
       <Pressable
         style={[
           styles.pickButton,
           selected && { backgroundColor: color, borderColor: color },
           disabled && !selected && styles.pickButtonDisabled,
+          // opacity 0.45 cuando está bloqueado (per handoff)
+          locked && !selected && { opacity: 0.45 },
         ]}
-        onPress={() => (!disabled ? handlePick(matchId, value) : null)}
+        onPress={onPress}
         disabled={disabled}
       >
         <Text

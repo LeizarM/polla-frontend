@@ -86,10 +86,13 @@ function syncWebCssVars(palette: ColorPalette) {
 
 // ─── Context ───────────────────────────────────────────────────────────────────
 
+// ⚠️ Default palette: "Día Claro" (light theme). Cambiable desde Perfil.
+const DEFAULT_PALETTE_ID = 'claro';
+
 const ThemeContext = createContext<ThemeContextType>({
   theme: baseTheme,
-  palette: PALETTES[0],
-  paletteId: 'mundial',
+  palette: getPaletteById(DEFAULT_PALETTE_ID),
+  paletteId: DEFAULT_PALETTE_ID,
   setPaletteId: () => {},
   palettes: PALETTES,
   refreshPalette: () => {},
@@ -100,7 +103,7 @@ const PALETTE_STORAGE_KEY = 'user_palette';
 // ─── Provider ──────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [paletteId, setPaletteIdState] = useState('mundial');
+  const [paletteId, setPaletteIdState] = useState(DEFAULT_PALETTE_ID);
   const user = useAuthStore((s: any) => s.user);
 
   // Load palette from AsyncStorage on mount / user change

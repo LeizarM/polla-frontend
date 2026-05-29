@@ -15,6 +15,7 @@ import { Ionicons }       from '@expo/vector-icons';
 import { Input }          from '../../components/ui/Input';
 import { Button }         from '../../components/ui/Button';
 import { useToast }       from '../../components/ui/Toast';
+import { PressableScale } from '../../components/ui/PressableScale';
 import { useAuthStore }   from '../../store/authStore';
 import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
@@ -261,13 +262,24 @@ export default function PerfilScreen() {
                   <Animated.View key={p.id} entering={ZoomIn.delay(idx * 55).duration(280).springify()}
                     style={{ width: isDesktop ? '22%' as any : '47%' as any }}
                   >
-                    <Pressable
+                    <PressableScale
+                      haptic="light"
+                      scale={0.95}
+                      onPress={() => { setPaletteId(p.id); showToast('success', `Paleta "${p.name}" aplicada`); }}
                       style={[
                         styles.paletteOption,
                         { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border },
-                        isActive && { borderColor: p.colors.primaryLight, borderWidth: 2 },
+                        isActive && {
+                          borderColor: p.colors.primaryLight,
+                          borderWidth: 2,
+                          // Subtle glow ring when active (premium touch)
+                          shadowColor: p.colors.primaryLight,
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.35,
+                          shadowRadius: 10,
+                          elevation: 6,
+                        },
                       ]}
-                      onPress={() => { setPaletteId(p.id); showToast('success', `Paleta "${p.name}" aplicada`); }}
                     >
                       <View style={{ flexDirection: 'row', gap: 5, marginBottom: 5 }}>
                         <View style={[styles.paletteCircle, { backgroundColor: p.colors.primary }]} />
@@ -281,7 +293,7 @@ export default function PerfilScreen() {
                       {isActive && (
                         <Ionicons name="checkmark-circle" size={16} color={p.colors.primaryLight} style={{ marginTop: 2 }} />
                       )}
-                    </Pressable>
+                    </PressableScale>
                   </Animated.View>
                 );
               })}
@@ -291,7 +303,7 @@ export default function PerfilScreen() {
 
         {/* Logout */}
         <Animated.View entering={FadeInDown.delay(280).duration(400)} style={{ paddingHorizontal: 20, paddingTop: 6 }}>
-          <Pressable onPress={handleLogout} style={styles.logoutWrap}>
+          <PressableScale onPress={handleLogout} haptic="heavy" style={styles.logoutWrap}>
             <LinearGradient
               colors={['#EF4444', '#DC2626']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -300,7 +312,7 @@ export default function PerfilScreen() {
               <Ionicons name="log-out-outline" size={20} color="#fff" />
               <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </LinearGradient>
-          </Pressable>
+          </PressableScale>
         </Animated.View>
 
       </ScrollView>

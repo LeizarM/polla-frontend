@@ -247,6 +247,11 @@ export const PALETTES: ColorPalette[] = [
   },
 ];
 
+// ⚠️ Default fallback is 'claro' (Día Claro) to match the app's default theme.
 export function getPaletteById(id: string): ColorPalette {
-  return PALETTES.find(p => p.id === id) ?? PALETTES[0];
+  return (
+    PALETTES.find(p => p.id === id) ??
+    PALETTES.find(p => p.id === 'claro') ??
+    PALETTES[0]
+  );
 }
