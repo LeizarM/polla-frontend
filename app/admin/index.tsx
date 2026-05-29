@@ -33,7 +33,7 @@ import { formatMoney } from '../../utils/currency';
 // ─── Stat card item ────────────────────────────────────────────────────────────
 
 function StatItem({
-  icon, value, label, color, bg, loading, badge, onPress,
+  icon, value, label, color, bg, loading, badge, onPress, hint, formatter,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   value: string | number;
@@ -43,9 +43,9 @@ function StatItem({
   loading?: boolean;
   badge?: boolean;
   onPress?: () => void;
+  hint?: string;
+  formatter?: (n: number) => string;   // Custom formatter for numeric values
 }) {
-  // Si el valor es numérico → animated counter (efecto premium).
-  // Si es string (ej. "Bs 1,234.50") lo mostramos plano.
   const isNumeric = typeof value === 'number';
   const inner = (
     <View style={si.wrap}>
@@ -59,12 +59,14 @@ function StatItem({
         <AnimatedCounter
           value={value as number}
           duration={900}
+          formatter={formatter}
           style={[si.value, { color }]}
         />
       ) : (
         <Text style={[si.value, { color }]}>{value}</Text>
       )}
       <Text style={si.label}>{label}</Text>
+      {hint ? <Text style={[si.hint, { color }]} numberOfLines={1}>{hint}</Text> : null}
     </View>
   );
   return onPress
@@ -77,6 +79,7 @@ const si = StyleSheet.create({
   iconBox:{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   dot:    { position: 'absolute', top: -3, right: -3, width: 11, height: 11, borderRadius: 6, backgroundColor: '#EF4444', borderWidth: 2, borderColor: '#162540' },
   value:  { fontSize: 15, fontFamily: 'Poppins_700Bold', letterSpacing: -0.3 },
+  hint:   { fontSize: 9, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.2, opacity: 0.85, textAlign: 'center', marginTop: 1 },
   label:  { fontSize: 9.5, fontFamily: 'Poppins_500Medium', color: '#64748B', textAlign: 'center', letterSpacing: 0.3 },
 });
 
@@ -301,8 +304,20 @@ export default function AdminDashboard() {
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
-                icon="cash" value={formatMoney(stats?.total_pool ?? 0)} label="En pozo"
-                color="#CA8A04" bg="rgba(202,138,4,0.12)" loading={statsLoading}
+                icon="cash"
+                // Pasamos número plano para que el AnimatedCounter cuente,
+                // con formatter que añade "Bs " y formato amigable.
+                value={stats?.total_distributed ?? 0}
+                formatter={(n) => `Bs ${formatMoney(n)}`}
+                label="Repartido"
+                color="#CA8A04"
+                bg="rgba(202,138,4,0.12)"
+                loading={statsLoading}
+                hint={
+                  (stats?.total_pool ?? 0) > 0
+                    ? `+ Bs ${formatMoney(stats?.total_pool ?? 0)} activo`
+                    : undefined
+                }
               />
               <View style={[styles.statDiv, { backgroundColor: theme.colors.border }]} />
               <StatItem
