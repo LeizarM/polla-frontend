@@ -31,6 +31,7 @@ import api               from '../../services/api';
 import { parseBackendDate } from '../../utils/date';
 import { useBreakpoint }   from '../../hooks/useBreakpoint';
 import { formatMoney }     from '../../utils/currency';
+import { usePollaFinalEnabled } from '../../hooks/useAppSettings';
 
 // Wrapper para mantener compatibilidad con código existente.
 // formatMoney es smart: "Bs 30" cuando entero, "Bs 7.50" cuando fraccional.
@@ -269,6 +270,11 @@ const TOURNAMENT_PALETTES: [string, string][] = [
 
 export default function HomeScreen() {
   const { user, refreshUser } = useAuthStore();
+  // Setting controlado por admin — si está OFF, escondemos el botón
+  // "Polla Final" para usuarios normales (y como esta pantalla es la del
+  // usuario, ningún admin debería estar aquí, pero por consistencia
+  // simplemente respetamos el setting tal cual).
+  const { enabled: pollaEnabled } = usePollaFinalEnabled();
   const { theme }             = useTheme();
   const { isDesktop }         = useBreakpoint();
   const [refreshing, setRefreshing] = useState(false);
@@ -356,12 +362,20 @@ export default function HomeScreen() {
 
   const firstName = user?.full_name?.split(' ')?.[0] || user?.username || 'Usuario';
 
-  const QUICK_ACTIONS = [
-    { icon: 'football',    label: 'Apuestas',    colors: ['#001A6E','#1A6BFF'] as [string,string], route: '/user/quinielas' },
-    { icon: 'star',        label: 'Polla Final',  colors: ['#8B0014','#C8102E'] as [string,string], route: '/user/polla'     },
-    { icon: 'add-circle',  label: 'Inscribirse',  colors: ['#064E3B','#10B981'] as [string,string], route: '/torneos-inscripcion' },
-    { icon: 'person',      label: 'Perfil',       colors: ['#4C1D95','#7C3AED'] as [string,string], route: '/user/perfil'   },
-  ];
+  const QUICK_ACTIONS = useMemo(() => {
+    const base = [
+      { icon: 'football',    label: 'Apuestas',    colors: ['#001A6E','#1A6BFF'] as [string,string], route: '/user/quinielas' },
+    ];
+    // Polla Final solo visible cuando admin lo activó (setting `polla_final_enabled`)
+    if (pollaEnabled) {
+      base.push({ icon: 'star', label: 'Polla Final', colors: ['#8B0014','#C8102E'] as [string,string], route: '/user/polla' });
+    }
+    base.push(
+      { icon: 'add-circle',  label: 'Inscribirse',  colors: ['#064E3B','#10B981'] as [string,string], route: '/torneos-inscripcion' },
+      { icon: 'person',      label: 'Perfil',       colors: ['#4C1D95','#7C3AED'] as [string,string], route: '/user/perfil'   },
+    );
+    return base;
+  }, [pollaEnabled]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
