@@ -22,13 +22,26 @@ export function OfflineIndicator() {
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
 
-    // SW nos avisa cuando vacía la cola de requests offline
+    // SW nos avisa de eventos importantes
     const onMsg = (e: MessageEvent) => {
       if (e?.data?.type === 'queue-flushed') {
         showToast('success', '✅ Se enviaron las acciones que hiciste sin internet');
       }
+      // Nuevo SW activado → toast con CTA "Actualizar" para recargar
+      // y mostrar la versión nueva. Evita auto-reload (sería disruptivo si
+      // el usuario está escribiendo).
+      if (e?.data?.type === 'sw-updated') {
+        showToast('info', '🎉 Nueva versión disponible — recargando…');
+        // Pequeño delay para que el toast sea visible antes de recargar
+        setTimeout(() => window.location.reload(), 1200);
+      }
     };
     navigator.serviceWorker?.addEventListener('message', onMsg);
+
+    // También fuerza un check del SW al cargar (por si ya hay update pendiente)
+    navigator.serviceWorker?.getRegistration?.()?.then((reg) => {
+      reg?.update?.().catch(() => {});
+    });
 
     return () => {
       window.removeEventListener('online', goOnline);

@@ -45,6 +45,26 @@ jobs:
           echo "── dist/ contents ──"
           ls -la dist/
 
+      # ⚡ Inyecta el SHA en sw.js: cada deploy invalida los caches anteriores
+      #    (cache-name lleva el SHA → activate() borra los caches viejos).
+      #    También copiamos public/sw.js manualmente porque algunas versiones de
+      #    Expo no lo incluyen en el export.
+      - name: Stamp Service Worker with commit SHA
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          # Asegura que sw.js esté en dist/
+          if [ -f public/sw.js ] && [ ! -f dist/sw.js ]; then
+            cp public/sw.js dist/sw.js
+          fi
+          # Reemplaza __BUILD_ID__ → SHA corto
+          if [ -f dist/sw.js ]; then
+            sed -i "s|__BUILD_ID__|${SHORT_SHA}|g" dist/sw.js
+            echo "✅ sw.js stamped with build id: ${SHORT_SHA}"
+            grep -n "mundial2026-" dist/sw.js | head -3
+          else
+            echo "⚠️  dist/sw.js not found — skipping stamp"
+          fi
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4

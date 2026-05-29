@@ -13,7 +13,11 @@
 //    Navegación HTML            → network-first con fallback a /offline.html
 // ═══════════════════════════════════════════════════════════════════════
 
-const VERSION = 'mundial2026-v1';
+// ⚠️ La cadena __BUILD_ID__ es reemplazada por el SHA del commit en CI antes
+//    de publicar a Plesk. Cada deploy invalida los caches anteriores
+//    (los nombres cambian → activate() borra los viejos).
+//    En dev local queda con el placeholder y se trata como una versión más.
+const VERSION = 'mundial2026-__BUILD_ID__';
 const STATIC_CACHE  = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const API_CACHE     = `${VERSION}-api`;
@@ -37,7 +41,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ─── activate (limpia caches viejos) ─────────────────────────────────
+// ─── activate (limpia caches viejos + notifica a clientes) ──────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
@@ -46,6 +50,10 @@ self.addEventListener('activate', (event) => {
         keys.filter(k => !k.startsWith(VERSION)).map(k => caches.delete(k))
       );
       await self.clients.claim();
+      // Avisa a las pestañas abiertas que hay una versión nueva.
+      // El cliente decide si auto-recarga (ver `OfflineIndicator.tsx`).
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const c of clients) c.postMessage({ type: 'sw-updated', version: VERSION });
     })()
   );
 });
