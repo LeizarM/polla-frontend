@@ -306,16 +306,16 @@ export default function AdminDashboard() {
               <StatItem
                 icon="cash"
                 // Pasamos número plano para que el AnimatedCounter cuente,
-                // con formatter que añade "Bs " y formato amigable.
+                // y `formatMoney` ya añade el prefijo "Bs ".
                 value={stats?.total_distributed ?? 0}
-                formatter={(n) => `Bs ${formatMoney(n)}`}
+                formatter={(n) => formatMoney(n)}
                 label="Repartido"
                 color="#CA8A04"
                 bg="rgba(202,138,4,0.12)"
                 loading={statsLoading}
                 hint={
                   (stats?.total_pool ?? 0) > 0
-                    ? `+ Bs ${formatMoney(stats?.total_pool ?? 0)} activo`
+                    ? `+ ${formatMoney(stats?.total_pool ?? 0)} activo`
                     : undefined
                 }
               />
