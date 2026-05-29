@@ -1,9 +1,17 @@
 /**
- * useAppSettings — leerlas y mutarlas en una sola fuente de verdad.
+ * useAppSettings — leer y mutar settings como única fuente de verdad.
  *
- * GET /api/settings devuelve un Record<string,string>. Lo cacheamos 5s
- * (suficientemente vivo para que cuando admin toque el switch los demás
- * lo vean al instante al navegar/recuperar foco).
+ *  - useAppSettings()          → todas las settings (Record<string,string>)
+ *  - usePollaFinalEnabled()    → boolean derivado para el switch de Polla Final
+ *  - useUpdateAppSetting()     → mutar settings con optimistic update
+ *
+ *  Notas:
+ *   - `staleTime: 0` → se re-fetchea en cada mount/focus. Endpoint barato.
+ *   - `refetchOnWindowFocus: true` (default) → vuelve a fetchear al volver
+ *     al tab del navegador. Importante para que el usuario vea cambios del
+ *     admin sin tener que refrescar.
+ *   - Mutación con `onMutate` → el switch refleja el cambio AL INSTANTE
+ *     sin esperar el roundtrip al backend (evita el "double tap").
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
@@ -23,17 +31,16 @@ export function useAppSettings() {
         return {};
       }
     },
-    // Permitimos un pequeño staleTime aquí porque /api/settings se consulta
-    // con MUY alta frecuencia (cada navegación a un layout). 5s = fresco
-    // pero no martillea el backend.
-    staleTime: 5_000,
+    // Siempre re-fetch en mount/focus — endpoint es muy ligero y queremos
+    // que cualquier cambio del admin se vea inmediato en otras pestañas.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
 /**
  * Útil para componentes que solo necesitan saber si la Polla Final está
- * visible. Maneja loading: durante la carga inicial devuelve `false` para
- * que la pestaña NO parpadee (aparezca y desaparezca).
+ * visible. Mientras carga devuelve `false` para que la tab NO parpadee.
  */
 export function usePollaFinalEnabled(): { enabled: boolean; isLoading: boolean } {
   const { data, isLoading } = useAppSettings();
@@ -42,8 +49,10 @@ export function usePollaFinalEnabled(): { enabled: boolean; isLoading: boolean }
 }
 
 /**
- * Hook para que el admin actualice settings. Invalida la query al éxito
- * → el resto de la app ve el cambio inmediatamente.
+ * Hook para que el admin actualice settings.
+ *
+ * Optimistic update: cambia el cache YA (UI responde al instante) y solo
+ * revierte si la mutación falla. Soluciona el "double tap" en el Switch.
  */
 export function useUpdateAppSetting() {
   const qc = useQueryClient();
@@ -52,7 +61,26 @@ export function useUpdateAppSetting() {
       const res = await api.patch('/api/settings', { settings: payload });
       return res?.data;
     },
-    onSuccess: () => {
+
+    // Optimistic: aplicamos el cambio AL INSTANTE en el cache.
+    // El Switch se actualiza inmediatamente porque lee del mismo cache.
+    onMutate: async (payload) => {
+      await qc.cancelQueries({ queryKey: QUERY_KEY });
+      const previous = qc.getQueryData<AppSettings>(QUERY_KEY);
+      qc.setQueryData<AppSettings>(QUERY_KEY, (old) => ({
+        ...(old ?? {}),
+        ...payload,
+      }));
+      return { previous };
+    },
+
+    // Si falla, revertimos al valor anterior.
+    onError: (_err, _payload, ctx) => {
+      if (ctx?.previous) qc.setQueryData(QUERY_KEY, ctx.previous);
+    },
+
+    // Sea éxito o error, refresh para sincronizar con el server.
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY });
     },
   });

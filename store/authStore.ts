@@ -48,7 +48,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       
       await AsyncStorage.setItem('token', access_token);
       set({ user, token: access_token });
-      
+
+      // Invalida queries en cache del usuario anterior (settings, tickets,
+      // permisos, etc.) — evita que el nuevo usuario vea estados viejos.
+      // Las queries se re-fetchean automáticamente al montar cada pantalla.
+      queryClient.invalidateQueries();
+
       // Navigate based on role
       setTimeout(() => {
         if (user.role === 'admin') {
@@ -89,7 +94,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       
       await AsyncStorage.setItem('token', access_token);
       set({ user, token: access_token });
-      
+
+      // Invalida queries del usuario anterior (si lo había)
+      queryClient.invalidateQueries();
+
       // Navigate based on role (usually 'user' for new registrations)
       setTimeout(() => {
         if (user.role === 'admin') {
