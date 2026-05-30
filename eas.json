@@ -16,21 +16,6 @@
         "YARN_ENABLE_IMMUTABLE_INSTALLS": "false"
       }
     },
-    "preview-light": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "image": "latest",
-        "gradleCommand": ":app:assembleRelease",
-        "applicationArchiveSuffix": "-arm64"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://app.esppapel.com:9443",
-        "YARN_ENABLE_IMMUTABLE_INSTALLS": "false",
-        "EAS_BUILD_RUNNER_EXECUTOR": "default"
-      }
-    },
     "production": {
       "autoIncrement": true,
       "android": {
