@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '../constants/api';
+import { queryClient } from './queryClient';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -33,6 +34,27 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// ─── Auto-invalidate React Query cache después de mutaciones ────────────
+// Cualquier POST/PATCH/PUT/DELETE exitoso invalida TODAS las queries.
+// Como queryClient tiene staleTime: 0, las pantallas activas re-fetchean
+// inmediatamente y las listas se actualizan al instante.
+// Esto resuelve "creo algo y no lo veo hasta refrescar".
+api.interceptors.response.use(
+  (response) => {
+    const method = response?.config?.method?.toLowerCase();
+    if (method && ['post', 'patch', 'put', 'delete'].includes(method)) {
+      // Fire-and-forget — no bloquea la respuesta para el código que la espera.
+      // Pequeño delay para que el componente que disparó la mutación procese
+      // el response ANTES de que el refetch dispare un re-render.
+      setTimeout(() => {
+        try { queryClient.invalidateQueries(); } catch {/* */}
+      }, 50);
+    }
+    return response;
+  },
+  async (error) => Promise.reject(error),
 );
 
 // Response interceptor: handle errors globally

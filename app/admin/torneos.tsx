@@ -275,11 +275,13 @@ function CreateTournamentModal({
           ? { final_bet_deadline: form.final_bet_deadline.toISOString() }
           : {}),
       });
+      // Await onSuccess (que normalmente hace refetch del padre) ANTES
+      // del toast → la lista nueva se ve apenas se cierre el modal.
+      await Promise.resolve(onSuccess());
       showToast('success', '¡Torneo creado! 🏆');
       setForm({ name: '', description: '', type: 'matchday', start_date: null,
                 end_date: null, bet_per_matchday: '10', bet_final: '5',
                 currency: 'Bs', final_bet_deadline: null });
-      onSuccess();
     } catch (error: any) {
       showToast('error', error?.friendlyMessage || 'Error al crear torneo');
     } finally {

@@ -352,9 +352,10 @@ function TeamsTab({ tournamentId, assignedTeams, onUpdate }: { tournamentId: str
       await api.post(`/api/tournaments/${tournamentId}/teams`, { team_ids: updatedIds });
       setSelected(updatedIds);
       setSavedTeamIds(new Set(updatedIds));
+      // AWAIT both refetches → la lista del torneo (padre) ya tiene el equipo
+      // antes de cerrar el modal. Sin esto, hay un flash de "lista vieja".
+      await Promise.all([refetchTeams(), Promise.resolve(onUpdate())]);
       showToast('success', 'Equipo creado y asignado al torneo');
-      refetchTeams();
-      onUpdate();
       setShowCreateTeam(false);
     } catch (error: any) {
       showToast('error', error?.friendlyMessage || 'Error al crear equipo');
@@ -364,8 +365,8 @@ function TeamsTab({ tournamentId, assignedTeams, onUpdate }: { tournamentId: str
   const handleEditTeam = async (id: string, name: string, country: string, shieldUrl?: string) => {
     try {
       await api.patch(`/api/teams/${id}`, { name, country, shield_url: shieldUrl || null });
+      await Promise.all([refetchTeams(), Promise.resolve(onUpdate())]);
       showToast('success', 'Equipo actualizado');
-      refetchTeams();
       setEditingTeam(null);
     } catch (error: any) {
       showToast('error', error?.friendlyMessage || 'Error al editar equipo');
@@ -376,8 +377,9 @@ function TeamsTab({ tournamentId, assignedTeams, onUpdate }: { tournamentId: str
     const doDelete = async () => {
       try {
         await api.delete(`/api/teams/${id}`);
+        // refetch ambos para que la card desaparezca al instante
+        await Promise.all([refetchTeams(), Promise.resolve(onUpdate())]);
         showToast('success', `${name} eliminado`);
-        refetchTeams();
       } catch (error: any) {
         showToast('error', error?.friendlyMessage || 'Error al eliminar equipo');
       }
