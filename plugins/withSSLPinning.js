@@ -30,11 +30,23 @@ const path = require('path');
 // Pueden venir de env vars para no hardcodear.
 const SSL_PINS = {
   hostname: 'app.esppapel.com',
-  // Pin actual del cert + pin backup (cadena CA o cert siguiente)
+  // SPKI hashes reales del cert de app.esppapel.com (obtenidos con openssl).
+  // Pineamos 3 niveles de la cadena — Android valida si CUALQUIERA coincide,
+  // así que esto sobrevive las renovaciones de Let's Encrypt (cada ~90d el
+  // LEAF cambia, pero el intermedio y el root se mantienen).
+  //
+  // Para re-obtenerlos si cambia la CA:
+  //   openssl s_client -servername app.esppapel.com -connect app.esppapel.com:9443 -showcerts </dev/null \
+  //     | (extraer cada cert) | openssl x509 -pubkey -noout \
+  //     | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
   pins: [
-    process.env.SSL_PIN_PRIMARY ?? 'PLACEHOLDER_REPLACE_WITH_REAL_SPKI_HASH_BASE64',
-    process.env.SSL_PIN_BACKUP  ?? 'PLACEHOLDER_REPLACE_WITH_BACKUP_SPKI_HASH_BASE64',
-  ],
+    // Leaf (CN=app.esppapel.com) — tight, cambia en cada renovación
+    process.env.SSL_PIN_PRIMARY ?? '2BYD28D8i/ErzIxIt7Mi77c873IiLQJ5CswTOcApg6w=',
+    // Intermedio (Let's Encrypt YE1) — sobrevive renovaciones del leaf
+    process.env.SSL_PIN_BACKUP  ?? 'brzvtCELCIZUo4sD/qPX0ccRtPsd3DY6RfmxpOU9oB4=',
+    // Root (ISRG Root X2) — backup ultra-estable (válido hasta ~2040)
+    process.env.SSL_PIN_ROOT    ?? 'sCkq5UWXjg+7mKu9lMhhYF5bGLsy7VI/UNW3tccdR7w=',
+  ].filter((p) => p && !p.startsWith('PLACEHOLDER')),
 };
 
 // ─── Android ────────────────────────────────────────────────────────────────
