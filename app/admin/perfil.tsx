@@ -75,6 +75,8 @@ export default function PerfilScreen() {
       const updated  = response?.data;
       if (updated) {
         updateUser(updated);
+        // Invalida queries que dependen del user (admin/usuarios, /auth/me, etc.)
+        queryClient.invalidateQueries();
         showToast('success', 'Perfil actualizado correctamente');
         setEditing(false);
       }

@@ -93,6 +93,8 @@ export default function PerfilScreen() {
       const response = await api.patch('/api/users/me', formData);
       if (response?.data) {
         updateUser(response.data);
+        // Invalida cualquier query que dependa del user (admin/usuarios, /auth/me, etc.)
+        queryClient.invalidateQueries();
         showToast('success', 'Perfil actualizado correctamente');
         setEditing(false);
       }

@@ -129,7 +129,14 @@ export default function PartidosScreen() {
     },
     onSuccess: () => {
       showToast('success', 'Marcador actualizado ✅');
+      // Al cambiar un marcador, varios datos derivados quedan stale:
+      // matches, rankings, tickets/aciertos, bet-log, dashboards.
       queryClient.invalidateQueries({ queryKey: ['admin-all-matches'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      queryClient.invalidateQueries({ queryKey: ['ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['bet-log'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       setEditingMatchId(null); setScoreA(''); setScoreB('');
     },
     onError: (error: any) => {

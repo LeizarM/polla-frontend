@@ -138,7 +138,12 @@ function TabSchedules({ theme, styles }: any) {
   const toggle = useMutation({
     mutationFn: async ({ id, enabled }: any) =>
       (await api.post(`/api/admin/notifications/schedules/${id}/toggle`, { enabled }))?.data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-notification-schedules'] }),
+    onSuccess: (_data, vars: any) => {
+      qc.invalidateQueries({ queryKey: ['admin-notification-schedules'] });
+      showToast('success', vars?.enabled ? 'Programación activada' : 'Programación pausada');
+    },
+    onError: (e: any) =>
+      showToast('error', e?.response?.data?.message || 'Error al cambiar estado'),
   });
 
   const remove = useMutation({
@@ -148,6 +153,8 @@ function TabSchedules({ theme, styles }: any) {
       showToast('success', 'Programación eliminada');
       qc.invalidateQueries({ queryKey: ['admin-notification-schedules'] });
     },
+    onError: (e: any) =>
+      showToast('error', e?.response?.data?.message || 'Error al eliminar'),
   });
 
   return (

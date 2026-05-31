@@ -1,35 +1,47 @@
-import { QueryClient, focusManager } from '@tanstack/react-query';
+import { QueryClient, focusManager, keepPreviousData } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 
 /**
- * QueryClient global.
+ * QueryClient global — estrategia "instantánea percibida":
  *
- * Filosofía "always-fresh":
- *   - staleTime = 0    → cualquier remontaje/foco refetchea
- *   - refetchOnMount   → al volver a montar un screen, refetch
- *   - refetchOnFocus   → al recuperar foco (browser tab / app foreground), refetch
- *   - refetchOnReconnect → al recuperar red, refetch
+ *   - staleTime = 8s    → si navegas entre pantallas en menos de 8s,
+ *                         NO hace request al server (usa cache → instantáneo)
+ *   - gcTime    = 5min  → cache se mantiene 5 minutos en memoria aunque
+ *                         no se use. Volver a una pantalla = data instantánea.
+ *   - placeholderData = keepPreviousData
+ *                       → mientras hace refetch en background, sigue mostrando
+ *                         los datos previos. CERO flicker / loading skeleton.
+ *   - refetchOnMount: 'always'  → cuando montas screen, refetch en background
+ *                                  (pero muestra cache mientras llega).
+ *   - refetchOnReconnect: true
+ *   - refetchOnWindowFocus: true
  *
- * Sumado a los `useFocusEffect(refetch)` que ya hay en cada pantalla,
- * el usuario NUNCA necesita pull-to-refresh manual — al navegar entre
- * pantallas los datos se actualizan solos.
+ * Cuando haces CRUD en una mutation, ese código debe llamar:
+ *     queryClient.invalidateQueries({ queryKey: ['xxx'] })
+ *   Eso fuerza refetch independiente del staleTime → UI actualizado.
  *
- * Si una pantalla quiere caché más larga puede override con
- *   useQuery({ queryKey, queryFn, staleTime: 60_000 })
+ * Si una pantalla quiere caché distinta:
+ *   useQuery({ queryKey, queryFn, staleTime: 60_000, placeholderData: keepPreviousData })
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      // 0 = los datos se consideran "viejos" inmediatamente → next mount/focus refetcha
-      staleTime: 0,
-      // gcTime: tiempo que datos no usados quedan en memoria antes de GC
-      // (antes era cacheTime). 60s evita re-pedir N veces si se entra y sale rápido.
-      gcTime: 60_000,
+      // 8 segundos de "freshness window" — navegar y volver rápido = instantáneo
+      staleTime: 8_000,
+      // gcTime largo = el cache se mantiene 5 minutos. Al regresar a una
+      // pantalla, los datos están listos al instante (luego refetch background).
+      gcTime: 5 * 60_000,
+      // 🪄 La magia visual: nunca desmonta datos previos mientras refetcha.
+      // El usuario ve los datos viejos (instantáneo) y luego se actualizan sin flicker.
+      placeholderData: keepPreviousData,
       refetchOnMount: 'always',
       refetchOnReconnect: true,
-      // Esto importa: en native lo enchufamos abajo con focusManager.
       refetchOnWindowFocus: true,
+    },
+    mutations: {
+      // Las mutaciones también se reintentan 1 vez por errores de red
+      retry: 1,
     },
   },
 });
