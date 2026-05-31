@@ -29,11 +29,10 @@ import Animated, {
 import { Input }    from '../../components/ui/Input';
 import { Button }   from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
+import { Logo }     from '../../components/ui/Logo';
 import { useAuthStore } from '../../store/authStore';
 import { safeGoBack }   from '../../utils/navigation';
 import { API_BASE_URL } from '../../constants/api';
-
-const LOGO_EMOJI = '⚽';
 
 // ─── Animated background orbs ────────────────────────────────────────────────
 function AnimatedOrbs() {
@@ -89,7 +88,7 @@ function LogoBadge({ logoUrl, size = 100 }: { logoUrl: string | null; size?: num
               transition={300}
             />
           ) : (
-            <Text style={{ fontSize: size * 0.46 }}>{LOGO_EMOJI}</Text>
+            <Logo size={size * 0.6} glow />
           )}
         </LinearGradient>
       </LinearGradient>

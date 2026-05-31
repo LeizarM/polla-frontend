@@ -23,6 +23,7 @@ import { useAuthStore } from '../store/authStore';
 import { ToastProvider } from '../components/ui/Toast';
 import { OfflineIndicator } from '../components/ui/OfflineIndicator';
 import { PWAInstallPrompt } from '../components/ui/PWAInstallPrompt';
+import { Logo } from '../components/ui/Logo';
 import { DeviceSecurityGate } from '../components/security/DeviceSecurityGate';
 import { queryClient } from '../services/queryClient';
 import { theme, fonts } from '../constants/theme';
@@ -54,7 +55,7 @@ function LoadingScreen() {
       <View style={[styles.orb, { width: 300, height: 300, top: -80, left: -80, backgroundColor: '#001A6E', opacity: 0.4 }]} />
       <View style={[styles.orb, { width: 250, height: 250, bottom: -60, right: -60, backgroundColor: '#7C3AED', opacity: 0.3 }]} />
 
-      <Animated.Text style={[styles.logo, animatedStyle]}>⚽</Animated.Text>
+      <Animated.View style={animatedStyle}><Logo size={92} glow /></Animated.View>
       <Text style={styles.title}>Apuestas</Text>
       <Text style={styles.titleAccent}>Mundial 2026</Text>
       <Text style={styles.tagline}>El torneo más grande te espera</Text>

@@ -38,11 +38,11 @@ import Animated, {
 import { Input }    from '../../components/ui/Input';
 import { Button }   from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
+import { Logo }     from '../../components/ui/Logo';
 import { useAuthStore } from '../../store/authStore';
 import { API_BASE_URL }  from '../../constants/api';
 
 const DEFAULT_TITLE = 'Apuestas Mundial 2026';
-const LOGO_EMOJI    = '⚽';
 
 // ─── Animated background orbs ────────────────────────────────────────────────
 function AnimatedOrbs() {
@@ -119,7 +119,7 @@ function LogoBadge({ logoUrl, size = 140 }: { logoUrl: string | null; size?: num
               transition={300}
             />
           ) : (
-            <Text style={{ fontSize: size * 0.48 }}>{LOGO_EMOJI}</Text>
+            <Logo size={size * 0.62} glow />
           )}
         </LinearGradient>
       </LinearGradient>

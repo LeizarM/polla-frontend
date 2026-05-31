@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PressableScale } from '../../components/ui/PressableScale';
+import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { safeGoBack } from '../../utils/navigation';
 import api from '../../services/api';
@@ -54,6 +55,7 @@ function shortDate(iso: string): string {
 export default function AuditoriaScreen() {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
+  const { showToast } = useToast();
   const isDesktop = width >= 900;
 
   const [actionFilter, setActionFilter] = useState('');
@@ -62,23 +64,36 @@ export default function AuditoriaScreen() {
   const { data: actionTypes } = useQuery({
     queryKey: ['audit-actions'],
     queryFn: async () => {
-      try { return (await api.get('/api/admin/audit-log/actions'))?.data ?? []; }
-      catch { return []; }
+      const res = await api.get('/api/admin/audit-log/actions');
+      return res?.data ?? [];
     },
   });
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, error } = useQuery({
     queryKey: ['audit-log', actionFilter, page],
     queryFn: async () => {
-      try {
-        const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
-        if (actionFilter) params.set('action', actionFilter);
-        return (await api.get(`/api/admin/audit-log?${params.toString()}`))?.data ?? { rows: [], total: 0, pages: 1 };
-      } catch { return { rows: [], total: 0, pages: 1 }; }
+      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      if (actionFilter) params.set('action', actionFilter);
+      const res = await api.get(`/api/admin/audit-log?${params.toString()}`);
+      return res?.data ?? { rows: [], total: 0, pages: 1 };
     },
+    // No keepPreviousData en esta pantalla — al cambiar de filtro queremos
+    // ver el cambio inmediato, sin retener el set previo
+    placeholderData: undefined,
   });
 
-  useFocusEffect(useCallback(() => { refetch(); }, []));
+  // Si la query falla, lo mostramos al usuario (antes silenciaba el error)
+  React.useEffect(() => {
+    if (error) {
+      const e = error as any;
+      showToast('error', e?.response?.data?.message || 'Error al cargar el audit log');
+      console.error('[Auditoria] query failed:', e?.response?.status, e?.response?.data, e?.message);
+    }
+  }, [error]);
+
+  // Refetch al recibir focus + al cambiar el filtro (queryKey ya lo hace,
+  // pero forzamos por si el cache tiene un set vacio antiguo)
+  useFocusEffect(useCallback(() => { refetch(); }, [actionFilter, page]));
 
   const rows: AuditRow[] = data?.rows ?? [];
   const totalPages = Math.max(1, data?.pages ?? 1);
