@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { safeGoBack } from '../../utils/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,6 +59,9 @@ export default function TournamentManageScreen() {
     await refetch();
     setRefreshing(false);
   };
+
+  // Refetch al volver a la pantalla (tras editar jornadas, equipos, etc.)
+  useFocusEffect(useCallback(() => { refetch(); }, [id]));
 
   const tabs: { key: Tab; label: string; icon: string; show: boolean }[] = [
     { key: 'info', label: 'Info', icon: 'information-circle-outline', show: true },
@@ -152,6 +156,8 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
     status: tournament?.status ?? 'draft',
     bet_per_matchday: String(tournament?.bet_per_matchday ?? 10),
     bet_final: String(tournament?.bet_final ?? 5),
+    start_date: tournament?.start_date ? new Date(tournament.start_date) : null as Date | null,
+    end_date: tournament?.end_date ? new Date(tournament.end_date) : null as Date | null,
     final_bet_deadline: tournament?.final_bet_deadline ? new Date(tournament.final_bet_deadline) : null as Date | null,
   });
 
@@ -162,11 +168,19 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Validación: end_date no puede ser antes de start_date
+      if (form.start_date && form.end_date && form.end_date < form.start_date) {
+        showToast('error', 'La fecha de fin no puede ser anterior a la de inicio');
+        setLoading(false);
+        return;
+      }
       await api.patch(`/api/tournaments/${tournament?.id}`, {
         name: form.name,
         description: form.description || undefined,
         bet_per_matchday: Number(form.bet_per_matchday),
         bet_final: Number(form.bet_final),
+        ...(form.start_date ? { start_date: form.start_date.toISOString() } : {}),
+        ...(form.end_date ? { end_date: form.end_date.toISOString() } : {}),
         ...(form.final_bet_deadline ? { final_bet_deadline: form.final_bet_deadline.toISOString() } : {}),
       });
       showToast('success', 'Torneo actualizado');
@@ -226,6 +240,26 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
               <View style={{ width: 8 }} />
               <View style={{ flex: 1 }}>
                 <Input label={`${tournament?.currency ?? 'Bs'} Polla Final (Y)`} value={form.bet_final} onChangeText={v => setForm({ ...form, bet_final: v })} type="number" />
+              </View>
+            </View>
+            <View style={tabStyles.row}>
+              <View style={{ flex: 1 }}>
+                <DateTimePicker
+                  label="Fecha Inicio"
+                  value={form.start_date}
+                  onChange={d => setForm({ ...form, start_date: d })}
+                  mode="date"
+                />
+              </View>
+              <View style={{ width: 8 }} />
+              <View style={{ flex: 1 }}>
+                <DateTimePicker
+                  label="Fecha Fin"
+                  value={form.end_date}
+                  onChange={d => setForm({ ...form, end_date: d })}
+                  mode="date"
+                  minimumDate={form.start_date ?? undefined}
+                />
               </View>
             </View>
             <DateTimePicker
@@ -394,15 +428,33 @@ function TeamsTab({ tournamentId, assignedTeams, onUpdate }: { tournamentId: str
     }
   };
 
+  // Optimistic override de la estrella (cuartos). El refetch del padre
+  // (onUpdate) puede tardar — sobre todo en iOS web — así que aplicamos el
+  // cambio localmente al instante y lo reconciliamos cuando llega el server.
+  const [quartersOverride, setQuartersOverride] = useState<Map<string, boolean>>(new Map());
+
   const toggleQuarters = async (teamId: string, current: boolean) => {
+    const next = !current;
+    // 1) Optimistic: actualiza la UI YA
+    setQuartersOverride(prev => {
+      const m = new Map(prev);
+      m.set(teamId, next);
+      return m;
+    });
     try {
       await api.patch(`/api/tournaments/${tournamentId}/team-quarters`, {
         team_id: teamId,
-        advanced_to_quarters: !current,
+        advanced_to_quarters: next,
       });
-      showToast('success', !current ? 'Equipo en cuartos ✅' : 'Removido de cuartos');
+      showToast('success', next ? 'Equipo en cuartos ✅' : 'Removido de cuartos');
       onUpdate();
     } catch (error: any) {
+      // 2) Revertir el optimistic si falló
+      setQuartersOverride(prev => {
+        const m = new Map(prev);
+        m.set(teamId, current);
+        return m;
+      });
       showToast('error', error?.friendlyMessage || 'Error');
     }
   };
@@ -412,13 +464,27 @@ function TeamsTab({ tournamentId, assignedTeams, onUpdate }: { tournamentId: str
     const ids = assignedTeams?.map?.((t: any) => t?.id) ?? [];
     setSelected(ids);
     setSavedTeamIds(new Set(ids));
+    // El server ya refleja la verdad → limpiamos overrides que coincidan,
+    // para no quedar pegados a un valor optimista viejo.
+    setQuartersOverride(prev => {
+      if (prev.size === 0) return prev;
+      const m = new Map(prev);
+      (assignedTeams ?? []).forEach((t: any) => {
+        if (m.has(t?.id) && m.get(t?.id) === (t?.advanced_to_quarters === true)) {
+          m.delete(t?.id);
+        }
+      });
+      return m;
+    });
   }, [assignedTeams]);
 
-  // Build a map of quarter-advanced teams from assignedTeams
+  // Build a map of quarter-advanced teams: server data + optimistic override
   const quartersMap = new Map<string, boolean>();
   (assignedTeams ?? []).forEach((t: any) => {
     quartersMap.set(t?.id, t?.advanced_to_quarters === true);
   });
+  // El override gana sobre el valor del server (refleja el último tap)
+  quartersOverride.forEach((val, id) => quartersMap.set(id, val));
 
   // Only show teams that are assigned to this tournament (sorted alphabetically)
   const assignedTeamList = (allTeams ?? [])

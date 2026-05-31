@@ -126,6 +126,12 @@ function PollaFinalScreenInner() {
             const betFinal       = Number(t?.bet_final ?? 0);
             const grandPrize     = jornadasCount * inscritosCount * betFinal;
             const cur            = t?.currency ?? 'Bs';
+            // Deadline lock — tras la fecha límite NADIE puede apostar/cambiar.
+            const deadline       = t?.final_bet_deadline ? new Date(t.final_bet_deadline) : null;
+            const isPastDeadline = deadline ? new Date() > deadline : false;
+            const deadlineLabel  = deadline
+              ? `${String(deadline.getDate()).padStart(2,'0')}/${String(deadline.getMonth()+1).padStart(2,'0')}/${deadline.getFullYear()} ${String(deadline.getHours()).padStart(2,'0')}:${String(deadline.getMinutes()).padStart(2,'0')}`
+              : null;
             return (
               <Animated.View key={t?.id} entering={FadeInDown.delay(idx * 90).duration(360).springify()}>
               <Card style={styles.tournamentCard}>
@@ -160,6 +166,20 @@ function PollaFinalScreenInner() {
                   </Text>
                 </View>
 
+                {/* Fecha límite — siempre visible si existe */}
+                {deadlineLabel && (
+                  <View style={styles.deadlineRow}>
+                    <Ionicons
+                      name={isPastDeadline ? 'lock-closed' : 'time-outline'}
+                      size={12}
+                      color={isPastDeadline ? '#EF4444' : theme.colors.textMuted}
+                    />
+                    <Text style={[styles.deadlineText, isPastDeadline && { color: '#EF4444' }]}>
+                      {isPastDeadline ? 'Cerrada el ' : 'Cierra: '}{deadlineLabel}
+                    </Text>
+                  </View>
+                )}
+
                 {hasBet ? (
                   <View style={styles.betSummary}>
                     <Text style={styles.betLabel}>Tu predicción:</Text>
@@ -177,6 +197,12 @@ function PollaFinalScreenInner() {
                         <Text style={[styles.wonText, { color: '#EF4444' }]}>{myBet?.total_points ?? 0} puntos - No ganaste</Text>
                       </View>
                     )}
+                  </View>
+                ) : isPastDeadline ? (
+                  // Deadline pasó y no apostó → cerrado, sin botón
+                  <View style={[styles.betButton, { backgroundColor: theme.colors.inputBg, borderWidth: 1, borderColor: theme.colors.border }]}>
+                    <Ionicons name="lock-closed" size={18} color={theme.colors.textMuted} />
+                    <Text style={[styles.betButtonText, { color: theme.colors.textMuted }]}>Apuestas cerradas</Text>
                   </View>
                 ) : (
                   <Pressable style={styles.betButton} onPress={() => openBetModal(t)}>
@@ -518,6 +544,8 @@ function makeStyles(t: typeof staticTheme) {
     },
     tournamentName: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: t.colors.textPrimary },
     tournamentInfo: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: t.colors.textSecondary, marginTop: 2 },
+    deadlineRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, marginBottom: 2 },
+    deadlineText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: t.colors.textMuted },
     betSummary: { backgroundColor: t.colors.surfaceElevated, borderRadius: 12, padding: 8 },
     betLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: t.colors.primaryLight, marginBottom: 6 },
     pickRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },
