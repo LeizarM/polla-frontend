@@ -47,7 +47,7 @@ function InfoRow({
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function PerfilScreen() {
-  const { user, updateUser }              = useAuthStore();
+  const { user, updateUser, refreshUser } = useAuthStore();
   const { showToast }                     = useToast();
   const { theme, paletteId, setPaletteId, palettes } = useTheme();
   const { isDesktop }                     = useBreakpoint();
@@ -243,7 +243,7 @@ export default function PerfilScreen() {
         >
           <TwoFactorSetup
             enabled={!!(user as any)?.totp_enabled}
-            onChange={() => { /* refetch via global query invalidation */ }}
+            onChange={() => { refreshUser(); }}
           />
         </Animated.View>
 

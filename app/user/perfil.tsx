@@ -23,6 +23,7 @@ import { Card }      from '../../components/ui/Card';
 import { Input }     from '../../components/ui/Input';
 import { Button }    from '../../components/ui/Button';
 import { useToast }  from '../../components/ui/Toast';
+import { TwoFactorSetup } from '../../components/security/TwoFactorSetup';
 import { useAuthStore }   from '../../store/authStore';
 import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
@@ -57,7 +58,7 @@ function InfoRow({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function PerfilScreen() {
-  const { user, updateUser }                   = useAuthStore();
+  const { user, updateUser, refreshUser }      = useAuthStore();
   const { showToast }                          = useToast();
   const { theme, paletteId, setPaletteId, palettes } = useTheme();
   const { isDesktop }                          = useBreakpoint();
@@ -366,8 +367,19 @@ export default function PerfilScreen() {
           )}
         </Animated.View>
 
+        {/* ── 2FA (Two-Factor Authentication) ─────────────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(170).duration(360)}
+          style={styles.sectionWrap}
+        >
+          <TwoFactorSetup
+            enabled={!!(user as any)?.totp_enabled}
+            onChange={() => { refreshUser(); }}
+          />
+        </Animated.View>
+
         {/* ── Palette picker ──────────────────────────────────────────────── */}
-        <Animated.View entering={FadeInDown.delay(190).duration(360)} style={styles.sectionWrap}>
+        <Animated.View entering={FadeInDown.delay(220).duration(360)} style={styles.sectionWrap}>
           <Text style={[styles.paletteSectionTitle, { color: theme.colors.textPrimary }]}>
             Tema de Colores
           </Text>

@@ -12,6 +12,9 @@ interface User {
   role: 'admin' | 'user';
   balance: number;
   status: string;
+  totp_enabled?: boolean;
+  ci?: string | null;
+  fcm_token?: string | null;
 }
 
 interface AuthStore {
