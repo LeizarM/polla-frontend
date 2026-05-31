@@ -64,30 +64,40 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   }
 }
 
+// Cache global del último token enviado al backend para esta sesión.
+// Evita re-enviar el MISMO token en cada navegación / re-render del hook.
+let __lastSentPushToken: string | null = null;
+
 export function usePushNotifications(isAuthenticated: boolean) {
   const router = useRouter();
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
-
-  const registerToken = useCallback(async () => {
-    if (!isAuthenticated || Platform.OS === 'web' || isExpoGo) return;
-
-    try {
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        await api.post('/api/push-tokens', { token, device_type: Platform.OS });
-        console.log('Push token registered:', token);
-      }
-    } catch (error) {
-      console.log('Failed to register push token:', error);
-    }
-  }, [isAuthenticated]);
+  // Mantenemos router en ref para usarlo dentro de los listeners SIN
+  // hacer que el useEffect se re-ejecute cuando router identity cambia.
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
     if (!isAuthenticated || Platform.OS === 'web' || isExpoGo) return;
 
-    registerToken();
+    // 1) Registrar token (solo si NO fue ya enviado este token en esta sesión)
+    (async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (!token) return;
+        if (token === __lastSentPushToken) {
+          // Mismo token que la última vez → NO re-enviar al backend
+          return;
+        }
+        await api.post('/api/push-tokens', { token, device_type: Platform.OS });
+        __lastSentPushToken = token;
+        console.log('Push token registered:', token);
+      } catch (error) {
+        console.log('Failed to register push token:', error);
+      }
+    })();
 
+    // 2) Listeners de notificaciones — usan routerRef para no triggear re-runs
     try {
       notificationListener.current = Notifications.addNotificationReceivedListener(
         (notification) => {
@@ -99,9 +109,9 @@ export function usePushNotifications(isAuthenticated: boolean) {
         (response) => {
           const data = response?.notification?.request?.content?.data;
           if (data?.type === 'matchday_reminder' && data?.matchday_id) {
-            router.push(`/quiniela/${data.matchday_id}` as any);
+            routerRef.current.push(`/quiniela/${data.matchday_id}` as any);
           } else if (data?.type === 'final_bet_reminder' && data?.tournament_id) {
-            router.push(`/tournament/${data.tournament_id}` as any);
+            routerRef.current.push(`/tournament/${data.tournament_id}` as any);
           }
         }
       );
@@ -113,5 +123,8 @@ export function usePushNotifications(isAuthenticated: boolean) {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, [isAuthenticated, registerToken, router]);
+    // SOLO depende de isAuthenticated. router cambia en cada navegación y
+    // antes hacía que TODO el efecto (incluido registrar token) se ejecutara
+    // de nuevo → spam al backend.
+  }, [isAuthenticated]);
 }

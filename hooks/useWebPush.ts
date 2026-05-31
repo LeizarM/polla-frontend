@@ -8,6 +8,10 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import api from '../services/api';
 
+// Cache global del último token web enviado al backend. Evita re-enviar la
+// MISMA suscripción cuando isAuthenticated re-evalúa (auth restore, etc.)
+let __lastSentWebPushToken: string | null = null;
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -56,11 +60,17 @@ export function useWebPush(isAuthenticated: boolean) {
           });
         }
 
-        // 5. Mandar suscripción al backend (mismo endpoint que native)
+        // 5. Mandar suscripción al backend solo si NO la enviamos antes
+        const tokenStr = JSON.stringify(sub);
+        if (tokenStr === __lastSentWebPushToken) {
+          // Misma suscripción que la última vez → no re-enviar
+          return;
+        }
         await api.post('/api/push-tokens', {
-          token: JSON.stringify(sub),
+          token: tokenStr,
           device_type: 'web',
         });
+        __lastSentWebPushToken = tokenStr;
         console.log('[push] Web Push registrado');
       } catch (e) {
         console.log('[push] Error:', e);
