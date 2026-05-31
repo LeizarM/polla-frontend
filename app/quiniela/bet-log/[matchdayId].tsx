@@ -91,7 +91,10 @@ export default function BetLogScreen() {
     queryKey: ['tournament-participants', tournamentId],
     queryFn: async () => {
       try {
-        const res = await api.get(`/api/tournament-participants/tournament/${tournamentId}`);
+        // /roster = endpoint publico sin PII (solo id/username/full_name de
+        // participantes aprobados). El endpoint completo /tournament/:id es
+        // admin-only porque expone phone + ci.
+        const res = await api.get(`/api/tournament-participants/tournament/${tournamentId}/roster`);
         return res?.data ?? [];
       } catch { return []; }
     },

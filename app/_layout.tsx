@@ -31,6 +31,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useWebPush } from '../hooks/useWebPush';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { SidebarProvider } from '../contexts/SidebarContext';
+import { isAdminOnlySegment } from '../constants/route-access';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -92,15 +93,19 @@ function AuthGuard({ children, fontsLoaded }: AuthGuardProps) {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup  = segments?.[0] === 'auth';
-    const inUserGroup  = segments?.[0] === 'user';
-    const inAdminGroup = segments?.[0] === 'admin';
+    const seg0 = segments?.[0];
+    const inAuthGroup  = seg0 === 'auth';
+    // Cubre TODOS los segmentos admin-only (admin, admin-usuario, tournament),
+    // no solo '/admin'. Antes un usuario podía deep-linkear a /admin-usuario/<id>
+    // o /tournament/<id> y el guard no lo bloqueaba.
+    const inAdminOnly = isAdminOnlySegment(seg0);
 
     if (!user && !inAuthGroup) {
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
       router.replace(isAdmin() ? '/admin' : '/user');
-    } else if (user && inAdminGroup && !isAdmin()) {
+    } else if (user && inAdminOnly && !isAdmin()) {
+      // Usuario normal intentando acceder a ruta admin → fuera
       router.replace('/user');
     }
   }, [user, isLoading, segments]);

@@ -1,18 +1,15 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
-import { useEffect } from 'react';
 import { TabBar } from '../../components/layout/TabBar';
 import { DesktopSidebar, TabConfig } from '../../components/layout/DesktopSidebar';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useAuthStore } from '../../store/authStore';
+import { AdminRouteGuard } from '../../components/security/AdminRouteGuard';
 
 export default function AdminLayout() {
   const { isDesktop } = useBreakpoint();
   const { theme } = useTheme();
-  const router = useRouter();
-  const { user, isAdmin } = useAuthStore();
   // El admin SIEMPRE ve la pestaña "Polla Final" para que pueda habilitarla/
   // deshabilitarla desde el Dashboard. Solo se oculta para usuarios normales.
 
@@ -28,14 +25,8 @@ export default function AdminLayout() {
     { name: 'perfil',         path: '/admin/perfil',         title: 'Perfil',    ionicon: 'person-outline',       ioniconActive: 'person' },
   ];
 
-  // Non-admins should not access /admin
-  useEffect(() => {
-    if (user && !isAdmin()) {
-      router.replace('/user' as any);
-    }
-  }, [user]);
-
   return (
+    <AdminRouteGuard>
     <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column', backgroundColor: theme.colors.bg }}>
       {isDesktop && <DesktopSidebar tabs={ADMIN_TABS} />}
 
@@ -129,5 +120,6 @@ export default function AdminLayout() {
         </Tabs>
       </View>
     </View>
+    </AdminRouteGuard>
   );
 }
