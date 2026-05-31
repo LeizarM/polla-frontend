@@ -49,6 +49,7 @@ function PollaFinalScreenInner() {
   const [refreshing, setRefreshing] = useState(false);
   const [showBetModal, setShowBetModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<any>(null);
+  const [showRules, setShowRules] = useState(false);
 
   const { data: tournaments, isLoading: loadingTournaments, refetch: refetchTournaments } = useQuery({
     queryKey: ['active-tournaments-polla'],
@@ -112,6 +113,75 @@ function PollaFinalScreenInner() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primaryLight} />}
       >
+        {/* ─── Tarjeta de Reglas (colapsable) ──────────────────────────── */}
+        <Card style={{ marginBottom: 12, padding: 0, overflow: 'hidden' }}>
+          <Pressable
+            onPress={() => setShowRules(v => !v)}
+            style={styles.rulesHeader}
+          >
+            <View style={styles.rulesIconWrap}>
+              <Ionicons name="information-circle" size={18} color="#FFD700" />
+            </View>
+            <Text style={styles.rulesTitle}>¿Cómo funciona la Polla Final?</Text>
+            <Ionicons
+              name={showRules ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={theme.colors.textMuted}
+            />
+          </Pressable>
+
+          {showRules && (
+            <View style={styles.rulesBody}>
+              <Text style={styles.rulesIntro}>
+                Cuando queden los 8 equipos clasificados (Cuartos de Final), cada
+                participante elige:
+              </Text>
+
+              <View style={styles.ruleLine}>
+                <Text style={styles.ruleEmoji}>🥇</Text>
+                <Text style={styles.ruleLabel}>Campeón Mundial</Text>
+                <View style={styles.rulePtsBadge}><Text style={styles.rulePtsText}>12 pts</Text></View>
+              </View>
+              <View style={styles.ruleLine}>
+                <Text style={styles.ruleEmoji}>🥈</Text>
+                <Text style={styles.ruleLabel}>Subcampeón</Text>
+                <View style={styles.rulePtsBadge}><Text style={styles.rulePtsText}>8 pts</Text></View>
+              </View>
+              <View style={styles.ruleLine}>
+                <Text style={styles.ruleEmoji}>🥉</Text>
+                <Text style={styles.ruleLabel}>Tercer Lugar</Text>
+                <View style={styles.rulePtsBadge}><Text style={styles.rulePtsText}>4 pts</Text></View>
+              </View>
+              <View style={styles.ruleLine}>
+                <Text style={styles.ruleEmoji}>🏅</Text>
+                <Text style={styles.ruleLabel}>Cuarto Lugar</Text>
+                <View style={styles.rulePtsBadge}><Text style={styles.rulePtsText}>2 pts</Text></View>
+              </View>
+
+              <View style={styles.ruleDivider} />
+
+              <View style={styles.ruleNote}>
+                <Ionicons name="trophy" size={14} color="#FFD700" />
+                <Text style={styles.ruleNoteText}>
+                  Quien sume <Text style={{ fontFamily: 'Poppins_700Bold' }}>más puntos</Text> gana
+                  el <Text style={{ fontFamily: 'Poppins_700Bold' }}>POZO ACUMULADO</Text>. Si hay
+                  empate, el pozo se reparte entre los ganadores.
+                </Text>
+              </View>
+
+              <View style={styles.ruleNote}>
+                <Ionicons name="time-outline" size={14} color={theme.colors.primaryLight} />
+                <Text style={styles.ruleNoteText}>
+                  Para cada partido <Text style={{ fontFamily: 'Poppins_700Bold' }}>solo cuenta el
+                  tiempo reglamentario</Text> (90 min + adición).{' '}
+                  <Text style={{ fontFamily: 'Poppins_700Bold' }}>NO</Text> cuentan los tiempos
+                  extra (30 min) ni los penales.
+                </Text>
+              </View>
+            </View>
+          )}
+        </Card>
+
         {loadingTournaments ? (
           [1, 2].map(i => <Skeleton key={i} width="100%" height={120} style={{ marginBottom: 12 }} />)
         ) : (tournaments?.length ?? 0) === 0 ? (
@@ -546,6 +616,26 @@ function makeStyles(t: typeof staticTheme) {
     tournamentInfo: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: t.colors.textSecondary, marginTop: 2 },
     deadlineRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, marginBottom: 2 },
     deadlineText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: t.colors.textMuted },
+
+    // ─── Reglas ───────────────────────────────────────────────────────
+    rulesHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
+    rulesIconWrap: {
+      width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: 'rgba(255,215,0,0.14)',
+    },
+    rulesTitle: { flex: 1, fontSize: 13, fontFamily: 'Poppins_700Bold', color: t.colors.textPrimary },
+    rulesBody: { paddingHorizontal: 14, paddingBottom: 14, gap: 8 },
+    rulesIntro: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: t.colors.textSecondary, lineHeight: 17, marginBottom: 2 },
+    ruleLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    ruleEmoji: { fontSize: 16, width: 22, textAlign: 'center' as const },
+    ruleLabel: { flex: 1, fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: t.colors.textPrimary },
+    rulePtsBadge: {
+      backgroundColor: 'rgba(37,99,235,0.12)', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 3,
+    },
+    rulePtsText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: t.colors.primaryLight },
+    ruleDivider: { height: StyleSheet.hairlineWidth, backgroundColor: t.colors.border, marginVertical: 6 },
+    ruleNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
+    ruleNoteText: { flex: 1, fontSize: 11.5, fontFamily: 'Poppins_400Regular', color: t.colors.textSecondary, lineHeight: 16 },
     betSummary: { backgroundColor: t.colors.surfaceElevated, borderRadius: 12, padding: 8 },
     betLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: t.colors.primaryLight, marginBottom: 6 },
     pickRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5 },

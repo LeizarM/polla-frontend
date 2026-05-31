@@ -447,6 +447,15 @@ export default function MatchdayDetailScreen() {
                 </Text>
               )}
 
+              {/* Regla de tiempo reglamentario — aplica a TODOS los partidos */}
+              <View style={styles.regTimeNote}>
+                <Ionicons name="time-outline" size={13} color={theme.colors.textMuted} />
+                <Text style={styles.regTimeText}>
+                  Solo cuenta el tiempo reglamentario (90 min + adición). No cuentan
+                  tiempos extra ni penales.
+                </Text>
+              </View>
+
               {anyMatchStarted && (
                 <View style={[styles.editBanner, { borderColor: 'rgba(245,158,11,0.35)', backgroundColor: 'rgba(245,158,11,0.10)' }]}>
                   <Ionicons name="information-circle" size={14} color={theme.colors.warning} />
@@ -916,6 +925,14 @@ function makeStyles(t: typeof staticTheme) {
     sectionHint: {
       fontSize: 12, fontFamily: 'Poppins_400Regular',
       color: t.colors.textSecondary, marginBottom: 14,
+    },
+    regTimeNote: {
+      flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+      marginBottom: 14, marginTop: -4,
+    },
+    regTimeText: {
+      flex: 1, fontSize: 11, fontFamily: 'Poppins_500Medium',
+      color: t.colors.textMuted, lineHeight: 15, fontStyle: 'italic' as const,
     },
     editBanner: {
       flexDirection: 'row', alignItems: 'flex-start', gap: 8,
