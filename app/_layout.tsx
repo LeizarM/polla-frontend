@@ -23,6 +23,7 @@ import { useAuthStore } from '../store/authStore';
 import { ToastProvider } from '../components/ui/Toast';
 import { OfflineIndicator } from '../components/ui/OfflineIndicator';
 import { PWAInstallPrompt } from '../components/ui/PWAInstallPrompt';
+import { DeviceSecurityGate } from '../components/security/DeviceSecurityGate';
 import { queryClient } from '../services/queryClient';
 import { theme, fonts } from '../constants/theme';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -124,13 +125,15 @@ export default function RootLayout() {
       <ThemeProvider>
         <SidebarProvider>
           <ToastProvider>
-            <AuthGuard fontsLoaded={!!fontsLoaded}>
-              <StatusBar style="light" />
-              <Slot />
-              {/* Web-only: banner offline + sugerencia "Instalar PWA" */}
-              <OfflineIndicator />
-              <PWAInstallPrompt />
-            </AuthGuard>
+            <DeviceSecurityGate>
+              <AuthGuard fontsLoaded={!!fontsLoaded}>
+                <StatusBar style="light" />
+                <Slot />
+                {/* Web-only: banner offline + sugerencia "Instalar PWA" */}
+                <OfflineIndicator />
+                <PWAInstallPrompt />
+              </AuthGuard>
+            </DeviceSecurityGate>
           </ToastProvider>
         </SidebarProvider>
       </ThemeProvider>

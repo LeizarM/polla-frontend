@@ -78,14 +78,18 @@ api.interceptors.response.use(
     }
     
     // Enhance error message for better UX
+    const serverMsg = error?.response?.data?.message;
     if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
       error.friendlyMessage = 'Sin conexión a internet';
+    } else if (status === 401 && typeof serverMsg === 'string' && serverMsg.includes('autenticación reciente')) {
+      // FreshAuthGuard rechazó: token muy viejo para acción crítica
+      error.friendlyMessage = 'Por seguridad, vuelve a iniciar sesión para realizar esta acción';
     } else if (status === 403) {
-      error.friendlyMessage = 'No tienes permisos para esta acción';
+      error.friendlyMessage = serverMsg || 'No tienes permisos para esta acción';
     } else if (status === 404) {
       error.friendlyMessage = 'Recurso no encontrado';
     } else if (status === 422) {
-      error.friendlyMessage = error?.response?.data?.message || 'Datos inválidos';
+      error.friendlyMessage = serverMsg || 'Datos inválidos';
     } else if (status === 500) {
       error.friendlyMessage = 'Error del servidor, intenta de nuevo';
     }

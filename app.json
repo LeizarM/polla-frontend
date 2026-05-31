@@ -75,7 +75,8 @@
             "targetSdkVersion": 35
           }
         }
-      ]
+      ],
+      "./plugins/withSSLPinning.js"
     ],
     "experiments": {
       "typedRoutes": true
