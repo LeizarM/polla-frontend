@@ -287,6 +287,22 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
               </Text>
             </View>
             <View style={tabStyles.infoRow}>
+              <Text style={tabStyles.infoLabel}>Inicio</Text>
+              <Text style={tabStyles.infoValue}>
+                {tournament?.start_date
+                  ? (() => { const d = new Date(tournament.start_date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
+                  : '—'}
+              </Text>
+            </View>
+            <View style={tabStyles.infoRow}>
+              <Text style={tabStyles.infoLabel}>Fin</Text>
+              <Text style={tabStyles.infoValue}>
+                {tournament?.end_date
+                  ? (() => { const d = new Date(tournament.end_date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
+                  : '—'}
+              </Text>
+            </View>
+            <View style={tabStyles.infoRow}>
               <Text style={tabStyles.infoLabel}>Apuesta/Jornada</Text>
               <Text style={tabStyles.infoValue}>{tournament?.currency ?? 'Bs'} {tournament?.bet_per_matchday}</Text>
             </View>
