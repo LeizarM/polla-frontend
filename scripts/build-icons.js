@@ -24,6 +24,10 @@ const path = require('path');
   const imgDir = path.join(root, 'assets', 'images');
   const iconSvg    = fs.readFileSync(path.join(imgDir, 'icon-source.svg'));
   const faviconSvg = fs.readFileSync(path.join(imgDir, 'favicon-source.svg'));
+  // Foreground del adaptive icon — SOLO la llama, fondo transparente, con
+  // zona segura. NO usar icon-source.svg aquí: ese tiene fondo + banner y
+  // rompe el adaptive icon (se ve cortado/mal al enmascararse).
+  const adaptiveFgSvg = fs.readFileSync(path.join(imgDir, 'adaptive-foreground-source.svg'));
 
   // The foreground for Android adaptive icons must have ~25% safe padding
   // — Android will mask it inside a circle/square. We render the same SVG
@@ -58,8 +62,11 @@ const path = require('path');
     // ── Main app icon (used for iOS + fallback Android) ───────────
     { name: 'icon.png',                       size: 1024, source: iconSvg, bg: { r: 10, g: 14, b: 26, alpha: 1 } },
     // ── Android adaptive ─────────────────────────────────────────
-    { name: 'android-icon-foreground.png',    size: 1024, source: iconSvg, foreground: true },
-    { name: 'android-icon-monochrome.png',    size: 1024, source: iconSvg, foreground: true },
+    // Usan el SVG de SOLO la llama (transparente + zona segura). Se renderizan
+    // como "splash" (transparente, sin shrink extra) porque el SVG ya trae el
+    // margen seguro incorporado.
+    { name: 'android-icon-foreground.png',    size: 1024, source: adaptiveFgSvg, splash: true },
+    { name: 'android-icon-monochrome.png',    size: 1024, source: adaptiveFgSvg, splash: true },
     // (background is configured by hex in app.json — no PNG needed)
     // ── Splash screen ────────────────────────────────────────────
     { name: 'splash-icon.png',                size: 1024, source: iconSvg, bg: { r: 0, g: 0, b: 0, alpha: 0 }, splash: true },

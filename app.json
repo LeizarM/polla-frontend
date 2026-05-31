@@ -64,8 +64,8 @@
         "expo-build-properties",
         {
           "android": {
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false,
             "enableBundleCompression": true,
             "usesCleartextTraffic": false,
             "networkSecurityConfig": "@xml/network_security_config",
