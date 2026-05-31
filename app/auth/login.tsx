@@ -174,19 +174,41 @@ export default function LoginScreen() {
     Haptics.notificationAsync(map[type]).catch(() => {});
   };
 
+  const [totpCode, setTotpCode] = useState('');
+  const [needsTotp, setNeedsTotp] = useState(false);
+
   const handleLogin = async () => {
     if (!username?.trim() || !password?.trim()) {
       haptic('warning');
       showToast('error', 'Completa todos los campos');
       return;
     }
+    if (needsTotp && !totpCode.trim()) {
+      haptic('warning');
+      showToast('error', 'Ingresa el código de tu app authenticator');
+      return;
+    }
     setLoading(true);
     try {
-      await login(username.trim(), password);
-      haptic('success');
+      const result = await login(username.trim(), password, totpCode.trim() || undefined);
+      if (result?.requires_2fa) {
+        // El backend pide el TOTP. Mostramos input adicional sin perder credenciales.
+        setNeedsTotp(true);
+        haptic('warning');
+        showToast('info', 'Ingresa el código de 6 dígitos de tu app authenticator');
+      } else {
+        haptic('success');
+        // Login OK; reset state
+        setNeedsTotp(false);
+        setTotpCode('');
+      }
     } catch (err: any) {
       haptic('error');
       const msg = err?.message ?? 'Error al iniciar sesión';
+      // Si el código TOTP era incorrecto, el backend manda "Código 2FA incorrecto"
+      if (msg.includes('2FA') || msg.includes('código')) {
+        setTotpCode('');
+      }
       showToast('error',
         msg.includes('suspendida') || msg.includes('blocked')
           ? 'Cuenta suspendida. Contacta al administrador'
@@ -318,9 +340,26 @@ export default function LoginScreen() {
                       placeholder="Tu contraseña"
                       type="password"
                       icon="lock-closed-outline"
-                      returnKeyType="done"
+                      returnKeyType={needsTotp ? 'next' : 'done'}
                       onSubmitEditing={handleLogin}
                     />
+
+                    {/* Campo TOTP — solo aparece después del primer intento si el user
+                        tiene 2FA activado */}
+                    {needsTotp && (
+                      <Input
+                        label="Código 2FA"
+                        value={totpCode}
+                        onChangeText={(v) => setTotpCode(v.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="123456"
+                        icon="key-outline"
+                        keyboardType="number-pad"
+                        returnKeyType="done"
+                        onSubmitEditing={handleLogin}
+                        maxLength={6}
+                        autoFocus
+                      />
+                    )}
 
                     <View style={{ marginTop: 12 }}>
                       <Button

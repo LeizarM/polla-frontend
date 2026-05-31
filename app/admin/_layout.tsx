@@ -24,6 +24,7 @@ export default function AdminLayout() {
     { name: 'polla',      path: '/admin/polla',      title: 'Polla Final',ionicon: 'star-outline',        ioniconActive: 'star' },
     { name: 'usuarios',       path: '/admin/usuarios',       title: 'Usuarios',  ionicon: 'people-outline',       ioniconActive: 'people' },
     { name: 'notificaciones', path: '/admin/notificaciones', title: 'Avisos',    ionicon: 'notifications-outline',ioniconActive: 'notifications' },
+    { name: 'auditoria',      path: '/admin/auditoria',      title: 'Auditoría', ionicon: 'shield-checkmark-outline', ioniconActive: 'shield-checkmark' },
     { name: 'perfil',         path: '/admin/perfil',         title: 'Perfil',    ionicon: 'person-outline',       ioniconActive: 'person' },
   ];
 
@@ -104,6 +105,15 @@ export default function AdminLayout() {
               title: 'Avisos',
               tabBarIcon: ({ color, size, focused }) => (
                 <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="auditoria"
+            options={{
+              title: 'Auditoría',
+              tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons name={focused ? 'shield-checkmark' : 'shield-checkmark-outline'} size={size} color={color} />
               ),
             }}
           />

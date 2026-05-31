@@ -18,7 +18,7 @@ interface AuthStore {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, totpCode?: string) => Promise<{ requires_2fa?: boolean }>;
   register: (data: { username: string; password: string; full_name: string; phone: string; ci?: string }) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
@@ -32,29 +32,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   token: null,
   isLoading: true,
   
-  login: async (username, password) => {
+  login: async (username, password, totpCode) => {
     try {
-      const response = await api.post('/api/auth/login', { username, password });
-      const { access_token, user } = response?.data ?? {};
-      
+      const payload: any = { username, password };
+      if (totpCode) payload.totp_code = totpCode;
+      const response = await api.post('/api/auth/login', payload);
+      const data = response?.data ?? {};
+
+      // Si el backend pide 2FA → devolvemos signal, la UI muestra el input TOTP
+      if (data?.requires_2fa) {
+        return { requires_2fa: true };
+      }
+
+      const { access_token, user } = data;
       if (!access_token || !user) {
         throw new Error('Respuesta inválida del servidor');
       }
-
-      // Check if account is blocked
       if (user?.status === 'blocked') {
         throw new Error('Cuenta suspendida');
       }
-      
+
       await secureStore.set('token', access_token);
       set({ user, token: access_token });
-
-      // Invalida queries en cache del usuario anterior (settings, tickets,
-      // permisos, etc.) — evita que el nuevo usuario vea estados viejos.
-      // Las queries se re-fetchean automáticamente al montar cada pantalla.
       queryClient.invalidateQueries();
 
-      // Navigate based on role
       setTimeout(() => {
         if (user.role === 'admin') {
           router.replace('/admin' as any);
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           router.replace('/user' as any);
         }
       }, 100);
+      return {};
     } catch (error: any) {
       console.error('Login error:', error);
       

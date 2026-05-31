@@ -16,6 +16,7 @@ import { Input }          from '../../components/ui/Input';
 import { Button }         from '../../components/ui/Button';
 import { useToast }       from '../../components/ui/Toast';
 import { PressableScale } from '../../components/ui/PressableScale';
+import { TwoFactorSetup } from '../../components/security/TwoFactorSetup';
 import { useAuthStore }   from '../../store/authStore';
 import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
@@ -234,6 +235,17 @@ export default function PerfilScreen() {
             <InfoRow icon="checkmark-circle-outline"  label="Estado"         value="Activo"        color="#10B981" last />
           </Animated.View>
         )}
+
+        {/* 2FA Setup */}
+        <Animated.View
+          entering={FadeInDown.delay(180).duration(400)}
+          style={{ paddingHorizontal: 20, marginTop: 14 }}
+        >
+          <TwoFactorSetup
+            enabled={!!(user as any)?.totp_enabled}
+            onChange={() => { /* refetch via global query invalidation */ }}
+          />
+        </Animated.View>
 
         {/* Color Palette */}
         <Animated.View
