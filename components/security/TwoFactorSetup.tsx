@@ -33,6 +33,20 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
   const [code, setCode] = useState('');
   const [disablePwd, setDisablePwd] = useState('');
 
+  // Optimistic override: cuando activamos/desactivamos, el cambio en el
+  // user state global (zustand) puede tardar 100-500ms hasta que el refresh
+  // user del backend resuelva. Mientras tanto, mostramos el state esperado
+  // para que la UI no quede "stale" tras un cambio exitoso.
+  const [optimisticEnabled, setOptimisticEnabled] = useState<boolean | null>(null);
+  const effectiveEnabled = optimisticEnabled !== null ? optimisticEnabled : enabled;
+
+  // Cuando la prop real (del store) ya refleja el cambio, liberamos el override
+  React.useEffect(() => {
+    if (optimisticEnabled !== null && enabled === optimisticEnabled) {
+      setOptimisticEnabled(null);
+    }
+  }, [enabled, optimisticEnabled]);
+
   const setupMut = useMutation({
     mutationFn: async () => (await api.post('/api/auth/2fa/setup'))?.data,
     onSuccess: (data) => {
@@ -52,6 +66,9 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
       showToast('success', '2FA activado correctamente');
       setStep('idle');
       setQrData(null); setSecret(null); setCode('');
+      // Optimistic: UI ya muestra "Desactivar 2FA" inmediato; refreshUser
+      // confirma con el backend en segundo plano.
+      setOptimisticEnabled(true);
       onChange?.();
     },
     onError: (e: any) => {
@@ -66,6 +83,8 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
       showToast('success', '2FA desactivado');
       setStep('idle');
       setCode(''); setDisablePwd('');
+      // Optimistic: UI ya muestra "Activar 2FA" inmediato
+      setOptimisticEnabled(false);
       onChange?.();
     },
     onError: (e: any) => {
@@ -84,11 +103,11 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
       <View style={styles.header}>
-        <View style={[styles.iconWrap, { backgroundColor: enabled ? '#10B98120' : theme.colors.inputBg }]}>
+        <View style={[styles.iconWrap, { backgroundColor: effectiveEnabled ? '#10B98120' : theme.colors.inputBg }]}>
           <Ionicons
-            name={enabled ? 'shield-checkmark' : 'shield-outline'}
+            name={effectiveEnabled ? 'shield-checkmark' : 'shield-outline'}
             size={20}
-            color={enabled ? '#10B981' : theme.colors.textMuted}
+            color={effectiveEnabled ? '#10B981' : theme.colors.textMuted}
           />
         </View>
         <View style={{ flex: 1 }}>
@@ -96,7 +115,7 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
             Autenticación de 2 factores
           </Text>
           <Text style={[styles.subtitle, { color: theme.colors.textMuted }]}>
-            {enabled
+            {effectiveEnabled
               ? 'Activa — login requiere código de tu app'
               : 'Añade una capa extra usando Google Authenticator, Authy, 1Password, etc.'}
           </Text>
@@ -104,7 +123,7 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
       </View>
 
       {/* ── Estado IDLE ──────────────────────────────────────────────── */}
-      {step === 'idle' && !enabled && (
+      {step === 'idle' && !effectiveEnabled && (
         <Pressable
           style={[styles.btn, { backgroundColor: '#10B981' }]}
           onPress={() => setupMut.mutate()}
@@ -120,7 +139,7 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
         </Pressable>
       )}
 
-      {step === 'idle' && enabled && (
+      {step === 'idle' && effectiveEnabled && (
         <Pressable
           style={[styles.btn, { backgroundColor: '#EF4444' }]}
           onPress={() => setStep('disable')}

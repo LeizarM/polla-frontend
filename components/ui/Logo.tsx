@@ -5,6 +5,9 @@
  * el usuario pasó (bosque_logo.svg), renderizada en React Native con
  * react-native-svg y un gradiente oro → ámbar → rojo por defecto.
  *
+ * Implementación: aplica fill="url(#gradient)" directamente a los Path
+ * (NO usa Mask + Rect — esa combinación falla en react-native-svg-web).
+ *
  * Props:
  *   size      — tamaño en px (default 80)
  *   gradient  — array de colores hex para el gradient (default Fuego Mundial)
@@ -17,7 +20,7 @@
  *   <Logo size={56} gradient={['#60A5FA','#1D4ED8','#B91C1C']} />  // Ignición
  */
 import React from 'react';
-import Svg, { G, Path, Defs, LinearGradient, Stop, Mask, Rect } from 'react-native-svg';
+import Svg, { G, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { View, Platform } from 'react-native';
 
 const FLAME_P1 =
@@ -42,7 +45,7 @@ interface LogoProps {
   gradient?: readonly string[] | string[] | null;
   /** Solid color si NO se pasa gradient */
   color?: string;
-  /** Añade drop-shadow del color final del gradient */
+  /** Añade drop-shadow del color final del gradient (solo web) */
   glow?: boolean;
   style?: any;
 }
@@ -57,9 +60,8 @@ export function Logo({
   // ID único por instancia (evita colisiones cuando hay varios Logos en pantalla)
   const id = React.useMemo(() => ++__flameId, []);
   const gid = `flame-grad-${id}`;
-  const mid = `flame-mask-${id}`;
 
-  // El glow solo funciona en web con CSS filter. En native no soporta drop-shadow.
+  // El glow solo aplica en web (CSS filter). En native no soporta drop-shadow.
   const glowStyle =
     glow && Platform.OS === 'web' && gradient
       ? {
@@ -68,38 +70,33 @@ export function Logo({
         }
       : undefined;
 
-  const innerGroup = (fill: string) => (
-    <G transform="translate(0,143) scale(0.066667,-0.066667)" fill={fill}>
-      <Path d={FLAME_P1} />
-      <Path d={FLAME_P2} />
-    </G>
-  );
+  // El fill aplicado a los Path: si hay gradient usamos url(#gid), sino solid color
+  const fillRef = gradient && gradient.length > 0 ? `url(#${gid})` : color;
 
   return (
     <View style={[glowStyle, style]}>
       <Svg width={size} height={size} viewBox="0 0 143 143">
-        {gradient && gradient.length > 0 ? (
-          <>
-            <Defs>
-              <LinearGradient id={gid} x1="0" y1="0" x2="0.45" y2="1">
-                {gradient.map((c, i) => (
-                  <Stop
-                    key={i}
-                    offset={`${(i / Math.max(1, gradient.length - 1)) * 100}%`}
-                    stopColor={c}
-                  />
-                ))}
-              </LinearGradient>
-              <Mask id={mid}>
-                <Rect width="143" height="143" fill="black" />
-                {innerGroup('white')}
-              </Mask>
-            </Defs>
-            <Rect width="143" height="143" fill={`url(#${gid})`} mask={`url(#${mid})`} />
-          </>
-        ) : (
-          innerGroup(color)
+        {gradient && gradient.length > 0 && (
+          <Defs>
+            {/* x1/y1/x2/y2 son fracciones del bounding box */}
+            <LinearGradient id={gid} x1="0" y1="0" x2="0.45" y2="1">
+              {gradient.map((c, i) => (
+                <Stop
+                  key={i}
+                  offset={`${(i / Math.max(1, gradient.length - 1)) * 100}%`}
+                  stopColor={c}
+                />
+              ))}
+            </LinearGradient>
+          </Defs>
         )}
+        {/* Los paths originales del SVG vienen en un viewport con coordenadas
+            invertidas y escala 0.066667. Mantenemos el mismo transform que
+            el SVG original. El gradient se aplica directamente al fill. */}
+        <G transform="translate(0,143) scale(0.066667,-0.066667)" fill={fillRef}>
+          <Path d={FLAME_P1} fill={fillRef} />
+          <Path d={FLAME_P2} fill={fillRef} />
+        </G>
       </Svg>
     </View>
   );
