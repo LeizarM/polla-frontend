@@ -2,7 +2,7 @@
  * User Home — Premium dashboard
  * Hero orbs · overlapping stat card · animated quick actions · matchday carousel
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   FadeInDown,
   FadeIn,
@@ -352,6 +353,14 @@ export default function HomeScreen() {
     } catch {}
     setRefreshing(false);
   };
+
+  // Refetch automático al volver a la pantalla — todas las queries críticas
+  useFocusEffect(useCallback(() => {
+    refetchMatchdays();
+    refetchEnrollments();
+    refetchTournamentList();
+    refetchMyTickets();
+  }, []));
 
   const getCurrentDate = () => {
     const days   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];

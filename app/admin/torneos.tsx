@@ -2,7 +2,7 @@
  * Torneos — Premium admin tournament management
  * Gradient cards · status pills · polished create modal
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, RefreshControl, Pressable,
   StyleSheet, Platform,
@@ -12,6 +12,7 @@ import { Ionicons }      from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { Button }        from '../../components/ui/Button';
 import { Input }         from '../../components/ui/Input';
@@ -66,6 +67,9 @@ export default function TorneosScreen() {
     await refetch();
     setRefreshing(false);
   };
+
+  // Refetch automático al volver a la pantalla
+  useFocusEffect(useCallback(() => { refetch(); }, []));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

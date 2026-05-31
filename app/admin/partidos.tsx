@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons }       from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router }         from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics       from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Badge }      from '../../components/ui/Badge';
@@ -79,6 +80,9 @@ export default function PartidosScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  // Refetch automático al volver a la pantalla
+  useFocusEffect(useCallback(() => { refetch(); }, []));
 
   const filtered = useMemo(() => (matches ?? []).filter((m: MatchItem) => {
     if (filter === 'scheduled') return m?.status === 'scheduled';
