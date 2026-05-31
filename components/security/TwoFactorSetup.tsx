@@ -218,7 +218,7 @@ export function TwoFactorSetup({ enabled, onChange }: Props) {
             placeholder="Tu contraseña"
             placeholderTextColor={theme.colors.textMuted}
             secureTextEntry
-            style={[styles.codeInput, { backgroundColor: theme.colors.inputBg, color: theme.colors.textPrimary, borderColor: theme.colors.border, textAlign: 'left', fontSize: 14, paddingHorizontal: 12 }]}
+            style={[styles.codeInput, { backgroundColor: theme.colors.inputBg, color: theme.colors.textPrimary, borderColor: theme.colors.border, textAlign: 'left', fontSize: Platform.OS === 'web' ? 16 : 14, paddingHorizontal: 12 }]}
           />
           <TextInput
             value={code}

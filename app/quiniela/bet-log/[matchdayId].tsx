@@ -1684,7 +1684,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
+    // 16px evita el zoom automático de iOS Safari al enfocar (zoom si <16px)
+    fontSize: 16,
     fontFamily: 'Poppins_400Regular',
     padding: 0,
   },

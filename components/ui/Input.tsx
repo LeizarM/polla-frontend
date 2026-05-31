@@ -187,7 +187,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input({
           <TextInput
             ref={ref ?? inputRef}
             style={{
-              fontSize: 14,
+              // iOS Safari hace ZOOM automático al enfocar un input con
+              // font-size < 16px (e ignora maximum-scale). En web forzamos
+              // 16px para evitar ese zoom; en native mantenemos 14 por estética.
+              fontSize: Platform.OS === 'web' ? 16 : 14,
               fontFamily: 'Poppins_400Regular',
               color: theme.colors.textPrimary,
               paddingVertical: label ? 4 : 10,
