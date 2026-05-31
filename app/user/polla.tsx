@@ -334,7 +334,10 @@ function BetModal({ visible, tournament, onClose, onSuccess }: { visible: boolea
                           <TeamFlag team={team} size={20} />
                           <Text style={[
                             modalStyles.teamChipText,
-                            isSelected && { color: '#FFF', fontFamily: 'Poppins_700Bold' },
+                            // El fondo del chip seleccionado es translucido (rosa claro),
+                            // NO un gradient oscuro. Usamos textPrimary para mantener
+                            // contraste sobre el fondo claro del tema "Día Claro".
+                            isSelected && { color: theme.colors.textPrimary, fontFamily: 'Poppins_700Bold' },
                             isUsed && { color: theme.colors.textMuted },
                           ]}>
                             {team?.name}

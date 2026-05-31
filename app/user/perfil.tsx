@@ -27,6 +27,7 @@ import { TwoFactorSetup } from '../../components/security/TwoFactorSetup';
 import { useAuthStore }   from '../../store/authStore';
 import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
+import { semantic }       from '../../constants/semantic-colors';
 import api from '../../services/api';
 
 // ─── Info row ─────────────────────────────────────────────────────────────────
@@ -305,7 +306,7 @@ export default function PerfilScreen() {
                   color={theme.colors.primaryLight} theme={theme} />
                 <InfoRow icon="ellipse"          label="Estado"
                   value={user?.status === 'active' ? 'Activo' : user?.status}
-                  color="#10B981" last theme={theme} />
+                  color={semantic.success} last theme={theme} />
               </View>
             </View>
           )}

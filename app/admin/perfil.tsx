@@ -20,6 +20,7 @@ import { TwoFactorSetup } from '../../components/security/TwoFactorSetup';
 import { useAuthStore }   from '../../store/authStore';
 import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
+import { semantic }       from '../../constants/semantic-colors';
 import Animated, { FadeInDown, FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import api from '../../services/api';
@@ -234,7 +235,7 @@ export default function PerfilScreen() {
             <InfoRow icon="card-outline"              label="Cédula (CI)"    value={(user as any)?.ci || 'Sin registrar'} />
             <InfoRow icon="call-outline"              label="Teléfono"       value={user?.phone ?? '—'} />
             <InfoRow icon="shield-checkmark-outline"  label="Rol"            value="Administrador" color={theme.colors.primaryLight} />
-            <InfoRow icon="checkmark-circle-outline"  label="Estado"         value="Activo"        color="#10B981" last />
+            <InfoRow icon="checkmark-circle-outline"  label="Estado"         value="Activo"        color={semantic.success} last />
           </Animated.View>
         )}
 
