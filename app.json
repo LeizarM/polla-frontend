@@ -67,7 +67,9 @@
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
             "enableBundleCompression": true,
-            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.swmansion.reanimated.** { *; }",
+            "usesCleartextTraffic": false,
+            "networkSecurityConfig": "@xml/network_security_config",
+            "extraProguardRules": "-keep class com.facebook.react.** { *; }\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.hermes.** { *; }\n-keepclassmembers class * { @com.facebook.proguard.annotations.DoNotStrip *; }",
             "buildToolsVersion": "35.0.0",
             "compileSdkVersion": 35,
             "targetSdkVersion": 35

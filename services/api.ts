@@ -1,8 +1,8 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '../constants/api';
 import { queryClient } from './queryClient';
+import { secureStore } from './secureStorage';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -24,7 +24,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await secureStore.get('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -66,7 +66,7 @@ api.interceptors.response.use(
     // 401: Unauthorized - token expired or invalid
     if (status === 401) {
       try {
-        await AsyncStorage.removeItem('token');
+        await secureStore.remove('token');
         // Only redirect if not already on auth pages
         const currentPath = window?.location?.pathname;
         if (currentPath && !currentPath.includes('/auth/')) {

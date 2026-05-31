@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import api from '../services/api';
 import { queryClient } from '../services/queryClient';
+import { secureStore } from '../services/secureStorage';
 
 interface User {
   id: string;
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         throw new Error('Cuenta suspendida');
       }
       
-      await AsyncStorage.setItem('token', access_token);
+      await secureStore.set('token', access_token);
       set({ user, token: access_token });
 
       // Invalida queries en cache del usuario anterior (settings, tickets,
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         throw new Error('Respuesta inválida del servidor');
       }
       
-      await AsyncStorage.setItem('token', access_token);
+      await secureStore.set('token', access_token);
       set({ user, token: access_token });
 
       // Invalida queries del usuario anterior (si lo había)
@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   
   logout: async () => {
     try {
-      await AsyncStorage.removeItem('token');
+      await secureStore.remove('token');
       queryClient.clear();
       set({ user: null, token: null });
       router.replace('/auth/login' as any);
@@ -138,7 +138,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   
   restoreSession: async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await secureStore.get('token');
       
       if (!token) {
         set({ isLoading: false });
@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (user) {
         set({ user, token, isLoading: false });
       } else {
-        await AsyncStorage.removeItem('token');
+        await secureStore.remove('token');
         set({ isLoading: false });
       }
     } catch (error: any) {
@@ -159,7 +159,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       
       // If token is invalid, clear it
       if (error?.response?.status === 401) {
-        await AsyncStorage.removeItem('token');
+        await secureStore.remove('token');
       }
       
       set({ isLoading: false });

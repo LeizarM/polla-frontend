@@ -1,7 +1,7 @@
 import { Platform, Alert } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants/api';
+import { secureStore } from './secureStorage';
 
 /**
  * Downloads a PDF report.
@@ -11,7 +11,7 @@ import { API_BASE_URL } from '../constants/api';
 export async function downloadPdf(path: string, filename: string) {
   try {
     const baseUrl = (API_BASE_URL ?? '').replace(/\/$/, '');
-    const token = await AsyncStorage.getItem('token');
+    const token = await secureStore.get('token');
     const authHeader = token ? `Bearer ${token}` : '';
     const fullUrl = `${baseUrl}${path}`;
 
