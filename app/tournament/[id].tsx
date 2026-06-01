@@ -33,7 +33,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
 import api from '../../services/api';
 import { downloadPdf } from '../../services/downloadPdf';
-import { parseBackendDate, toLocalDateString, toDDMMYYYY } from '../../utils/date';
+import { parseBackendDate, toLocalDateString, toDDMMYYYY, toNoonISOString } from '../../utils/date';
 
 type Tab = 'info' | 'teams' | 'matchdays' | 'groups' | 'participants';
 
@@ -156,8 +156,10 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
     status: tournament?.status ?? 'draft',
     bet_per_matchday: String(tournament?.bet_per_matchday ?? 10),
     bet_final: String(tournament?.bet_final ?? 5),
-    start_date: tournament?.start_date ? new Date(tournament.start_date) : null as Date | null,
-    end_date: tournament?.end_date ? new Date(tournament.end_date) : null as Date | null,
+    // parseBackendDate evita el shift de timezone (las fechas @db.Date vienen
+    // como medianoche UTC; new Date() las mostraria un dia antes en UTC-4).
+    start_date: parseBackendDate(tournament?.start_date),
+    end_date: parseBackendDate(tournament?.end_date),
     final_bet_deadline: tournament?.final_bet_deadline ? new Date(tournament.final_bet_deadline) : null as Date | null,
   });
 
@@ -179,8 +181,11 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
         description: form.description || undefined,
         bet_per_matchday: Number(form.bet_per_matchday),
         bet_final: Number(form.bet_final),
-        ...(form.start_date ? { start_date: form.start_date.toISOString() } : {}),
-        ...(form.end_date ? { end_date: form.end_date.toISOString() } : {}),
+        // toNoonISOString ancla la fecha al mediodia local → el dia del calendario
+        // se preserva sin importar el shift de timezone (evita guardar 1 dia antes).
+        ...(form.start_date ? { start_date: toNoonISOString(form.start_date) } : {}),
+        ...(form.end_date ? { end_date: toNoonISOString(form.end_date) } : {}),
+        // El deadline es un timestamp real (con hora) → toISOString es correcto.
         ...(form.final_bet_deadline ? { final_bet_deadline: form.final_bet_deadline.toISOString() } : {}),
       });
       showToast('success', 'Torneo actualizado');
@@ -289,17 +294,13 @@ function InfoTab({ tournament, onUpdate }: { tournament: any; onUpdate: () => vo
             <View style={tabStyles.infoRow}>
               <Text style={tabStyles.infoLabel}>Inicio</Text>
               <Text style={tabStyles.infoValue}>
-                {tournament?.start_date
-                  ? (() => { const d = new Date(tournament.start_date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
-                  : '—'}
+                {(() => { const d = parseBackendDate(tournament?.start_date); return d ? toDDMMYYYY(d) : '—'; })()}
               </Text>
             </View>
             <View style={tabStyles.infoRow}>
               <Text style={tabStyles.infoLabel}>Fin</Text>
               <Text style={tabStyles.infoValue}>
-                {tournament?.end_date
-                  ? (() => { const d = new Date(tournament.end_date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
-                  : '—'}
+                {(() => { const d = parseBackendDate(tournament?.end_date); return d ? toDDMMYYYY(d) : '—'; })()}
               </Text>
             </View>
             <View style={tabStyles.infoRow}>
