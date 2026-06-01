@@ -265,7 +265,8 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
   // ── Prize math: jornadas × inscritos × bet_final ─────────────────────────────
   const jornadasCount    = Number(t?._count?.matchdays    ?? t?.matchdays?.length ?? 0);
-  const inscritosCount   = Number(t?._count?.participants ?? t?.participants?.length ?? 0);
+  // Solo cuentan los APROBADOS (no pendientes/rechazados) para el pozo
+  const inscritosCount   = Number(t?.approved_participants ?? t?._count?.participants ?? t?.participants?.length ?? 0);
   const betFinal         = Number(t?.bet_final ?? 0);
   const grandPrize       = jornadasCount * inscritosCount * betFinal;
   const currency         = t?.currency ?? 'Bs';

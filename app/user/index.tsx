@@ -73,11 +73,13 @@ function MatchdayCard({ matchday, onPress, fullWidth = false }: { matchday: any;
   const tournament = matchday?.tournament;
   const currency   = tournament?.currency ?? 'Bs';
 
-  // Tournament-level inscritos (people enrolled in the tournament)
+  // Inscritos APROBADOS (los únicos que pagan al pozo). approved_participants
+  // viene del backend; el matchday ya trae participant_count (también aprobados).
   const inscritos = Number(
-    tournament?._count?.participants
+    tournament?.approved_participants
+    ?? matchday?.participant_count
+    ?? tournament?._count?.participants
     ?? tournament?.participants?.length
-    ?? matchday?.tournament_participant_count
     ?? 0,
   );
 

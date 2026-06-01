@@ -223,6 +223,7 @@ export default function RegisterScreen() {
     if (!fullName?.trim())            { haptic('warning'); showToast('error', 'El nombre completo es requerido');                  return false; }
     if (!phone?.trim())               { haptic('warning'); showToast('error', 'El teléfono es requerido');                         return false; }
     if (!/^[0-9+\s-]+$/.test(phone)) { haptic('warning'); showToast('error', 'El teléfono solo puede contener números');          return false; }
+    if (!ci?.trim())                  { haptic('warning'); showToast('error', 'La cédula (CI) es requerida');                      return false; }
     if (!password || password.length < 6)
                                       { haptic('warning'); showToast('error', 'La contraseña debe tener al menos 6 caracteres');   return false; }
     if (password !== confirmPassword) { haptic('warning'); showToast('error', 'Las contraseñas no coinciden');                     return false; }
@@ -238,7 +239,7 @@ export default function RegisterScreen() {
         password,
         full_name: fullName.trim(),
         phone: phone.trim(),
-        ...(ci?.trim() ? { ci: ci.trim() } : {}),
+        ci: ci.trim(),
       });
       haptic('success');
       showToast('success', '¡Cuenta creada exitosamente!');
@@ -315,7 +316,7 @@ export default function RegisterScreen() {
 
           <Input
             ref={ciRef}
-            label="CI  (opcional)"
+            label="CI / Cédula"
             value={ci}
             onChangeText={setCi}
             placeholder="Ej: 12345678"
