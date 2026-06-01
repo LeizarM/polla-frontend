@@ -7,7 +7,11 @@ module.exports = function(api) {
       ['babel-preset-expo', { jsxImportSource: 'nativewind' }],
     ],
     plugins: [
-      'react-native-reanimated/plugin',
+      // ⚠️ Reanimated v4: el plugin de worklets se movió a react-native-worklets.
+      // Usar 'react-native-reanimated/plugin' (el de v3) deja los worklets SIN
+      // transformar → crashean NATIVAMENTE en release APK (aunque a veces
+      // funcionan en dev). Debe ser el ÚLTIMO plugin de la lista.
+      'react-native-worklets/plugin',
     ],
   };
 };
