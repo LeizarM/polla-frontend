@@ -116,7 +116,11 @@ export default function MatchdayDetailScreen() {
     matchday.status !== 'closed'
   );
   const betPerMatchday = Number(tournament?.bet_per_matchday ?? 10);
-  const expectedPool = matchday?.expected_pool ?? matchday?.total_pool ?? 0;
+  // Pozo REAL: solo lo efectivamente apostado. Crece Bs {bet} por cada apuesta
+  // registrada. Empieza en 0 hasta que alguien apuesta. (Igual que la lista Apostar.)
+  const currentPool = Number(matchday?.total_pool ?? 0);
+  // Nº de apuestas que ya formaron el pozo (pozo / monto fijo por jornada)
+  const betsCount = betPerMatchday > 0 ? Math.round(currentPool / betPerMatchday) : 0;
   const currency = tournament?.currency ?? 'Bs';
 
   // The user's real ticket (amount_bet > 0)
@@ -367,13 +371,13 @@ export default function MatchdayDetailScreen() {
           <View style={styles.poolItem}>
             <Ionicons name="cash-outline" size={16} color={theme.colors.success} />
             <Text style={styles.poolLabel}>Pozo actual</Text>
-            <Text style={styles.poolValue}>{formatCurrency(expectedPool, currency)}</Text>
+            <Text style={styles.poolValue}>{formatCurrency(currentPool, currency)}</Text>
           </View>
           <View style={styles.poolDivider} />
           <View style={styles.poolItem}>
             <Ionicons name="people-outline" size={16} color={theme.colors.gold} />
             <Text style={styles.poolLabel}>Apuestas</Text>
-            <Text style={styles.poolValue}>{matchday?.participant_count ?? '—'}</Text>
+            <Text style={styles.poolValue}>{betsCount}</Text>
           </View>
           <View style={styles.poolDivider} />
           <View style={styles.poolItem}>
@@ -387,7 +391,9 @@ export default function MatchdayDetailScreen() {
         <View style={styles.poolHint}>
           <Ionicons name="information-circle-outline" size={13} color={theme.colors.textMuted} />
           <Text style={styles.poolHintText}>
-            Pozo = apuestas registradas × {formatCurrency(betPerMatchday, currency)}/jornada
+            El pozo es dinero REAL apostado: suma {formatCurrency(betPerMatchday, currency)} por
+            cada apuesta registrada. Empieza en {formatCurrency(0, currency)} y crece cuando los
+            inscritos hacen su apuesta.
           </Text>
         </View>
 

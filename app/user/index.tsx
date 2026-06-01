@@ -86,20 +86,13 @@ function MatchdayCard({ matchday, onPress, fullWidth = false }: { matchday: any;
   // Per-participant bet amount, set when tournament was created
   const betAmount = Number(tournament?.bet_per_matchday ?? 0);
 
-  // Expected total pool = N inscritos × X Bs (the max pool if everyone bets).
-  // If backend didn't expose participant count, fall back to backend's expected_pool.
-  const calculatedPool = inscritos * betAmount;
-  const expectedPool   = calculatedPool > 0
-    ? calculatedPool
-    : Number(matchday?.expected_pool ?? matchday?.total_pool ?? 0);
-
-  // Bets actually placed on THIS matchday (different from inscritos — only those who
-  // submitted a ticket so far). Falls back to 0 if backend doesn't expose it.
-  const betsPlaced = Number(
-    matchday?.bets_count
-    ?? matchday?.participant_count
-    ?? 0,
-  );
+  // Pozo REAL: solo lo efectivamente apostado (crece con cada apuesta). Igual
+  // criterio en todas las pantallas (detalle jornada + lista Apostar).
+  const realPool = Number(matchday?.total_pool ?? 0);
+  // Pozo POTENCIAL = inscritos aprobados × monto fijo (lo máximo si todos apuestan).
+  const potentialPool = inscritos * betAmount;
+  // Nº de apuestas reales que formaron el pozo (pozo / monto por jornada)
+  const betsPlaced = betAmount > 0 ? Math.round(realPool / betAmount) : 0;
 
   const matchCount = Number(
     matchday?.matches?.length
@@ -194,19 +187,18 @@ function MatchdayCard({ matchday, onPress, fullWidth = false }: { matchday: any;
           </View>
         </View>
 
-        {/* Total pool with formula */}
+        {/* Pozo real + potencial */}
         <View style={[styles.mdPoolBox, { borderColor: '#10B98140', backgroundColor: '#10B98112' }]}>
           <View style={styles.mdPoolRow}>
             <Ionicons name="trophy" size={15} color="#10B981" />
-            <Text style={[styles.mdPoolLabel, { color: theme.colors.textSecondary }]}>Pozo total</Text>
+            <Text style={[styles.mdPoolLabel, { color: theme.colors.textSecondary }]}>Pozo actual</Text>
             <Text style={[styles.mdPoolValue, { color: '#10B981' }]}>
-              {currency} {expectedPool.toFixed(2)}
+              {currency} {realPool.toFixed(2)}
             </Text>
           </View>
           <Text style={[styles.mdPoolHint, { color: theme.colors.textMuted }]}>
-            {inscritos > 0
-              ? `${inscritos} × ${currency} ${betAmount} · se reparte entre quien más acierte`
-              : 'Se reparte entre quien más partidos acierte'}
+            {betsPlaced} apuesta{betsPlaced === 1 ? '' : 's'} registrada{betsPlaced === 1 ? '' : 's'} · crece {currency} {betAmount} por apuesta
+            {potentialPool > 0 ? ` · hasta ${currency} ${potentialPool.toFixed(2)} si los ${inscritos} apuestan` : ''}
           </Text>
         </View>
 
