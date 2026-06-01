@@ -284,7 +284,8 @@ export default function HomeScreen() {
     queryKey: ['matchdays-active'],
     queryFn: async () => {
       try {
-        const res = await api.get('/api/matchdays?status=open');
+        // upcoming=true → solo jornadas que aparecen desde 1 día antes de su fecha
+        const res = await api.get('/api/matchdays?status=open&upcoming=true');
         return res?.data ?? [];
       } catch { return []; }
     },

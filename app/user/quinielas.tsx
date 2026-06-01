@@ -148,7 +148,8 @@ export default function QuinielasScreen() {
   const { data: matchdays, isLoading, refetch } = useQuery({
     queryKey: ['user-matchdays'],
     queryFn: async () => {
-      try { const res = await api.get('/api/matchdays'); return (res?.data ?? []) as MatchdayItem[]; }
+      // upcoming=true → jornadas visibles desde 1 día antes de su fecha
+      try { const res = await api.get('/api/matchdays?upcoming=true'); return (res?.data ?? []) as MatchdayItem[]; }
       catch { return [] as MatchdayItem[]; }
     },
   });

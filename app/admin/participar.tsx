@@ -56,7 +56,8 @@ export default function AdminParticiparScreen() {
   const { data: matchdays, isLoading: matchdaysLoading, refetch: refetchMatchdays } = useQuery({
     queryKey: ['admin-my-matchdays'],
     queryFn: async () => {
-      const res = await api.get('/api/matchdays');
+      // upcoming=true → jornadas visibles desde 1 día antes (igual que el usuario)
+      const res = await api.get('/api/matchdays?upcoming=true');
       return res?.data ?? [];
     },
   });
