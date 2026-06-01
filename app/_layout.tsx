@@ -32,6 +32,7 @@ import { useWebPush } from '../hooks/useWebPush';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { SidebarProvider } from '../contexts/SidebarContext';
 import { isAdminOnlySegment } from '../constants/route-access';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -127,6 +128,7 @@ export default function RootLayout() {
   });
 
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <SidebarProvider>
@@ -144,6 +146,7 @@ export default function RootLayout() {
         </SidebarProvider>
       </ThemeProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

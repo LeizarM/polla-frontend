@@ -23,6 +23,7 @@
         "backgroundColor": "#0A0E1A"
       },
       "package": "com.leizarm.mundial2026",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "permissions": [
         "NOTIFICATIONS",

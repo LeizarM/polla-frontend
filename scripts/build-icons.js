@@ -68,8 +68,8 @@ const path = require('path');
     { name: 'android-icon-foreground.png',    size: 1024, source: adaptiveFgSvg, splash: true },
     { name: 'android-icon-monochrome.png',    size: 1024, source: adaptiveFgSvg, splash: true },
     // (background is configured by hex in app.json — no PNG needed)
-    // ── Splash screen ────────────────────────────────────────────
-    { name: 'splash-icon.png',                size: 1024, source: iconSvg, bg: { r: 0, g: 0, b: 0, alpha: 0 }, splash: true },
+    // ── Splash screen — llama limpia (consistente con launcher icon) ──
+    { name: 'splash-icon.png',                size: 1024, source: adaptiveFgSvg, bg: { r: 0, g: 0, b: 0, alpha: 0 }, splash: true },
     // ── Web favicon ─────────────────────────────────────────────
     { name: 'favicon.png',                    size: 64,   source: faviconSvg, bg: { r: 0, g: 0, b: 0, alpha: 0 } },
     // ── PWA icons (manifest.json) ─────────────────────────────────
