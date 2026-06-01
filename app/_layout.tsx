@@ -1,4 +1,22 @@
 import '../global.css'; // ← NativeWind: MUST be first import
+import * as Sentry from '@sentry/react-native';
+
+// ─── Sentry — captura de crashes nativos + JS (release APK) ────────────────
+// El DSN viene de EXPO_PUBLIC_SENTRY_DSN (seteado en eas.json). Si no está,
+// Sentry queda inactivo (no rompe nada). El DSN es público — seguro en cliente.
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    // Captura TODO mientras debuggeamos el crash
+    enableNative: true,
+    debug: false,
+    tracesSampleRate: 0,           // sin performance tracing, solo crashes
+    attachStacktrace: true,
+    environment: 'preview',
+  });
+}
+
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -118,7 +136,7 @@ function AuthGuard({ children, fontsLoaded }: AuthGuardProps) {
   return <>{children}</>;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -149,6 +167,9 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+// Sentry.wrap envuelve la app raíz para capturar errores con contexto completo.
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
   loadingContainer: {
