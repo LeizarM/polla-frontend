@@ -224,8 +224,11 @@ export default function RegisterScreen() {
     if (!phone?.trim())               { haptic('warning'); showToast('error', 'El teléfono es requerido');                         return false; }
     if (!/^[0-9+\s-]+$/.test(phone)) { haptic('warning'); showToast('error', 'El teléfono solo puede contener números');          return false; }
     if (!ci?.trim())                  { haptic('warning'); showToast('error', 'La cédula (CI) es requerida');                      return false; }
-    if (!password || password.length < 6)
-                                      { haptic('warning'); showToast('error', 'La contraseña debe tener al menos 6 caracteres');   return false; }
+    // Política del backend: min 8, al menos 1 letra y 1 número
+    if (!password || password.length < 8)
+                                      { haptic('warning'); showToast('error', 'La contraseña debe tener al menos 8 caracteres');   return false; }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
+                                      { haptic('warning'); showToast('error', 'La contraseña debe incluir letras y números');      return false; }
     if (password !== confirmPassword) { haptic('warning'); showToast('error', 'Las contraseñas no coinciden');                     return false; }
     return true;
   };
@@ -333,7 +336,7 @@ export default function RegisterScreen() {
             label="Contraseña"
             value={password}
             onChangeText={setPassword}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres, con letras y números"
             type="password"
             icon="lock-closed-outline"
             returnKeyType="next"

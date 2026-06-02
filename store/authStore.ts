@@ -113,14 +113,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }, 100);
     } catch (error: any) {
       console.error('Register error:', error);
-      
-      // Transform error messages
-      if (error?.response?.status === 409 || error?.response?.data?.message?.includes('already exists')) {
-        throw new Error('Este nombre de usuario ya está en uso');
+
+      const status = error?.response?.status;
+      const backendMsg = error?.response?.data?.message;
+
+      // 409 = conflicto REAL de usuario en uso (backend solo usa 409 para eso)
+      if (status === 409) {
+        throw new Error(backendMsg || 'Este nombre de usuario ya está en uso');
       }
-      if (error?.response?.status === 422) {
-        const detail = error?.response?.data?.message;
-        throw new Error(detail || 'Datos inválidos. Verifica los campos');
+      // 400/422 = validación (CI faltante, password débil, etc.) → mostrar el
+      // mensaje REAL del backend, no asumir "usuario en uso".
+      if (status === 400 || status === 422) {
+        throw new Error(backendMsg || 'Datos inválidos. Verifica los campos');
       }
       if (error?.code === 'ERR_NETWORK' || error?.message?.includes('Network')) {
         throw new Error('Sin conexión a internet');
