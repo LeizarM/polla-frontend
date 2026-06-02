@@ -8,14 +8,13 @@
   2. Limpia la carpeta remota y sube el dist/ nuevo.
   3. (Opcional) reinicia nginx la primera vez (-RestartNginx).
 
-  Requiere: OpenSSH (ssh.exe / scp.exe, vienen en Windows 10+), acceso por
-  llave al server.
+  Requiere: OpenSSH (ssh.exe / scp.exe en Windows 10+), acceso por llave.
 
 .EXAMPLE
   # Primera vez (sube + reinicia nginx para tomar el nuevo mount):
   ./scripts/deploy-web.ps1 -ServerIp 200.105.10.20 -SshPort 22 -RestartNginx
 
-  # Updates siguientes (solo reemplaza archivos, nginx no hace falta reiniciar):
+  # Updates siguientes (solo reemplaza archivos):
   ./scripts/deploy-web.ps1 -ServerIp 200.105.10.20 -SshPort 22
 #>
 param(
@@ -29,10 +28,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$root = Split-Path -Parent $PSScriptRoot   # carpeta del proyecto (react_native_space)
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-# ── 1. Build ────────────────────────────────────────────────────────────────
+# 1. Build
 if (-not $SkipBuild) {
   Write-Host "==> Building web export (API: $ApiUrl)..." -ForegroundColor Cyan
   $env:EXPO_PUBLIC_API_URL = $ApiUrl
@@ -41,12 +40,12 @@ if (-not $SkipBuild) {
 }
 
 if (-not (Test-Path "$root\dist\index.html")) {
-  throw "No se encontro dist/index.html — el build no genero el frontend."
+  throw "No se encontro dist/index.html. El build no genero el frontend."
 }
 
 $dest = "$SshUser@${ServerIp}:$RemoteDir"
 
-# ── 2. Limpiar remoto + subir ───────────────────────────────────────────────
+# 2. Limpiar remoto + subir
 Write-Host "==> Preparando carpeta remota $RemoteDir ..." -ForegroundColor Cyan
 ssh -p $SshPort "$SshUser@$ServerIp" "mkdir -p $RemoteDir && find $RemoteDir -mindepth 1 -delete"
 if ($LASTEXITCODE -ne 0) { throw "No se pudo preparar la carpeta remota (revisa SSH)" }
@@ -55,11 +54,12 @@ Write-Host "==> Subiendo dist/ ..." -ForegroundColor Cyan
 scp -P $SshPort -r "$root\dist\*" $dest
 if ($LASTEXITCODE -ne 0) { throw "scp fallo" }
 
-# ── 3. (Opcional) reiniciar nginx ───────────────────────────────────────────
+# 3. (Opcional) reiniciar nginx
 if ($RestartNginx) {
   Write-Host "==> Reiniciando nginx ..." -ForegroundColor Cyan
   ssh -p $SshPort "$SshUser@$ServerIp" "cd /opt/mundial2026 && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d nginx"
 }
 
-Write-Host "`n[OK] Frontend desplegado en $ApiUrl/" -ForegroundColor Green
-Write-Host "    Verifica: $ApiUrl/  y  $ApiUrl/admin" -ForegroundColor Green
+Write-Host ""
+Write-Host "[OK] Frontend desplegado en $ApiUrl/" -ForegroundColor Green
+Write-Host "     Verifica: $ApiUrl/  y  $ApiUrl/admin" -ForegroundColor Green
