@@ -32,6 +32,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
 import api from '../../services/api';
 import { formatMoney } from '../../utils/currency';
+import { parseBackendDate, toDDMMYYYY } from '../../utils/date';
 
 const POSITIONS = [
   { key: 'pick_1st' as const, label: '1° Lugar', short: '1°', pts: '12 pts', emoji: '🥇', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
@@ -167,7 +168,7 @@ export default function AdminParticiparScreen() {
                           <Text style={styles.cardTitle}>{md?.name}</Text>
                           <Text style={styles.cardSub}>{md?.tournament?.name ?? 'Torneo'}</Text>
                           <Text style={styles.cardDate}>
-                            {md?.date ? (() => { const d = new Date(md.date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : ''}
+                            {(() => { const d = parseBackendDate(md?.date); return d ? toDDMMYYYY(d) : ''; })()}
                             {' · '}{
                               Number(
                                 md?.matches?.length

@@ -18,6 +18,7 @@ import { Badge }      from '../../components/ui/Badge';
 import { Skeleton }   from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useTheme }   from '../../contexts/ThemeContext';
+import { parseBackendDate } from '../../utils/date';
 import api from '../../services/api';
 
 type FilterType = 'all' | 'open' | 'finished';
@@ -34,7 +35,9 @@ function formatCurrency(amount: number, currency = 'Bs') {
 }
 function formatDate(dateStr: string) {
   try {
-    const d = new Date(dateStr);
+    // parseBackendDate evita el shift de timezone (la fecha @db.Date viene como
+    // medianoche UTC; new Date() la mostraria un dia antes en UTC-4).
+    const d = parseBackendDate(dateStr) ?? new Date(dateStr);
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   } catch { return dateStr ?? ''; }
 }
