@@ -18,7 +18,7 @@ if (SENTRY_DSN) {
 }
 
 import { useEffect } from 'react';
-import { Slot, useRouter, useSegments, SplashScreen } from 'expo-router';
+import { Slot, useRouter, useSegments, SplashScreen, useRootNavigationState } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
@@ -95,6 +95,10 @@ function AuthGuard({ children, fontsLoaded }: AuthGuardProps) {
   const { user, isLoading, restoreSession, isAdmin } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  // Estado del navegador raíz. navState?.key existe solo cuando el <Slot/> ya
+  // está montado. Navegar antes de eso lanza "navigate before mounting Root
+  // Layout". Lo usamos para gatear el redirect.
+  const navState = useRootNavigationState();
 
   usePushNotifications(!!user);
   useWebPush(!!user);
@@ -111,6 +115,8 @@ function AuthGuard({ children, fontsLoaded }: AuthGuardProps) {
 
   useEffect(() => {
     if (isLoading) return;
+    // No navegar hasta que el navegador raíz (<Slot/>) esté montado.
+    if (!navState?.key) return;
 
     const seg0 = segments?.[0];
     const inAuthGroup  = seg0 === 'auth';
@@ -127,7 +133,7 @@ function AuthGuard({ children, fontsLoaded }: AuthGuardProps) {
       // Usuario normal intentando acceder a ruta admin → fuera
       router.replace('/user');
     }
-  }, [user, isLoading, segments]);
+  }, [user, isLoading, segments, navState?.key]);
 
   if (isLoading || !fontsLoaded) {
     return <LoadingScreen />;
