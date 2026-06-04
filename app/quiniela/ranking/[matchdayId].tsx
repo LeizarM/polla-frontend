@@ -579,7 +579,7 @@ export default function RankingScreen() {
                   { color: theme.colors.textPrimary },
                   isMe && { color: theme.colors.primaryLight },
                 ]} numberOfLines={1}>
-                  {item?.full_name ?? item?.username ?? 'Usuario'}{isMe ? ' (Tú)' : ''}
+                  {item?.full_name ?? 'Usuario'}{isMe ? ' (Tú)' : ''}
                 </Text>
                 {/* EMPATE chip only when actually tied AND someone won */}
                 {isTied && hasWon && (
@@ -594,9 +594,7 @@ export default function RankingScreen() {
                   </View>
                 )}
               </View>
-              <Text style={[styles.userHandle, { color: theme.colors.textMuted }]}>
-                @{item?.username ?? '?'}
-              </Text>
+              {/* Privacidad: solo nombre — sin @usuario */}
             </View>
             <View style={styles.scoreInfo}>
               <Text style={[styles.correctCount, { color: theme.colors.textPrimary }]}>
@@ -828,9 +826,7 @@ export default function RankingScreen() {
                     ]} numberOfLines={1}>
                       {u.full_name}{isMe ? ' · TÚ' : ''}
                     </Text>
-                    <Text style={[styles.pivotHandle, { color: theme.colors.textMuted }]} numberOfLines={1}>
-                      @{u.username}
-                    </Text>
+                    {/* Privacidad: solo nombre — sin @usuario */}
                   </View>
                   {/* Per-matchday cells (toggle: aciertos ↔ dinero) */}
                   {matchdays.map((md: any) => {

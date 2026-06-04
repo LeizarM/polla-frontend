@@ -172,9 +172,7 @@ export default function MatchdayWinnersScreen() {
                         <Text style={[styles.ticketName, { color: theme.colors.textPrimary }]}>
                           {ticket?.full_name ?? 'Usuario'}
                         </Text>
-                        <Text style={[styles.ticketUsername, { color: theme.colors.textMuted }]}>
-                          @{ticket?.username}
-                        </Text>
+                        {/* Privacidad: solo nombre — sin @usuario */}
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={styles.ticketCorrect}>{ticket?.total_correct} ✓</Text>
@@ -225,9 +223,7 @@ export default function MatchdayWinnersScreen() {
                         <Text style={[styles.ticketName, { color: theme.colors.textPrimary }]}>
                           {ticket?.full_name ?? 'Usuario'}
                         </Text>
-                        <Text style={[styles.ticketUsername, { color: theme.colors.textMuted }]}>
-                          @{ticket?.username}
-                        </Text>
+                        {/* Privacidad: solo nombre — sin @usuario */}
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={[styles.ticketCorrect, isWinner && { color: '#F59E0B' }]}>

@@ -530,9 +530,7 @@ export default function BetLogScreen() {
                       <Text style={[styles.leaderName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                         {l.full_name ?? '-'}
                       </Text>
-                      <Text style={[styles.leaderHandle, { color: theme.colors.textMuted }]}>
-                        @{l.username ?? '-'}
-                      </Text>
+                      {/* Privacidad: solo nombre — sin @usuario */}
                     </View>
                     {l.pendingPicks > 0 && (
                       <Text style={[styles.leaderPending, { color: theme.colors.textMuted }]}>
@@ -889,9 +887,7 @@ export default function BetLogScreen() {
                           <Text style={[styles.betUser, { color: theme.colors.textPrimary }]}>
                             {bet?.full_name ?? '-'}
                           </Text>
-                          <Text style={[styles.betHandle, { color: theme.colors.textMuted }]}>
-                            @{bet?.username ?? '-'}
-                          </Text>
+                          {/* Privacidad: solo nombre — sin @usuario */}
                         </View>
                       </View>
                       <View style={styles.betMeta}>
@@ -1150,9 +1146,7 @@ export default function BetLogScreen() {
                       <Text style={[styles.noBetName, { color: theme.colors.textPrimary }]}>
                         {u.full_name}
                       </Text>
-                      <Text style={[styles.noBetHandle, { color: theme.colors.textMuted }]}>
-                        @{u.username}
-                      </Text>
+                      {/* Privacidad: solo nombre — sin @usuario */}
                     </View>
                     <View style={[styles.noBetTag, { backgroundColor: '#EF444415', borderColor: '#EF444440' }]}>
                       <Text style={[styles.noBetTagText, { color: '#EF4444' }]}>

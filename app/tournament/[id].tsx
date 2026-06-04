@@ -927,7 +927,7 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
     <View key={p?.id} style={tabStyles.participantRow}>
       <View style={{ flex: 1 }}>
         <Text style={tabStyles.participantName}>{p?.user?.full_name ?? '—'}</Text>
-        <Text style={tabStyles.participantInfo}>@{p?.user?.username ?? '—'} · CI: {p?.user?.ci ?? '—'}</Text>
+        {/* Privacidad: solo nombre completo — sin @usuario ni CI */}
       </View>
       {showActions ? (
         <View style={{ flexDirection: 'row', gap: 8 }}>
