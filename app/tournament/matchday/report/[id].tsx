@@ -204,12 +204,12 @@ export default function MatchdayReportScreen() {
                         <View style={styles.userRow}>
                           <View style={[styles.avatar, { backgroundColor: u?.status === 'won' ? 'rgba(255,215,0,0.2)' : 'rgba(16,185,129,0.2)' }]}>
                             <Text style={[styles.avatarText, { color: u?.status === 'won' ? '#FFD700' : '#10B981' }]}>
-                              {u?.username?.[0]?.toUpperCase() ?? '?'}
+                              {u?.full_name?.[0]?.toUpperCase() ?? '?'}
                             </Text>
                           </View>
                           <View style={{ flex: 1 }}>
-                            <Text style={styles.userName}>{u?.full_name ?? u?.username}</Text>
-                            <Text style={styles.userSub}>@{u?.username} · {u?.phone ?? ''}</Text>
+                            {/* Privacidad: solo nombre — sin @usuario ni telefono */}
+                            <Text style={styles.userName}>{u?.full_name ?? 'Participante'}</Text>
                           </View>
                           <View style={{ alignItems: 'flex-end' }}>
                             <View style={styles.betBadge}>
@@ -245,12 +245,13 @@ export default function MatchdayReportScreen() {
                           <View style={styles.userRow}>
                             <View style={[styles.avatar, { backgroundColor: 'rgba(245,158,11,0.2)' }]}>
                               <Text style={[styles.avatarText, { color: '#F59E0B' }]}>
-                                {u?.username?.[0]?.toUpperCase() ?? '?'}
+                                {u?.full_name?.[0]?.toUpperCase() ?? '?'}
                               </Text>
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={styles.userName}>{u?.full_name ?? u?.username}</Text>
-                              <Text style={styles.userSub}>@{u?.username} · Saldo: {formatMoney(u?.balance ?? 0)}</Text>
+                              {/* Privacidad: solo nombre — sin @usuario */}
+                              <Text style={styles.userName}>{u?.full_name ?? 'Participante'}</Text>
+                              <Text style={styles.userSub}>Saldo: {formatMoney(u?.balance ?? 0)}</Text>
                             </View>
                             <View style={styles.pendingBadge}>
                               <Text style={styles.pendingBadgeText}>⚠️ Sin apostar</Text>

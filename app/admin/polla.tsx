@@ -237,7 +237,7 @@ export default function AdminPollaScreen() {
                 <Text style={{ color: theme.colors.primaryLight, fontFamily: 'Poppins_700Bold', fontSize: 13, marginBottom: 6 }}>Apuestas:</Text>
                 {(reportData?.bets ?? []).map((b: any, i: number) => (
                   <Text key={i} style={{ color: theme.colors.textPrimary, fontSize: 12, marginBottom: 3 }}>
-                    {b?.position}. {b?.full_name ?? b?.username} — {b?.total_points ?? 0} pts {b?.status === 'won' ? '🏆' : ''}
+                    {b?.position}. {b?.full_name ?? 'Participante'} — {b?.total_points ?? 0} pts {b?.status === 'won' ? '🏆' : ''}
                   </Text>
                 ))}
               </>
@@ -248,7 +248,7 @@ export default function AdminPollaScreen() {
                 <Text style={{ color: '#F59E0B', fontFamily: 'Poppins_700Bold', fontSize: 13, marginTop: 12, marginBottom: 6 }}>⚠️ No han apostado:</Text>
                 {(reportData?.pending_users ?? []).map((u: any, i: number) => (
                   <Text key={i} style={{ color: theme.colors.textSecondary, fontSize: 12, marginBottom: 3 }}>
-                    {i + 1}. {u?.full_name} (@{u?.username})
+                    {i + 1}. {u?.full_name}
                   </Text>
                 ))}
               </>
