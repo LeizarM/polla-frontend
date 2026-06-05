@@ -148,29 +148,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   restoreSession: async () => {
     try {
       const token = await secureStore.get('token');
-      
+
       if (!token) {
-        set({ isLoading: false });
+        set({ user: null, token: null, isLoading: false });
         return;
       }
-      
+
       const response = await api.get('/api/auth/me');
       const user = response?.data;
-      
+
       if (user) {
         set({ user, token, isLoading: false });
       } else {
         await secureStore.remove('token');
-        set({ isLoading: false });
+        set({ user: null, token: null, isLoading: false });
       }
     } catch (error: any) {
       console.error('Session restore error:', error);
-      
-      // If token is invalid, clear it
-      if (error?.response?.status === 401) {
+
+      // Si el SERVER rechazó el token (401 expirado/inválido, 403 cuenta
+      // bloqueada/revocada) limpiamos la sesión por completo. Solo conservamos
+      // el token ante un error de RED (server caído / sin internet) para no
+      // desloguear por un corte temporal.
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
         await secureStore.remove('token');
+        set({ user: null, token: null });
       }
-      
+
       set({ isLoading: false });
     }
   },

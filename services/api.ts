@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { API_BASE_URL } from '../constants/api';
 import { queryClient } from './queryClient';
 import { secureStore } from './secureStorage';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -63,17 +64,24 @@ api.interceptors.response.use(
   async (error) => {
     const status = error?.response?.status;
     
-    // 401: Unauthorized - token expired or invalid
+    // 401: token expirado/inválido/revocado. Si había sesión activa, la
+    // cerramos COMPLETA (token + estado en memoria + cache + redirect a login).
+    // OJO: en native `window.location` es undefined → antes el redirect nunca
+    // corría en la APK y el usuario quedaba atrapado con la sesión muerta.
     if (status === 401) {
       try {
-        await secureStore.remove('token');
-        // Only redirect if not already on auth pages
-        const currentPath = window?.location?.pathname;
-        if (currentPath && !currentPath.includes('/auth/')) {
-          router.replace('/auth/login' as any);
+        const hadSession = useAuthStore.getState().token != null;
+        if (hadSession) {
+          // logout() borra el token (secureStore), resetea el store, limpia
+          // queries y navega a login — funciona en web Y en native.
+          await useAuthStore.getState().logout();
+        } else {
+          // 401 sin sesión (ej. login con credenciales malas): solo limpiamos
+          // un token residual, sin redirect (la pantalla de login muestra el error).
+          await secureStore.remove('token');
         }
       } catch (e) {
-        console.error('Error clearing token:', e);
+        console.error('Error clearing session:', e);
       }
     }
     
