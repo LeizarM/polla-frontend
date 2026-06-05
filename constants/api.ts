@@ -25,8 +25,11 @@ const getBaseURL = (): string => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return `http://${window.location.hostname}:3000`;
   }
-  // Fallback (móvil sin .env): nada inteligente que adivinar — pon EXPO_PUBLIC_API_URL.
-  return 'http://localhost:3000';
+  // Fallback MÓVIL → PRODUCCIÓN por defecto. Antes era 'http://localhost:3000',
+  // lo que rompía los OTA (eas update) cuando EXPO_PUBLIC_API_URL quedaba vacía:
+  // el celu apuntaba a sí mismo → "sin conexión a internet". Con prod por
+  // default, un OTA mal configurado NO deja la app inutilizable.
+  return 'https://app.esppapel.com:9443';
 };
 
 export const API_BASE_URL = getBaseURL();
