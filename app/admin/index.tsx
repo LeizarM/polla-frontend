@@ -165,9 +165,11 @@ export default function AdminDashboard() {
   const doLogout = async () => {
     try {
       await AsyncStorage.clear();
-      globalQueryClient.clear();
-      useAuthStore.setState({ user: null, token: null });
-      router.replace('/auth/login' as any);
+      // BUG FIX SEGURIDAD: el token vive en secureStore, NO en AsyncStorage.
+      // Antes este logout NO lo borraba → al reabrir la app, restoreSession lo
+      // encontraba y entraba solo sin pedir credenciales. logout() del store
+      // hace secureStore.remove('token') + clear queries + reset + navega.
+      await useAuthStore.getState().logout();
     } catch {}
   };
 
