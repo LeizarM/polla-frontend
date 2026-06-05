@@ -14,16 +14,12 @@ Then:
 - Press `a` for Android emulator
 - Press `i` for iOS simulator
 
-## 🔐 Test Credentials
+## 🔐 Cuentas de prueba (solo desarrollo)
 
-### Admin Account
-- Username: `admin`
-- Password: `admin123`
-
-### User Accounts
-- `user1` / `user123` (Balance: $500.00)
-- `user2` / `user123` (Balance: $250.00)
-- `user3` / `user123` (Balance: $100.00)
+Las cuentas se crean con `prisma db seed` y sus contraseñas vienen de env vars
+(`SEED_ADMIN_PASSWORD`, `SEED_USER_PASSWORD`) — **NO hay credenciales por
+defecto en el repo**. En producción **no corras el seed** (o usá contraseñas
+fuertes y distintas).
 
 ## 📱 Features
 
