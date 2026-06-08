@@ -29,7 +29,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../../constants/theme';
 import api from '../../../services/api';
 import { downloadPdf } from '../../../services/downloadPdf';
-import { parseBackendDate, toLocalDateString } from '../../../utils/date';
+import { parseBackendDate, toLocalDateString, boliviaWallToISO, boliviaParts } from '../../../utils/date';
 
 export default function MatchdayManageScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
@@ -276,21 +276,17 @@ function EditMatchdayModal({ visible, onClose, matchday, onSuccess }: any) {
       const newDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const syncResults = await Promise.allSettled(
         matchesToSync.map(async (m: any) => {
-          const oldMatchDate = m?.match_date ? new Date(m.match_date) : null;
-          if (!oldMatchDate || isNaN(oldMatchDate.getTime())) return;
-          // Preserve hours/minutes from the existing match_date.
-          const updated = new Date(newDay);
-          updated.setHours(
-            oldMatchDate.getHours(),
-            oldMatchDate.getMinutes(),
-            0,
-            0,
+          // Preservar la HORA de Bolivia del partido y reubicarla en el nuevo día.
+          const oldP = boliviaParts(m?.match_date);
+          if (!oldP) return;
+          const wall = new Date(
+            newDay.getFullYear(), newDay.getMonth(), newDay.getDate(),
+            Number(oldP.hh), Number(oldP.mm), 0, 0,
           );
+          const newISO = boliviaWallToISO(wall);
           // Skip if already aligned (don't waste a request)
-          if (updated.getTime() === oldMatchDate.getTime()) return;
-          await api.patch(`/api/matches/${m.id}`, {
-            match_date: updated.toISOString(),
-          });
+          if (m?.match_date && new Date(m.match_date).toISOString() === newISO) return;
+          await api.patch(`/api/matches/${m.id}`, { match_date: newISO });
         }),
       );
 
@@ -410,7 +406,8 @@ function MatchCard({ match, allMatches, onUpdate, isResolved, matchdayDate }: {
       const updated = new Date(base);
       updated.setHours(matchTime.getHours(), matchTime.getMinutes(), 0, 0);
       await api.patch(`/api/matches/${match?.id}`, {
-        match_date: updated.toISOString(),
+        // Hora SIEMPRE como Bolivia (UTC-4), sin importar el TZ del device.
+        match_date: boliviaWallToISO(updated),
       });
       showToast('success', 'Hora actualizada');
       setEditingTime(false);
@@ -907,7 +904,8 @@ function AddMatchModal({ visible, onClose, matchdayId, matchdayDate, existingMat
         matchday_id: matchdayId,
         team_a_id: teamAId,
         team_b_id: teamBId,
-        match_date: combined.toISOString(),
+        // Hora SIEMPRE interpretada como Bolivia (UTC-4), sin importar el TZ del device.
+        match_date: boliviaWallToISO(combined),
       });
       showToast('success', '✅ Partido creado');
       onSuccess();

@@ -73,3 +73,43 @@ export function toDDMMYYYY(d: Date): string {
   const mo  = String(d.getMonth() + 1).padStart(2, '0');
   return `${day}/${mo}/${d.getFullYear()}`;
 }
+
+// ─── Hora de Bolivia (UTC-4 FIJO, sin horario de verano) ────────────────────
+// Blindaje: las horas de los PARTIDOS se interpretan al guardar y se muestran
+// SIEMPRE como hora de Bolivia, sin importar el timezone del dispositivo (del
+// admin que carga ni del usuario que mira). Así las notificaciones automáticas
+// —que disparan X min antes del instante guardado— son precisas pase lo que pase.
+export const BOLIVIA_UTC_OFFSET_HOURS = 4;
+
+/**
+ * Toma una fecha cuyos componentes de PARED (año/mes/día/hora/min — lo que el
+ * admin eligió en el picker) representan hora de Bolivia, y devuelve el instante
+ * UTC correcto. Ej: "16:00" → "...T20:00:00.000Z". Da igual el TZ del device.
+ */
+export function boliviaWallToISO(d: Date): string {
+  return new Date(Date.UTC(
+    d.getFullYear(), d.getMonth(), d.getDate(),
+    d.getHours() + BOLIVIA_UTC_OFFSET_HOURS, d.getMinutes(), 0, 0,
+  )).toISOString();
+}
+
+/**
+ * Componentes de PARED en hora de Bolivia de un instante (ISO/Date), sin
+ * importar el TZ de quien mira. Para formatear displays de forma consistente.
+ */
+export function boliviaParts(input: string | Date | null | undefined): {
+  hh: string; mm: string; day: string; mo: string; year: number;
+} | null {
+  if (!input) return null;
+  const t = input instanceof Date ? input : new Date(input);
+  if (isNaN(t.getTime())) return null;
+  // Restar el offset y leer en UTC = hora de pared de Bolivia.
+  const bo = new Date(t.getTime() - BOLIVIA_UTC_OFFSET_HOURS * 3_600_000);
+  return {
+    hh:   String(bo.getUTCHours()).padStart(2, '0'),
+    mm:   String(bo.getUTCMinutes()).padStart(2, '0'),
+    day:  String(bo.getUTCDate()).padStart(2, '0'),
+    mo:   String(bo.getUTCMonth() + 1).padStart(2, '0'),
+    year: bo.getUTCFullYear(),
+  };
+}

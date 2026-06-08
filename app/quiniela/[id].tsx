@@ -31,6 +31,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
 import { getRandomBetMessage } from '../../constants/betMessages';
 import api from '../../services/api';
+import { boliviaParts } from '../../utils/date';
 
 type PickValue = 'L' | 'E' | 'V' | null;
 
@@ -51,12 +52,10 @@ function formatCurrency(amount: number, currency = 'Bs'): string {
 
 function formatMatchDate(dateStr: string): string {
   try {
-    const d   = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, '0');
-    const mo  = String(d.getMonth() + 1).padStart(2, '0');
-    const hh  = String(d.getHours()).padStart(2, '0');
-    const mm  = String(d.getMinutes()).padStart(2, '0');
-    return `${day}/${mo}/${d.getFullYear()}  ${hh}:${mm}`;
+    // Hora de Bolivia (UTC-4) SIEMPRE, sin importar el TZ del dispositivo.
+    const p = boliviaParts(dateStr);
+    if (!p) return dateStr ?? '';
+    return `${p.day}/${p.mo}/${p.year}  ${p.hh}:${p.mm}`;
   } catch {
     return dateStr ?? '';
   }

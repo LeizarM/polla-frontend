@@ -23,6 +23,7 @@ import { TeamFlag }   from '../../components/ui/TeamFlag';
 import { useToast }   from '../../components/ui/Toast';
 import { useTheme }   from '../../contexts/ThemeContext';
 import api from '../../services/api';
+import { boliviaParts } from '../../utils/date';
 
 interface MatchItem {
   id: string; match_date: string; status: string;
@@ -36,22 +37,17 @@ interface MatchItem {
 type FilterType = 'all' | 'scheduled' | 'finished';
 
 function formatMatchDate(dateStr: string): string {
-  try {
-    const d   = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, '0');
-    const mo  = String(d.getMonth() + 1).padStart(2, '0');
-    const hh  = String(d.getHours()).padStart(2, '0');
-    const mm  = String(d.getMinutes()).padStart(2, '0');
-    return `${day}/${mo}/${d.getFullYear()}  ${hh}:${mm}`;
-  } catch { return dateStr ?? ''; }
+  // Hora de Bolivia (UTC-4) SIEMPRE, sin importar el TZ del dispositivo.
+  const p = boliviaParts(dateStr);
+  if (!p) return dateStr ?? '';
+  return `${p.day}/${p.mo}/${p.year}  ${p.hh}:${p.mm}`;
 }
 
 function formatSectionDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]}`;
-  } catch { return ''; }
+  const p = boliviaParts(dateStr);
+  if (!p) return '';
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${p.day} ${MONTHS[Number(p.mo) - 1]}`;
 }
 
 export default function PartidosScreen() {
