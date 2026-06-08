@@ -228,7 +228,7 @@ export default function TicketDetailScreen() {
         {matchday?.id && (
           <Animated.View entering={FadeInDown.delay(200).duration(380)}>
             <Pressable
-              onPress={() => router.push(`/quiniela/ranking/${matchday.id}` as any)}
+              onPress={() => router.push(`/quiniela/ranking/${matchday.id}?tournamentId=${matchday?.tournament_id ?? ''}` as any)}
               style={({ pressed }) => [
                 styles.rankingRow,
                 {

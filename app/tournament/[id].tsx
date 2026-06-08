@@ -779,7 +779,7 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
                   <Pressable
                     onPress={(e: any) => {
                       e.stopPropagation?.();
-                      router.push(`/quiniela/ranking/${md?.id}` as any);
+                      router.push(`/quiniela/ranking/${md?.id}?tournamentId=${md?.tournament_id ?? ''}` as any);
                     }}
                     style={({ pressed }) => [
                       tabStyles.rankingShortcut,
@@ -919,14 +919,17 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
     },
   });
 
-  const pending = (participants ?? []).filter((p: any) => p?.status === 'pending');
-  const approved = (participants ?? []).filter((p: any) => p?.status === 'approved');
-  const rejected = (participants ?? []).filter((p: any) => p?.status === 'rejected');
+  // Orden alfabético por nombre completo (español) en todas las listas.
+  const byName = (a: any, b: any) =>
+    (a?.user?.full_name ?? '').localeCompare(b?.user?.full_name ?? '', 'es');
+  const pending = (participants ?? []).filter((p: any) => p?.status === 'pending').sort(byName);
+  const approved = (participants ?? []).filter((p: any) => p?.status === 'approved').sort(byName);
+  const rejected = (participants ?? []).filter((p: any) => p?.status === 'rejected').sort(byName);
 
-  const renderUser = (p: any, showActions: boolean) => (
+  const renderUser = (p: any, showActions: boolean, num: number) => (
     <View key={p?.id} style={tabStyles.participantRow}>
       <View style={{ flex: 1 }}>
-        <Text style={tabStyles.participantName}>{p?.user?.full_name ?? '—'}</Text>
+        <Text style={tabStyles.participantName}>{num}. {p?.user?.full_name ?? '—'}</Text>
         {/* Privacidad: solo nombre completo — sin @usuario ni CI */}
       </View>
       {showActions ? (
@@ -989,19 +992,19 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
           {pending.length > 0 && (
             <View>
               <Text style={tabStyles.subSectionTitle}>⏳ Pendientes ({pending.length})</Text>
-              {pending.map((p: any) => renderUser(p, true))}
+              {pending.map((p: any, i: number) => renderUser(p, true, i + 1))}
             </View>
           )}
           {approved.length > 0 && (
             <View style={{ marginTop: 16 }}>
               <Text style={tabStyles.subSectionTitle}>✅ Aprobados ({approved.length})</Text>
-              {approved.map((p: any) => renderUser(p, false))}
+              {approved.map((p: any, i: number) => renderUser(p, false, i + 1))}
             </View>
           )}
           {rejected.length > 0 && (
             <View style={{ marginTop: 16 }}>
               <Text style={tabStyles.subSectionTitle}>❌ Rechazados ({rejected.length})</Text>
-              {rejected.map((p: any) => renderUser(p, false))}
+              {rejected.map((p: any, i: number) => renderUser(p, false, i + 1))}
             </View>
           )}
         </View>

@@ -58,7 +58,7 @@ function MatchdayCard({
     } else {
       // Resolved/finished → take user directly to the ranking
       // (from the ranking they can navigate to their ticket if needed)
-      router.push(`/quiniela/ranking/${item?.id}` as any);
+      router.push(`/quiniela/ranking/${item?.id}?tournamentId=${item?.tournament_id ?? ''}` as any);
     }
   };
 

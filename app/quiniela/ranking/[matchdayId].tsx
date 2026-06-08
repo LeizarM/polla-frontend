@@ -65,7 +65,10 @@ function RaceLanes({
     const getVal = (u: any) => metric === 'dinero'
       ? Number(u?.totalPrize ?? 0)
       : Number(u?.totalCorrect ?? 0);
-    return arr.sort((a, b) => getVal(b) - getVal(a));
+    return arr.sort((a, b) =>
+      getVal(b) - getVal(a) ||
+      String(a?.full_name ?? '').localeCompare(String(b?.full_name ?? ''), 'es'),
+    );
   }, [rows, metric]);
 
   const max = useMemo(() => {
@@ -383,6 +386,7 @@ export default function RankingScreen() {
       return (res?.data ?? []) as RankingEntry[];
     },
     enabled: !!matchdayId,
+    refetchOnMount: 'always',
   });
 
   const { data: matchday } = useQuery({
@@ -395,7 +399,11 @@ export default function RankingScreen() {
     enabled: !!matchdayId,
   });
 
-  const tournamentId: string | undefined = matchday?.tournament_id ?? matchday?.tournament?.id;
+  const routeTournamentId = (useLocalSearchParams<{ tournamentId?: string }>().tournamentId) || undefined;
+  // tournamentId del param de ruta si vino; sino, del matchday (cadena). Tener
+  // el param directo evita que el acumulado quede vacío en la 1ª visita mientras
+  // carga matchday-info (era el "no muestra nada hasta volver atrás").
+  const tournamentId: string | undefined = routeTournamentId ?? matchday?.tournament_id ?? matchday?.tournament?.id;
   const currency = matchday?.tournament?.currency ?? 'Bs';
 
   // ── Tournament-wide accumulated pivot ────────────────────────────────────────
@@ -407,6 +415,7 @@ export default function RankingScreen() {
       return res?.data ?? null;
     },
     enabled: !!tournamentId && tab === 'tournament',
+    refetchOnMount: 'always',
   });
 
   // ── My personal ticket history (own picks per jornada) ──────────────────────
@@ -513,7 +522,11 @@ export default function RankingScreen() {
     const rows = ranking ?? [];
     if (rows.length === 0) return [] as Array<RankingEntry & { sharedPosition: number; tied: boolean; hasWon: boolean }>;
     // Sort by total_correct desc (server might already do this, but be safe)
-    const sorted = [...rows].sort((a, b) => (b.total_correct ?? 0) - (a.total_correct ?? 0));
+    const sorted = [...rows].sort((a, b) =>
+      (b.total_correct ?? 0) - (a.total_correct ?? 0) ||
+      (b.prize_won ?? 0) - (a.prize_won ?? 0) ||
+      String(a.full_name ?? '').localeCompare(String(b.full_name ?? ''), 'es'),
+    );
     const out: Array<RankingEntry & { sharedPosition: number; tied: boolean; hasWon: boolean }> = [];
     let currentPos = 1;
     let lastScore: number | null = null;
