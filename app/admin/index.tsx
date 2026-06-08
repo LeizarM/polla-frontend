@@ -224,6 +224,18 @@ export default function AdminDashboard() {
     },
   });
 
+  // Jornadas para apostar (aparecen 1 día antes), igual que el dashboard del
+  // usuario. El admin también participa, así que las mostramos para apostar directo.
+  const { data: openMatchdays, refetch: refetchOpenMatchdays } = useQuery({
+    queryKey: ['admin-open-matchdays'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/matchdays?status=open&upcoming=true');
+        return res?.data ?? [];
+      } catch { return []; }
+    },
+  });
+
   const myTotalWon = useMemo(() => {
     if (!Array.isArray(myTickets)) return 0;
     return myTickets.reduce((sum: number, t: any) => sum + Number(t?.prize_won ?? 0), 0);
@@ -233,11 +245,12 @@ export default function AdminDashboard() {
     refetchStats();
     refetchPending();
     refetchMyTickets();
+    refetchOpenMatchdays();
   }, []));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchStats(), refetchPending(), refetchMyTickets()]);
+    await Promise.all([refetchStats(), refetchPending(), refetchMyTickets(), refetchOpenMatchdays()]);
     setRefreshing(false);
   };
 
@@ -362,6 +375,45 @@ export default function AdminDashboard() {
             </PressableScale>
           </Animated.View>
         )}
+
+        {/* ── Jornadas para apostar (1 día antes) — el admin también participa ── */}
+        <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+            Jornadas para Apostar{(openMatchdays?.length ?? 0) > 0 ? `  (${openMatchdays.length})` : ''}
+          </Text>
+          {(openMatchdays?.length ?? 0) === 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}>
+              <Ionicons name="football-outline" size={20} color={theme.colors.textMuted} />
+              <Text style={{ flex: 1, color: theme.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 13 }}>
+                Sin jornadas activas. Aparecen 1 día antes de su fecha.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 8 }}>
+              {openMatchdays.map((md: any) => (
+                <PressableScale
+                  key={md.id}
+                  onPress={() => router.push(`/quiniela/${md.id}` as any)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface }}
+                >
+                  <Ionicons name="football" size={20} color={theme.colors.primaryLight} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.colors.textPrimary, fontFamily: 'Poppins_600SemiBold', fontSize: 14 }} numberOfLines={1}>
+                      {md?.name ?? 'Jornada'}
+                    </Text>
+                    <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 12, marginTop: 2 }} numberOfLines={1}>
+                      {md?.tournament?.name ?? ''}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.colors.primaryLight, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 }}>
+                    <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold', fontSize: 12 }}>Apostar</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#fff" />
+                  </View>
+                </PressableScale>
+              ))}
+            </View>
+          )}
+        </Animated.View>
 
         {/* ── Actions grid ─────────────────────────────────────────────── */}
         <Animated.View entering={FadeInDown.delay(220).duration(400)} style={styles.section}>

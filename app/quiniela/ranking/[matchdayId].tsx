@@ -5,7 +5,7 @@
  */
 import React, { useCallback, useState, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, ScrollView,
+  View, Text, StyleSheet, FlatList, ScrollView, useWindowDimensions,
   Pressable, RefreshControl,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
@@ -357,6 +357,11 @@ export default function RankingScreen() {
   const { theme }  = useTheme();
   const { matchdayId = '' } = useLocalSearchParams<{ matchdayId: string }>();
   const { user }   = useAuthStore();
+  const { height: winH } = useWindowDimensions();
+  // Altura máx del cuerpo de la tabla acumulada → scroll vertical propio.
+  // (En web el ScrollView horizontal recorta el overflow vertical, por eso las
+  // filas no scrolleaban; con un ScrollView acotado adentro anda en app Y web.)
+  const pivotRowsMaxH = Math.max(260, winH - 340);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabKey>('matchday');
   // Pivot cell view: 'aciertos' or 'dinero'. Default auto-set below based on whether
@@ -803,7 +808,8 @@ export default function RankingScreen() {
               <Text style={[styles.pivotHCell, styles.pivotPrizeCol, { color: '#FFD700' }]}>Ganado{'\n'}<Text style={styles.pivotHSubCellInline}>{cur}</Text></Text>
             </View>
 
-            {/* Body rows */}
+            {/* Body rows — scroll vertical propio (acotado) para app Y web */}
+            <ScrollView style={{ maxHeight: pivotRowsMaxH }} nestedScrollEnabled showsVerticalScrollIndicator={true}>
             {rows.map((u: any, i: number) => {
               const isMe = u.uid === user?.id;
               const pos  = i + 1;
@@ -915,6 +921,7 @@ export default function RankingScreen() {
                 </Animated.View>
               );
             })}
+            </ScrollView>
           </View>
         </ScrollView>
 
