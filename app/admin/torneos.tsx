@@ -24,7 +24,7 @@ import { useToast }      from '../../components/ui/Toast';
 import { useTheme }      from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
 import api from '../../services/api';
-import { toLocalDateString } from '../../utils/date';
+import { toLocalDateString, parseBackendDate } from '../../utils/date';
 
 // ─── Status config ─────────────────────────────────────────────────────────────
 
@@ -41,7 +41,9 @@ const TYPE_COLORS: Record<string, { color: string; bg: string }> = {
 
 function formatDate(dateStr: string) {
   try {
-    const d = new Date(dateStr);
+    // parseBackendDate evita el corrimiento de 1 día: las fechas @db.Date vienen
+    // como medianoche UTC y `new Date()` las mostraría un día antes en UTC-4.
+    const d = parseBackendDate(dateStr) ?? new Date(dateStr);
     const day = String(d.getDate()).padStart(2, '0');
     const mo  = String(d.getMonth() + 1).padStart(2, '0');
     return `${day}/${mo}/${d.getFullYear()}`;

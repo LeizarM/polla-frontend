@@ -239,6 +239,11 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
   const { theme } = useTheme();
   const cardStyles = useMemo(() => makeCardStyles(theme), [theme]);
   const hasBet = !!myBet;
+  // Deadline de la Polla Final: una vez pasado, NADIE puede apostar. El backend
+  // ya lo rechaza (create + update); acá lo reflejamos en la UI para que el
+  // botón quede bloqueado y no genere un error feo. (Blindaje doble.)
+  const deadline = t?.final_bet_deadline ? new Date(t.final_bet_deadline) : null;
+  const isPastDeadline = !!deadline && new Date() > deadline;
 
   // ── Pulse animation on the prize amount (premium "this is BIG" feel) ─────────
   const pulse = useSharedValue(1);
@@ -400,8 +405,8 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
             })}
           </View>
         ) : (
-          /* Empty podium slots — TOCABLE para apostar directo */
-          <Pressable onPress={onBet}>
+          /* Empty podium slots — TOCABLE para apostar (salvo deadline pasado) */
+          <Pressable onPress={isPastDeadline ? undefined : onBet} disabled={isPastDeadline}>
             <View style={[cardStyles.podiumRow, { alignItems: 'flex-end' }]}>
               {POSITIONS.map((pos, idx) => {
                 const h = [124, 106, 92, 82][idx];
@@ -421,9 +426,9 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               })}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
-              <Ionicons name="hand-left-outline" size={12} color="rgba(255,255,255,0.55)" />
-              <Text style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'Poppins_500Medium', fontSize: 11 }}>
-                Toca para elegir tu podio
+              <Ionicons name={isPastDeadline ? 'lock-closed' : 'hand-left-outline'} size={12} color={isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.55)'} />
+              <Text style={{ color: isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.55)', fontFamily: 'Poppins_500Medium', fontSize: 11 }}>
+                {isPastDeadline ? 'Apuestas cerradas — pasó la fecha límite' : 'Toca para elegir tu podio'}
               </Text>
             </View>
           </Pressable>
@@ -449,6 +454,11 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
                 </Text>
               </View>
             )}
+          </View>
+        ) : isPastDeadline ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.10)' }}>
+            <Ionicons name="lock-closed" size={18} color="#EF4444" />
+            <Text style={{ color: '#EF4444', fontFamily: 'Poppins_700Bold', fontSize: 15 }}>Apuestas cerradas (pasó la fecha límite)</Text>
           </View>
         ) : (
           <Pressable style={cardStyles.betCta} onPress={onBet}>
