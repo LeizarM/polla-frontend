@@ -813,8 +813,16 @@ export default function RankingScreen() {
           <View>
             {/* Header row */}
             <View style={[styles.pivotHeader, { backgroundColor: theme.colors.primary }]}>
-              <Text style={[styles.pivotHCell, styles.pivotPosCol, { color: '#fff' }]}>#</Text>
-              <Text style={[styles.pivotHCell, styles.pivotNameCol, { width: nameColW, color: '#fff' }]}>Participante</Text>
+              {/* Header convertido a Views: un <Text> con width NO respeta el ancho
+                  en react-native-web (flex-shrink lo encoge al contenido) -> el header
+                  quedaba angosto y desalineado de las filas. Con Views (mismos wrappers
+                  que el body) las columnas quedan idénticas y alineadas. */}
+              <View style={[styles.pivotCellWrap, styles.pivotPosCol]}>
+                <Text style={[styles.pivotHCell, { color: '#fff' }]}>#</Text>
+              </View>
+              <View style={[styles.pivotCellWrap, styles.pivotNameCol, { width: nameColW }]}>
+                <Text style={[styles.pivotHCell, { color: '#fff', textAlign: 'left' }]}>Participante</Text>
+              </View>
               {matchdays.map((md: any, i: number) => (
                 <View key={md.id} style={[styles.pivotHCellWrap, styles.pivotMdCol]}>
                   <Text style={[styles.pivotHCell, { color: '#fff' }]}>J{i + 1}</Text>
@@ -827,7 +835,9 @@ export default function RankingScreen() {
                   Uncomment to re-enable summary column.
               <Text style={[styles.pivotHCell, styles.pivotTotalCol, { color: '#FFD700' }]}>Total{'\n'}<Text style={styles.pivotHSubCellInline}>aciertos</Text></Text>
               */}
-              <Text style={[styles.pivotHCell, styles.pivotPrizeCol, { color: '#FFD700' }]}>Ganado{'\n'}<Text style={styles.pivotHSubCellInline}>{cur}</Text></Text>
+              <View style={[styles.pivotCellWrap, styles.pivotPrizeCol]}>
+                <Text style={[styles.pivotHCell, { color: '#FFD700', textAlign: 'center' }]}>Ganado{'\n'}<Text style={styles.pivotHSubCellInline}>{cur}</Text></Text>
+              </View>
             </View>
 
             {/* Body rows */}
