@@ -678,6 +678,18 @@ export default function RankingScreen() {
     const betPerMd = Number(accumulated?.tournament?.bet_per_matchday ?? 0);
     const totalInscritos = rows.length;
 
+    // ── Autosize de la columna PARTICIPANTE ────────────────────────────────
+    // La columna era fija (150px) → los nombres largos se cortaban y se
+    // encimaban con J1. Ahora el ancho se ajusta al nombre MÁS LARGO del
+    // listado (incluye el sufijo " · TÚ"). pivotName = 13px Poppins SemiBold
+    // ≈ 8px/caracter. Clamp 150–320px (más allá usa ellipsis). El MISMO ancho
+    // se aplica al header y a todas las filas → columnas siempre alineadas.
+    const longestNameLen = rows.reduce((m: number, u: any) => {
+      const extra = u.uid === user?.id ? 5 : 0; // sufijo " · TÚ"
+      return Math.max(m, String(u.full_name ?? u.username ?? '').length + extra);
+    }, 'Participante'.length);
+    const nameColW = Math.round(Math.min(320, Math.max(150, longestNameLen * 8 + 24)));
+
     return (
       <View style={styles.pivotWrap}>
 
@@ -802,7 +814,7 @@ export default function RankingScreen() {
             {/* Header row */}
             <View style={[styles.pivotHeader, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.pivotHCell, styles.pivotPosCol, { color: '#fff' }]}>#</Text>
-              <Text style={[styles.pivotHCell, styles.pivotNameCol, { color: '#fff' }]}>Participante</Text>
+              <Text style={[styles.pivotHCell, styles.pivotNameCol, { width: nameColW, color: '#fff' }]}>Participante</Text>
               {matchdays.map((md: any, i: number) => (
                 <View key={md.id} style={[styles.pivotHCellWrap, styles.pivotMdCol]}>
                   <Text style={[styles.pivotHCell, { color: '#fff' }]}>J{i + 1}</Text>
@@ -846,7 +858,7 @@ export default function RankingScreen() {
                     )}
                   </View>
                   {/* Name */}
-                  <View style={[styles.pivotCellWrap, styles.pivotNameCol]}>
+                  <View style={[styles.pivotCellWrap, styles.pivotNameCol, { width: nameColW }]}>
                     <Text style={[
                       styles.pivotName,
                       { color: theme.colors.textPrimary },
