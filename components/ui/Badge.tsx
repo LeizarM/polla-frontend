@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<string, string> = {
   pending:  'Pendiente',
   closed:   'Cerrada',
   finished: 'Finalizado',
-  resolved: 'Resuelto',
+  resolved: 'Finalizado',
   lost:     'Perdido',
   blocked:  'Bloqueado',
   rejected: 'Rechazado',

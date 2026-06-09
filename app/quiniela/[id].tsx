@@ -475,6 +475,8 @@ export default function MatchdayDetailScreen() {
                 const matchStarted = new Date(match.match_date) <= now;
                 const myPick = picks[match.id] ?? null;
                 const locked = matchStarted;
+                // "Finalizado" cuando el partido ya tiene resultado; sino "Iniciado".
+                const matchFinished = match.status === 'finished' || (match.score_a != null && match.score_b != null);
 
                 return (
                   <Animated.View
@@ -499,9 +501,9 @@ export default function MatchdayDetailScreen() {
                           {formatMatchDate(match?.match_date)}
                         </Text>
                         {locked && (
-                          <View style={styles.lockedBadge}>
-                            <Ionicons name="lock-closed" size={11} color="#EF4444" />
-                            <Text style={styles.lockedBadgeText}>Iniciado</Text>
+                          <View style={[styles.lockedBadge, matchFinished && { backgroundColor: 'rgba(16,185,129,0.15)' }]}>
+                            <Ionicons name={matchFinished ? 'checkmark-done' : 'lock-closed'} size={11} color={matchFinished ? '#10B981' : '#EF4444'} />
+                            <Text style={[styles.lockedBadgeText, matchFinished && { color: '#10B981' }]}>{matchFinished ? 'Finalizado' : 'Iniciado'}</Text>
                           </View>
                         )}
                         {!locked && match.status === 'open' && myPick && (
