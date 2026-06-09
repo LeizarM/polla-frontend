@@ -688,7 +688,7 @@ export default function RankingScreen() {
       const extra = u.uid === user?.id ? 5 : 0; // sufijo " · TÚ"
       return Math.max(m, String(u.full_name ?? u.username ?? '').length + extra);
     }, 'Participante'.length);
-    const nameColW = Math.round(Math.min(320, Math.max(150, longestNameLen * 8 + 24)));
+    const nameColW = Math.round(Math.min(340, Math.max(150, longestNameLen * 8 + 44)));
 
     return (
       <View style={styles.pivotWrap}>
@@ -1380,7 +1380,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   pivotPosCol:   { width: 40 },
-  pivotNameCol:  { width: 150, alignItems: 'flex-start', justifyContent: 'center', paddingHorizontal: 10 },
+  pivotNameCol:  { width: 150, alignItems: 'flex-start', justifyContent: 'center', paddingLeft: 12, paddingRight: 28 },
   pivotMdCol:    { width: 60 },
   pivotTotalCol: { width: 60 },
   pivotPrizeCol: { width: 78 },

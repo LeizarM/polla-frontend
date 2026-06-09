@@ -317,7 +317,7 @@ export default function BetLogScreen() {
       const extra = user?.id && uid === user.id ? 5 : 0; // sufijo " · TÚ"
       return Math.max(m, String(b?.full_name ?? '-').length + extra);
     }, 0);
-    return Math.round(Math.min(300, Math.max(150, 39 + longest * 7.2 + 6)));
+    return Math.round(Math.min(320, Math.max(150, 51 + longest * 7.2 + 6)));
   }, [sortedBets, user?.id]);
 
   // Leaders = users tied for the top correct count (only meaningful if > 0)
@@ -1738,7 +1738,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
     paddingVertical: 8,
-    paddingRight: 10,
+    paddingRight: 22,
     borderRightWidth: StyleSheet.hairlineWidth,
   },
   pivotMatchCell: {
