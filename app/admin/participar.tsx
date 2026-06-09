@@ -373,15 +373,21 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
         {/* Podium visual */}
         {hasBet ? (
-          <View style={cardStyles.podiumRow}>
-            {POSITIONS.map((pos) => {
+          <View style={[cardStyles.podiumRow, { alignItems: 'flex-end' }]}>
+            {POSITIONS.map((pos, idx) => {
               const team = getTeam(myBet?.[pos.key]);
+              const h = [124, 106, 92, 82][idx];
+              const first = idx === 0;
               return (
-                <View key={pos.key} style={[cardStyles.podiumSlot, { borderColor: pos.color + '60' }]}>
-                  <Text style={cardStyles.podiumEmoji}>{pos.emoji}</Text>
+                <View key={pos.key} style={[
+                  cardStyles.podiumSlot,
+                  { height: h, justifyContent: 'flex-end', gap: 3, borderColor: pos.color + '80', backgroundColor: pos.color + '1A' },
+                  first && { shadowColor: pos.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 12, elevation: 10 },
+                ]}>
+                  <Text style={{ fontSize: first ? 22 : 16 }}>{pos.emoji}</Text>
                   {team ? (
                     <>
-                      <TeamFlag team={team} size={28} />
+                      <TeamFlag team={team} size={first ? 30 : 24} />
                       <Text style={[cardStyles.podiumTeamName, { color: pos.color }]} numberOfLines={1}>
                         {team?.name}
                       </Text>
@@ -396,14 +402,23 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         ) : (
           /* Empty podium slots — TOCABLE para apostar directo */
           <Pressable onPress={onBet}>
-            <View style={cardStyles.podiumRow}>
-              {POSITIONS.map((pos) => (
-                <View key={pos.key} style={[cardStyles.podiumSlot, cardStyles.podiumSlotEmpty]}>
-                  <Text style={cardStyles.podiumEmoji}>{pos.emoji}</Text>
-                  <Ionicons name="help-circle-outline" size={22} color="rgba(255,255,255,0.3)" />
-                  <Text style={cardStyles.podiumSlotLabel}>{pos.short}</Text>
-                </View>
-              ))}
+            <View style={[cardStyles.podiumRow, { alignItems: 'flex-end' }]}>
+              {POSITIONS.map((pos, idx) => {
+                const h = [124, 106, 92, 82][idx];
+                const first = idx === 0;
+                return (
+                  <View key={pos.key} style={[
+                    cardStyles.podiumSlot, cardStyles.podiumSlotEmpty,
+                    { height: h, justifyContent: 'flex-end', gap: 3, borderColor: pos.color + '66', backgroundColor: pos.color + '14' },
+                    first && { shadowColor: pos.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 12, elevation: 8 },
+                  ]}>
+                    <Text style={{ fontSize: first ? 24 : 18 }}>{pos.emoji}</Text>
+                    <Ionicons name="help-circle-outline" size={first ? 24 : 18} color="rgba(255,255,255,0.45)" />
+                    <Text style={[cardStyles.podiumSlotLabel, { color: pos.color, fontSize: first ? 12 : 10 }]}>{pos.short}</Text>
+                    <Text style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontFamily: 'Poppins_600SemiBold' }}>{pos.pts}</Text>
+                  </View>
+                );
+              })}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
               <Ionicons name="hand-left-outline" size={12} color="rgba(255,255,255,0.55)" />

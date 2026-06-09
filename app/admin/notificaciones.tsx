@@ -482,18 +482,18 @@ function ScheduleFormModal({ theme, editing, onClose, onSaved }: any) {
         {/* ── Preview ───────────────────────────────────────── */}
         <View style={[modalStyles.preview, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
           <Text style={[modalStyles.previewLabel, { color: theme.colors.textMuted }]}>VISTA PREVIA</Text>
-          <View style={modalStyles.previewBubble}>
+          <View style={[modalStyles.previewBubble, { backgroundColor: theme.colors.inputBg }]}>
             <View style={modalStyles.previewIcon}>
               <Text style={{ fontSize: 16 }}>⚽</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={modalStyles.previewTitle} numberOfLines={1}>{title || 'Título…'}</Text>
-              <Text style={modalStyles.previewBody} numberOfLines={3}>
+              <Text style={[modalStyles.previewTitle, { color: theme.colors.textPrimary }]} numberOfLines={1}>{title || 'Título…'}</Text>
+              <Text style={[modalStyles.previewBody, { color: theme.colors.textSecondary }]} numberOfLines={3}>
                 {body
                   ? body.replace(/\{team_a\}/g, 'Brasil').replace(/\{team_b\}/g, 'Argentina').replace(/\{minutes\}/g, offset).replace(/\{matchday\}/g, 'J1')
                   : 'Mensaje…'}
               </Text>
-              <Text style={modalStyles.previewMeta}>Mundial 2026 · ahora</Text>
+              <Text style={[modalStyles.previewMeta, { color: theme.colors.textMuted }]}>Mundial 2026 · ahora</Text>
             </View>
           </View>
         </View>
