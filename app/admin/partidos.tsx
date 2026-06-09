@@ -55,6 +55,7 @@ export default function PartidosScreen() {
   const { showToast } = useToast();
   const queryClient   = useQueryClient();
   const [filter,          setFilter]          = useState<FilterType>('all');
+  const [sortOrder,       setSortOrder]       = useState<'desc' | 'asc'>('desc');
   const [editingMatchId,  setEditingMatchId]  = useState<string | null>(null);
   const [scoreA,          setScoreA]          = useState('');
   const [scoreB,          setScoreB]          = useState('');
@@ -115,8 +116,10 @@ export default function PartidosScreen() {
       if ((m?.match_date ?? '') < grp.minDate) grp.minDate = m.match_date ?? '';
       if ((m?.match_date ?? '') > grp.maxDate) grp.maxDate = m.match_date ?? '';
     }
-    return [...map.values()].sort((a, b) => b.maxDate.localeCompare(a.maxDate));
-  }, [filtered, selectedMatchdayId]);
+    return [...map.values()].sort((a, b) =>
+      sortOrder === 'desc' ? b.maxDate.localeCompare(a.maxDate) : a.maxDate.localeCompare(b.maxDate),
+    );
+  }, [filtered, selectedMatchdayId, sortOrder]);
 
   const scoreMutation = useMutation({
     mutationFn: async ({ matchId, sa, sb }: { matchId: string; sa: number; sb: number }) => {
@@ -386,6 +389,16 @@ export default function PartidosScreen() {
             </Pressable>
           );
         })}
+        {/* Orden de jornadas — toca para alternar reciente ↔ antiguo */}
+        <Pressable
+          style={[styles.filterChip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primaryLight, marginLeft: 'auto' }]}
+          onPress={() => setSortOrder((s) => (s === 'desc' ? 'asc' : 'desc'))}
+        >
+          <Ionicons name={sortOrder === 'desc' ? 'arrow-down' : 'arrow-up'} size={13} color={theme.colors.primaryLight} />
+          <Text style={[styles.filterText, { color: theme.colors.primaryLight, fontFamily: 'Poppins_700Bold' }]}>
+            {sortOrder === 'desc' ? 'Nuevas' : 'Viejas'}
+          </Text>
+        </Pressable>
       </Animated.View>
 
       {/* Jornada dropdown */}
