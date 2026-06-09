@@ -35,6 +35,11 @@ export function useAppSettings() {
     // que cualquier cambio del admin se vea inmediato en otras pestañas.
     staleTime: 0,
     refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    // Polling ligero: el cambio del admin (mostrar/ocultar Polla Final) se
+    // refleja en TODOS los dispositivos (web y apk) en ~1 min, sin reiniciar la
+    // app. El endpoint es diminuto. Esto hace que el toggle sea realmente dinámico.
+    refetchInterval: 60_000,
   });
 }
 

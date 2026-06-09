@@ -16,6 +16,7 @@ import { DesktopSidebar, TabConfig } from './DesktopSidebar';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuthStore } from '../../store/authStore';
+import { usePollaFinalEnabled } from '../../hooks/useAppSettings';
 
 const ADMIN_TABS: TabConfig[] = [
   { name: 'index',      path: '/admin',            title: 'Dashboard',   ionicon: 'stats-chart-outline', ioniconActive: 'stats-chart' },
@@ -23,8 +24,10 @@ const ADMIN_TABS: TabConfig[] = [
   { name: 'participar', path: '/admin/participar', title: 'Apostar',     ionicon: 'ticket-outline',      ioniconActive: 'ticket' },
   { name: 'partidos',   path: '/admin/partidos',   title: 'Resultados',  ionicon: 'create-outline',      ioniconActive: 'create' },
   { name: 'polla',      path: '/admin/polla',      title: 'Polla Final', ionicon: 'star-outline',        ioniconActive: 'star' },
-  { name: 'usuarios',   path: '/admin/usuarios',   title: 'Usuarios',    ionicon: 'people-outline',      ioniconActive: 'people' },
-  { name: 'perfil',     path: '/admin/perfil',     title: 'Perfil',      ionicon: 'person-outline',      ioniconActive: 'person' },
+  { name: 'usuarios',       path: '/admin/usuarios',       title: 'Usuarios',    ionicon: 'people-outline',           ioniconActive: 'people' },
+  { name: 'notificaciones', path: '/admin/notificaciones', title: 'Avisos',      ionicon: 'notifications-outline',     ioniconActive: 'notifications' },
+  { name: 'auditoria',      path: '/admin/auditoria',      title: 'Auditoría',   ionicon: 'shield-checkmark-outline', ioniconActive: 'shield-checkmark' },
+  { name: 'perfil',         path: '/admin/perfil',         title: 'Perfil',      ionicon: 'person-outline',           ioniconActive: 'person' },
 ];
 
 const USER_TABS: TabConfig[] = [
@@ -42,7 +45,14 @@ export function AppShell({ children }: AppShellProps) {
   const { isDesktop } = useBreakpoint();
   const { theme }     = useTheme();
   const { user, isAdmin } = useAuthStore();
-  const tabs = user && isAdmin() ? ADMIN_TABS : USER_TABS;
+  const { enabled: pollaEnabled } = usePollaFinalEnabled();
+  const isAdminUser = !!user && isAdmin();
+  // Usuario: ocultar "Polla Final" si está deshabilitada (igual que el tab bar),
+  // así el sidebar de escritorio en rutas profundas (torneo, etc.) tampoco la
+  // muestra hasta que el admin la habilite. Dinámico (el hook re-fetchea).
+  const tabs = isAdminUser
+    ? ADMIN_TABS
+    : (pollaEnabled ? USER_TABS : USER_TABS.filter((t) => t.name !== 'polla'));
 
   return (
     <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column', backgroundColor: theme.colors.bg }}>
