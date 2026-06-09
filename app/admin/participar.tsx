@@ -264,6 +264,20 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
   const getTeam = (id?: string) => (teams ?? []).find((tt: any) => tt?.id === id);
 
+  // Reporte de la Polla Final → detecta ganador(es) del premio gordo cuando ya
+  // se resolvió. Solo se usa acá (panel admin), así que el cartel es admin-only.
+  const { data: pollaReport } = useQuery({
+    queryKey: ['polla-report-card', t?.id],
+    queryFn: async () => {
+      try { const res = await api.get(`/api/final-bets/tournament/${t?.id}/report`); return res?.data ?? null; }
+      catch { return null; }
+    },
+    enabled: !!t?.id,
+    staleTime: 30000,
+  });
+  const winners = ((pollaReport?.bets ?? []) as any[]).filter((b) => b?.status === 'won');
+  const isResolved = winners.length > 0;
+
   // ── Prize math: jornadas × inscritos × bet_final ─────────────────────────────
   const jornadasCount    = Number(t?._count?.matchdays    ?? t?.matchdays?.length ?? 0);
   // Solo cuentan los APROBADOS (no pendientes/rechazados) para el pozo
@@ -305,8 +319,35 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           )}
         </View>
 
+        {/* ─── Cartel GANADOR del premio gordo (cuando ya se resolvió) ──── */}
+        {isResolved && (
+          <View style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: '#FFD700' }}>
+            <LinearGradient colors={['rgba(255,215,0,0.18)', 'rgba(255,165,0,0.08)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Text style={{ fontSize: 16 }}>🏆</Text>
+                <Text style={{ color: '#FFD700', fontFamily: 'Poppins_800ExtraBold', fontSize: 12, letterSpacing: 0.5 }}>
+                  GANADOR{winners.length > 1 ? 'ES' : ''} DEL PREMIO GORDO
+                </Text>
+              </View>
+              {winners.map((w, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 3 }}>
+                  <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 14, flex: 1 }} numberOfLines={1}>
+                    {w?.full_name ?? 'Participante'}
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontFamily: 'Poppins_600SemiBold', fontSize: 12, marginHorizontal: 8 }}>
+                    {w?.total_points ?? 0} pts
+                  </Text>
+                  <Text style={{ color: '#34D399', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
+                    {currency} {Number(w?.prize_won ?? 0).toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+            </LinearGradient>
+          </View>
+        )}
+
         {/* ─── BIG PRIZE display with animated pulse ───────────────────── */}
-        <Animated.View style={[cardStyles.prizeBox, prizeAnimStyle]}>
+        <Animated.View style={[cardStyles.prizeBox, prizeAnimStyle, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 18, elevation: 14 }]}>
           <LinearGradient
             colors={['#FFD700', '#FFA500', '#D4A017']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -353,16 +394,24 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
             })}
           </View>
         ) : (
-          /* Empty podium slots */
-          <View style={cardStyles.podiumRow}>
-            {POSITIONS.map((pos) => (
-              <View key={pos.key} style={[cardStyles.podiumSlot, cardStyles.podiumSlotEmpty]}>
-                <Text style={cardStyles.podiumEmoji}>{pos.emoji}</Text>
-                <Ionicons name="help-circle-outline" size={22} color="rgba(255,255,255,0.3)" />
-                <Text style={cardStyles.podiumSlotLabel}>{pos.short}</Text>
-              </View>
-            ))}
-          </View>
+          /* Empty podium slots — TOCABLE para apostar directo */
+          <Pressable onPress={onBet}>
+            <View style={cardStyles.podiumRow}>
+              {POSITIONS.map((pos) => (
+                <View key={pos.key} style={[cardStyles.podiumSlot, cardStyles.podiumSlotEmpty]}>
+                  <Text style={cardStyles.podiumEmoji}>{pos.emoji}</Text>
+                  <Ionicons name="help-circle-outline" size={22} color="rgba(255,255,255,0.3)" />
+                  <Text style={cardStyles.podiumSlotLabel}>{pos.short}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
+              <Ionicons name="hand-left-outline" size={12} color="rgba(255,255,255,0.55)" />
+              <Text style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'Poppins_500Medium', fontSize: 11 }}>
+                Toca para elegir tu podio
+              </Text>
+            </View>
+          </Pressable>
         )}
       </LinearGradient>
 
