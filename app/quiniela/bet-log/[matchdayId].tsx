@@ -305,6 +305,21 @@ export default function BetLogScreen() {
     );
   }, [sortedBets, userSearch]);
 
+  // ── Autosize de la columna de usuario en la matriz ───────────────────────
+  // Era fija (150px) -> los nombres largos se cortaban. Se ajusta al nombre más
+  // largo de la lista (incluye sufijo " · TÚ"). pivotUserCell tiene 39px fijos
+  // (posCircle 22 + gap 7 + paddingRight 10); el nombre es 12px Poppins SemiBold
+  // ≈ 7.2px/char. Clamp 150–300px. Basado en sortedBets (lista completa) para
+  // que la columna NO salte de ancho al filtrar por búsqueda.
+  const userColW = useMemo(() => {
+    const longest = sortedBets.reduce((m: number, b: any) => {
+      const uid   = b?.user_id ?? b?.id;
+      const extra = user?.id && uid === user.id ? 5 : 0; // sufijo " · TÚ"
+      return Math.max(m, String(b?.full_name ?? '-').length + extra);
+    }, 0);
+    return Math.round(Math.min(300, Math.max(150, 39 + longest * 7.2 + 6)));
+  }, [sortedBets, user?.id]);
+
   // Leaders = users tied for the top correct count (only meaningful if > 0)
   const topCorrect = sortedBets[0]?.totalCorrect ?? 0;
   const leaders    = topCorrect > 0
@@ -1017,7 +1032,7 @@ export default function BetLogScreen() {
                 <View>
                   {/* Column headers: one cell per match */}
                   <View style={styles.pivotHeaderRow}>
-                    <View style={styles.pivotUserCell} />
+                    <View style={[styles.pivotUserCell, { width: userColW }]} />
                     {(matchday?.matches ?? []).map((match: any, mi: number) => {
                       const scoreStr = match?.score_a != null ? `${match.score_a}-${match.score_b}` : null;
                       const resColor = PICK_LABELS_LOCAL.includes(match?.result)   ? '#3B82F6'
@@ -1051,7 +1066,7 @@ export default function BetLogScreen() {
                         }]}
                       >
                         {/* User info cell */}
-                        <View style={[styles.pivotUserCell, { borderRightColor: theme.colors.border }]}>
+                        <View style={[styles.pivotUserCell, { width: userColW, borderRightColor: theme.colors.border }]}>
                           <View style={[styles.pivotPosCircle, { backgroundColor: posColor }]}>
                             <Text style={[styles.pivotPosText, { color: '#fff' }]}>{idx + 1}</Text>
                           </View>
