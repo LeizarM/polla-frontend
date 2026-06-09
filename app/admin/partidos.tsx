@@ -391,10 +391,10 @@ export default function PartidosScreen() {
         })}
         {/* Orden de jornadas — toca para alternar reciente ↔ antiguo */}
         <Pressable
-          style={[styles.filterChip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primaryLight, marginLeft: 'auto' }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.primaryLight + '22', borderColor: theme.colors.primaryLight }]}
           onPress={() => setSortOrder((s) => (s === 'desc' ? 'asc' : 'desc'))}
         >
-          <Ionicons name={sortOrder === 'desc' ? 'arrow-down' : 'arrow-up'} size={13} color={theme.colors.primaryLight} />
+          <Ionicons name={sortOrder === 'desc' ? 'arrow-down' : 'arrow-up'} size={14} color={theme.colors.primaryLight} />
           <Text style={[styles.filterText, { color: theme.colors.primaryLight, fontFamily: 'Poppins_700Bold' }]}>
             {sortOrder === 'desc' ? 'Nuevas' : 'Viejas'}
           </Text>
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
   },
   infoText: { flex: 1, fontSize: 12, fontFamily: 'Poppins_400Regular' },
 
-  filterRow: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 8, gap: 8 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, gap: 8 },
   filterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 14, paddingVertical: 8,

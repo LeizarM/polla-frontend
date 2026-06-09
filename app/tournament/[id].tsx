@@ -694,6 +694,7 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDate, setNewDate] = useState<Date | null>(null);
+  const [mdSortOrder, setMdSortOrder] = useState<'desc' | 'asc'>('desc');
   const queryClient = useQueryClient();
 
   const { data: matchdays, isLoading } = useQuery({
@@ -722,6 +723,17 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
   // Expected pool if all inscritos bet (what the user asked for)
   const expectedPool = participantCount * betPerMatchday;
 
+  // Jornadas ordenadas por fecha según el toggle (desc = nuevas primero).
+  const sortedMatchdays = useMemo(() => {
+    const list = [...(matchdays ?? [])];
+    list.sort((a: any, b: any) =>
+      mdSortOrder === 'desc'
+        ? (b?.date ?? '').localeCompare(a?.date ?? '')
+        : (a?.date ?? '').localeCompare(b?.date ?? ''),
+    );
+    return list;
+  }, [matchdays, mdSortOrder]);
+
   const handleCreate = async () => {
     if (!newName?.trim() || !newDate) {
       showToast('error', 'Nombre y fecha son requeridos');
@@ -744,7 +756,20 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
     <View>
       <View style={tabStyles.sectionHeader}>
         <Text style={tabStyles.sectionTitle}>Jornadas</Text>
-        <Button title="+ Jornada" variant="ghost" size="sm" onPress={() => setShowCreate(true)} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {(matchdays?.length ?? 0) > 1 && (
+            <Pressable
+              onPress={() => setMdSortOrder((s) => (s === 'desc' ? 'asc' : 'desc'))}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.primaryLight, backgroundColor: theme.colors.primaryLight + '22' }}
+            >
+              <Ionicons name={mdSortOrder === 'desc' ? 'arrow-down' : 'arrow-up'} size={13} color={theme.colors.primaryLight} />
+              <Text style={{ color: theme.colors.primaryLight, fontFamily: 'Poppins_700Bold', fontSize: 12 }}>
+                {mdSortOrder === 'desc' ? 'Nuevas' : 'Viejas'}
+              </Text>
+            </Pressable>
+          )}
+          <Button title="+ Jornada" variant="ghost" size="sm" onPress={() => setShowCreate(true)} />
+        </View>
       </View>
 
       {isLoading ? (
@@ -752,7 +777,7 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
       ) : (matchdays?.length ?? 0) === 0 ? (
         <EmptyState icon="calendar-outline" title="No hay jornadas" description="Crea la primera jornada del torneo" />
       ) : (
-        matchdays?.map?.((md: any) => {
+        sortedMatchdays.map((md: any) => {
           // Expected pozo = participants × bet_per_matchday (full potential pool).
           // Fall back to backend's `total_pool` if no tournament data yet.
           const pozo = expectedPool > 0
