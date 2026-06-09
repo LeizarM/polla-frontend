@@ -1217,7 +1217,7 @@ function makeMatchStyles(t: typeof staticTheme) {
     },
     scoreDash: { color: t.colors.textMuted, fontSize: 18, fontFamily: 'Poppins_700Bold' },
     actions: {
-      flexDirection: 'row', justifyContent: 'center', gap: 8,
+      flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8,
       marginTop: 8, borderTopWidth: 1, borderTopColor: t.colors.border, paddingTop: 8,
     },
     timeEditRow: {

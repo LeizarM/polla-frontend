@@ -6,7 +6,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, useWindowDimensions,
-  Pressable, RefreshControl,
+  Pressable, RefreshControl, Platform,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,6 +32,23 @@ import { formatMoney } from '../../../utils/currency';
 // fractional (Bs 7.50). Keeps every screen consistent.
 function formatCurrency(amount: number, currency = 'Bs'): string {
   return formatMoney(amount, currency);
+}
+
+// Scroll 2D para la tabla acumulada (N participantes × M jornadas).
+// WEB: un solo contenedor con overflow nativo → scrollea horizontal Y vertical
+//      a la vez (un ScrollView de un solo eje recortaba el otro → el bug del
+//      scroll horizontal que faltaba).
+// MÓVIL: ScrollView horizontal; el scroll vertical lo maneja el ScrollView de
+//        la pantalla que envuelve todo el pivot.
+function Pivot2DScroll({ maxHeight, children }: { maxHeight: number; children: React.ReactNode }) {
+  if (Platform.OS === 'web') {
+    return <View style={{ maxHeight, overflow: 'scroll' as any }}>{children}</View>;
+  }
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled bounces={false}>
+      {children}
+    </ScrollView>
+  );
 }
 
 interface RankingEntry {
@@ -779,15 +796,8 @@ export default function RankingScreen() {
           </Pressable>
         </View>
 
-        {/* Horizontally scrollable table.
-            Vertical scroll is handled by the outer page-level ScrollView,
-            so this combination supports N participants × M jornadas. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          nestedScrollEnabled
-          bounces={false}
-        >
+        {/* Tabla N participantes × M jornadas con scroll 2D (ver Pivot2DScroll). */}
+        <Pivot2DScroll maxHeight={pivotRowsMaxH}>
           <View>
             {/* Header row */}
             <View style={[styles.pivotHeader, { backgroundColor: theme.colors.primary }]}>
@@ -808,8 +818,7 @@ export default function RankingScreen() {
               <Text style={[styles.pivotHCell, styles.pivotPrizeCol, { color: '#FFD700' }]}>Ganado{'\n'}<Text style={styles.pivotHSubCellInline}>{cur}</Text></Text>
             </View>
 
-            {/* Body rows — scroll vertical propio (acotado) para app Y web */}
-            <ScrollView style={{ maxHeight: pivotRowsMaxH }} nestedScrollEnabled showsVerticalScrollIndicator={true}>
+            {/* Body rows */}
             {rows.map((u: any, i: number) => {
               const isMe = u.uid === user?.id;
               const pos  = i + 1;
@@ -921,9 +930,8 @@ export default function RankingScreen() {
                 </Animated.View>
               );
             })}
-            </ScrollView>
           </View>
-        </ScrollView>
+        </Pivot2DScroll>
 
         {/* Summary footer */}
         <View style={[styles.pivotFooter, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>

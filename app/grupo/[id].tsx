@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, Redirect } from 'expo-router';
 import { safeGoBack } from '../../utils/navigation';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -42,7 +42,12 @@ function formatCurrency(amount: number): string {
 
 const POSITION_LABELS = ['1°', '2°', '3°', '4°'];
 
+// Grupos DESHABILITADO (no se usa). Redirige al inicio.
 export default function GroupDetailScreen() {
+  return <Redirect href="/user" />;
+}
+
+function GroupDetailScreenInner() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
   const { user, refreshUser } = useAuthStore();
   const { showToast } = useToast();

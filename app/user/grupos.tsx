@@ -11,7 +11,7 @@ import { SafeAreaView }   from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons }       from '@expo/vector-icons';
 import { useQuery }       from '@tanstack/react-query';
-import { router }         from 'expo-router';
+import { router, Redirect } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Badge }      from '../../components/ui/Badge';
@@ -114,7 +114,14 @@ function GroupCard({
   );
 }
 
+// Grupos DESHABILITADO (no se usa). Redirige al inicio para que nadie entre por
+// error (ni por URL directa en web). Para reactivar: borra este guard y renombra
+// GruposScreenInner → GruposScreen.
 export default function GruposScreen() {
+  return <Redirect href="/user" />;
+}
+
+function GruposScreenInner() {
   const [filter, setFilter]         = useState<FilterType>('all');
   const { theme }                   = useTheme();
   const [refreshing, setRefreshing] = useState(false);
