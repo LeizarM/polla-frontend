@@ -80,9 +80,10 @@ function UserRow({
             @{user?.username}
           </Text>
           <View style={styles.userMeta}>
-            <Ionicons name="wallet-outline" size={11} color={theme.colors.textMuted} />
-            <Text style={[styles.userBalance, { color: theme.colors.textMuted }]}>
-              {formatCurrency(Number(user?.balance ?? 0))}
+            {/* Total GANADO en jornadas (suma de prize_won). Verde si ganó algo. */}
+            <Ionicons name="trophy-outline" size={11} color={Number(user?.total_won ?? 0) > 0 ? '#10B981' : theme.colors.textMuted} />
+            <Text style={[styles.userBalance, { color: Number(user?.total_won ?? 0) > 0 ? '#10B981' : theme.colors.textMuted }]}>
+              {formatCurrency(Number(user?.total_won ?? 0))}
             </Text>
             {user?.role === 'admin' && (
               <>
