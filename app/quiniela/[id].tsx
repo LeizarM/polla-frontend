@@ -258,7 +258,11 @@ export default function MatchdayDetailScreen() {
       if (!isEdit) refreshUser();
       setShowConfirm(false);
       if (ticket?.id) {
-        router.push(`/quiniela/ticket/${ticket.id}` as any);
+        // replace (NO push): así "atrás" desde el boleto vuelve a la lista / boleto
+        // anterior y NO re-entra a la pantalla de apuesta a medio llenar (que dejaba
+        // un stack confuso y caía en "boleto no encontrado"). Para volver a editar
+        // está el botón de editar dentro del propio boleto.
+        router.replace(`/quiniela/ticket/${ticket.id}` as any);
       }
     },
     onError: (error: any) => {

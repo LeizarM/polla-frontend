@@ -38,7 +38,7 @@ export default function TicketDetailScreen() {
   const { theme }             = useTheme();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const { data: ticket, isLoading, refetch } = useQuery({
+  const { data: ticket, isLoading, error, refetch } = useQuery({
     queryKey: ['ticket-detail', id],
     queryFn: async () => {
       if (!id) return null;
@@ -47,6 +47,9 @@ export default function TicketDetailScreen() {
     },
     enabled: !!id,
     refetchInterval: 30000,
+    // No reintentar un 404 real (boleto inexistente), pero SÍ reintentar fallas
+    // transitorias (red/429). Antes cualquier error mostraba "Boleto no encontrado".
+    retry: (count, err: any) => err?.response?.status !== 404 && count < 3,
   });
 
   const onRefresh = React.useCallback(async () => {
@@ -106,6 +109,11 @@ export default function TicketDetailScreen() {
   }
 
   if (!ticket) {
+    // Distinguir 404 real (boleto borrado) de una falla transitoria (red/429).
+    // Antes CUALQUIER error mostraba "Boleto no encontrado" — típico al volver
+    // atrás justo después de apostar, cuando la app refetchea todo y una request
+    // puede fallar. Ahora ofrecemos Reintentar / Volver (no es callejón sin salida).
+    const isNotFound = (error as any)?.response?.status === 404;
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]} edges={['top']}>
         <LinearGradient
@@ -117,9 +125,40 @@ export default function TicketDetailScreen() {
             <Pressable onPress={() => safeGoBack('/user')} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.85)" />
             </Pressable>
-            <Text style={styles.headerTitle}>Boleto no encontrado</Text>
+            <Text style={styles.headerTitle}>{isNotFound ? 'Boleto no encontrado' : 'No se pudo cargar'}</Text>
           </View>
         </LinearGradient>
+
+        <View style={styles.notFoundBody}>
+          <Ionicons
+            name={isNotFound ? 'receipt-outline' : 'cloud-offline-outline'}
+            size={52}
+            color={theme.colors.textMuted}
+          />
+          <Text style={[styles.notFoundText, { color: theme.colors.textSecondary }]}>
+            {isNotFound
+              ? 'No encontramos este boleto. Puede que haya sido eliminado.'
+              : 'No pudimos cargar tu boleto. Revisá tu conexión e intentá de nuevo.'}
+          </Text>
+          <View style={styles.notFoundActions}>
+            {!isNotFound && (
+              <Pressable
+                onPress={() => refetch()}
+                style={[styles.notFoundBtn, { backgroundColor: theme.colors.primary }]}
+              >
+                <Ionicons name="refresh" size={16} color="#fff" />
+                <Text style={styles.notFoundBtnText}>Reintentar</Text>
+              </Pressable>
+            )}
+            <Pressable
+              onPress={() => safeGoBack('/user')}
+              style={[styles.notFoundBtn, { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border }]}
+            >
+              <Ionicons name="arrow-back" size={16} color={theme.colors.textPrimary} />
+              <Text style={[styles.notFoundBtnText, { color: theme.colors.textPrimary }]}>Volver</Text>
+            </Pressable>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -582,5 +621,38 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Poppins_400Regular',
     marginTop: 2,
+  },
+
+  // Estado de error / boleto-no-encontrado recuperable
+  notFoundBody: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    gap: 16,
+  },
+  notFoundText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  notFoundActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  notFoundBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 12,
+  },
+  notFoundBtnText: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#fff',
   },
 });
