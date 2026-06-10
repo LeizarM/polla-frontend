@@ -242,7 +242,13 @@ export default function BetLogScreen() {
         user_id:  p?.user_id ?? p?.user?.id,
         username: p?.user?.username ?? p?.username ?? '-',
         full_name: p?.user?.full_name ?? p?.full_name ?? '-',
-      }));
+      }))
+      // Orden alfabético por nombre (igual que la matriz de arriba)
+      .sort((a: any, b: any) =>
+        String(a.full_name ?? a.username ?? '').localeCompare(
+          String(b.full_name ?? b.username ?? ''), 'es',
+        ),
+      );
   }, [participants, data?.bets]);
 
   // Enrich each bet with running stats (correct / wrong / pending) — works in
@@ -288,12 +294,16 @@ export default function BetLogScreen() {
     });
   }, [data?.bets, matchday?.matches]);
 
-  // Sort: most correct → fewest wrong → original order
+  // Orden ALFABÉTICO por nombre. Esto es un registro de apuestas (para buscar
+  // gente), no un ranking: el rendimiento se ve en la sección de "líderes" de
+  // arriba y en los ✓/✗ de cada fila. topCorrect/leaders se calculan con max
+  // aparte, así que NO dependen de este orden.
   const sortedBets = useMemo(() => {
-    return [...betsWithStats].sort((a, b) => {
-      if (b.totalCorrect !== a.totalCorrect) return b.totalCorrect - a.totalCorrect;
-      return a.wrongSoFar - b.wrongSoFar;
-    });
+    return [...betsWithStats].sort((a: any, b: any) =>
+      String(a?.full_name ?? a?.username ?? '').localeCompare(
+        String(b?.full_name ?? b?.username ?? ''), 'es',
+      ),
+    );
   }, [betsWithStats]);
 
   const visibleBets = useMemo(() => {
@@ -320,8 +330,13 @@ export default function BetLogScreen() {
     return Math.round(Math.min(320, Math.max(150, 51 + longest * 7.2 + 6)));
   }, [sortedBets, user?.id]);
 
-  // Leaders = users tied for the top correct count (only meaningful if > 0)
-  const topCorrect = sortedBets[0]?.totalCorrect ?? 0;
+  // Leaders = users tied for the top correct count (only meaningful if > 0).
+  // Se calcula con MAX (no sortedBets[0]) porque la lista ahora está en orden
+  // alfabético, no por rendimiento.
+  const topCorrect = betsWithStats.reduce(
+    (m: number, b: any) => Math.max(m, Number(b?.totalCorrect ?? 0)),
+    0,
+  );
   const leaders    = topCorrect > 0
     ? sortedBets.filter((b) => b.totalCorrect === topCorrect)
     : [];
