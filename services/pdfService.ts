@@ -41,7 +41,7 @@ export const exportMatchdayReportPDF = async (data: any) => {
           <div class="stat-label">Sin apostar</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value">$${Number(data?.stats?.pool_collected ?? 0).toFixed(2)}</div>
+          <div class="stat-value">$${Number(data?.stats?.expected_pool ?? 0).toFixed(2)}</div>
           <div class="stat-label">Pozo total</div>
         </div>
       </div>

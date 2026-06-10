@@ -711,11 +711,11 @@ export default function RankingScreen() {
                   Pozo de cada jornada
                 </Text>
                 <Text style={[styles.infoStepSub, { color: theme.colors.textSecondary }]}>
-                  Solo los que apuestan aportan al pozo:{' '}
-                  <Text style={{ fontFamily: 'Poppins_700Bold', color: theme.colors.primaryLight }}>apostadores</Text>
+                  Todos los inscritos aportan al pozo:{' '}
+                  <Text style={{ fontFamily: 'Poppins_700Bold', color: theme.colors.primaryLight }}>inscritos</Text>
                   {' × '}
                   <Text style={{ fontFamily: 'Poppins_700Bold', color: theme.colors.primaryLight }}>{cur} {betPerMd}</Text>
-                  {'. Máximo posible si todos apuestan: '}
+                  {' = '}
                   <Text style={{ fontFamily: 'Poppins_700Bold', color: '#10B981' }}>
                     {cur} {(totalInscritos * betPerMd).toFixed(2)}
                   </Text>
@@ -784,7 +784,7 @@ export default function RankingScreen() {
             <Text style={[styles.viewToggleHint, { color: theme.colors.textMuted }]}>
               {cellView === 'aciertos'
                 ? 'Cada celda = partidos correctos esa jornada'
-                : `Suma los valores para verificar el total. Pozo de cada jornada = (apostadores × ${cur} ${betPerMd})`}
+                : `Suma los valores para verificar el total. Pozo de cada jornada = (inscritos × ${cur} ${betPerMd})`}
             </Text>
           </View>
           <Pressable
