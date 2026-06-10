@@ -134,12 +134,16 @@ export default function MatchdayDetailScreen() {
   const betsCount = betPerMatchday > 0 ? Math.round(currentPool / betPerMatchday) : 0;
   const currency = tournament?.currency ?? 'Bs';
 
-  // Pozo POTENCIAL (si TODOS los inscritos aprobados apuestan) y cuántos faltan.
-  // El pozo real (currentPool) sigue siendo lo efectivamente apostado — es lo que
-  // se reparte. Potencial y "No apostaron" son solo informativos / de seguimiento.
+  // POZO = inscritos aprobados × bet. TODOS los inscritos cuentan (apuesten o no):
+  // al inscribirse ya "entran" al pozo. Se reparte entre los ganadores (más
+  // aciertos). currentPool (total_pool) = lo realmente apostado hasta ahora; solo
+  // sirve para saber cuántos apostaron (betsCount). El monto a repartir es
+  // potentialPool (inscritos × bet).
   const approvedCount = (roster ?? []).filter((p: any) => p?.status === 'approved').length;
-  const potentialPool = approvedCount * betPerMatchday;
-  const notBetCount   = Math.max(0, approvedCount - betsCount);
+  const potentialPool = approvedCount * betPerMatchday;          // el pozo a repartir
+  const notBetCount   = Math.max(0, approvedCount - betsCount);  // inscritos sin apostar
+  // Pozo a mostrar; fallback al real mientras carga el roster (evita mostrar Bs 0).
+  const displayPool   = approvedCount > 0 ? potentialPool : currentPool;
 
   // The user's real ticket (amount_bet > 0)
   const existingTicket = (myTickets ?? []).find((t: any) => Number(t.amount_bet) > 0) ?? null;
@@ -388,18 +392,18 @@ export default function MatchdayDetailScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* Pool Info Bar */}
+        {/* Pool Info Bar — el pozo es inscritos × bet (lo que se reparte) */}
         <View style={styles.poolBar}>
           <View style={styles.poolItem}>
             <Ionicons name="cash-outline" size={16} color={theme.colors.success} />
-            <Text style={styles.poolLabel}>Pozo actual</Text>
-            <Text style={styles.poolValue}>{formatCurrency(currentPool, currency)}</Text>
+            <Text style={styles.poolLabel}>Pozo</Text>
+            <Text style={styles.poolValue}>{formatCurrency(displayPool, currency)}</Text>
           </View>
           <View style={styles.poolDivider} />
           <View style={styles.poolItem}>
             <Ionicons name="people-outline" size={16} color={theme.colors.gold} />
-            <Text style={styles.poolLabel}>Apuestas</Text>
-            <Text style={styles.poolValue}>{betsCount}</Text>
+            <Text style={styles.poolLabel}>Inscritos</Text>
+            <Text style={styles.poolValue}>{approvedCount || '—'}</Text>
           </View>
           <View style={styles.poolDivider} />
           <View style={styles.poolItem}>
@@ -409,14 +413,14 @@ export default function MatchdayDetailScreen() {
           </View>
         </View>
 
-        {/* 2ª fila — Pozo POTENCIAL (si todos los inscritos apuestan) + cuántos faltan.
+        {/* 2ª fila — participación: cuántos de los inscritos ya apostaron / faltan.
             Solo se muestra cuando ya cargó el roster (approvedCount > 0). */}
         {approvedCount > 0 && (
           <View style={styles.poolBar}>
             <View style={styles.poolItem}>
-              <Ionicons name="trending-up-outline" size={16} color={theme.colors.primaryLight} />
-              <Text style={styles.poolLabel}>Potencial</Text>
-              <Text style={styles.poolValue}>{formatCurrency(potentialPool, currency)}</Text>
+              <Ionicons name="checkmark-circle-outline" size={16} color={theme.colors.success} />
+              <Text style={styles.poolLabel}>Apostaron</Text>
+              <Text style={styles.poolValue}>{betsCount}</Text>
             </View>
             <View style={styles.poolDivider} />
             <View style={styles.poolItem}>
@@ -431,9 +435,8 @@ export default function MatchdayDetailScreen() {
         <View style={styles.poolHint}>
           <Ionicons name="information-circle-outline" size={13} color={theme.colors.textMuted} />
           <Text style={styles.poolHintText}>
-            El pozo es dinero REAL apostado: suma {formatCurrency(betPerMatchday, currency)} por
-            cada apuesta registrada. Empieza en {formatCurrency(0, currency)} y crece cuando los
-            inscritos hacen su apuesta.
+            El pozo es {formatCurrency(betPerMatchday, currency)} por cada inscrito — se reparte
+            entre los que más aciertan esa jornada. Quien no acierta o no apuesta, no recibe nada.
           </Text>
         </View>
 

@@ -187,18 +187,18 @@ function MatchdayCard({ matchday, onPress, fullWidth = false }: { matchday: any;
           </View>
         </View>
 
-        {/* Pozo real + potencial */}
+        {/* Pozo = inscritos × bet (lo que se reparte entre los ganadores) */}
         <View style={[styles.mdPoolBox, { borderColor: '#10B98140', backgroundColor: '#10B98112' }]}>
           <View style={styles.mdPoolRow}>
             <Ionicons name="trophy" size={15} color="#10B981" />
-            <Text style={[styles.mdPoolLabel, { color: theme.colors.textSecondary }]}>Pozo actual</Text>
+            <Text style={[styles.mdPoolLabel, { color: theme.colors.textSecondary }]}>Pozo</Text>
             <Text style={[styles.mdPoolValue, { color: '#10B981' }]}>
-              {currency} {realPool.toFixed(2)}
+              {currency} {(inscritos > 0 ? potentialPool : realPool).toFixed(2)}
             </Text>
           </View>
           <Text style={[styles.mdPoolHint, { color: theme.colors.textMuted }]}>
-            {betsPlaced} apuesta{betsPlaced === 1 ? '' : 's'} registrada{betsPlaced === 1 ? '' : 's'} · crece {currency} {betAmount} por apuesta
-            {potentialPool > 0 ? ` · hasta ${currency} ${potentialPool.toFixed(2)} si los ${inscritos} apuestan` : ''}
+            {currency} {betAmount} por inscrito · se reparte entre los que más aciertan
+            {inscritos > 0 ? ` · ${betsPlaced}/${inscritos} ya apostaron` : ''}
           </Text>
         </View>
 
