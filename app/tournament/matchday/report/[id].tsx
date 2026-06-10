@@ -67,7 +67,10 @@ export default function MatchdayReportScreen() {
 
   const matchday    = report?.matchday;
   const usersBet    = report?.users_bet ?? [];
-  const usersPending = report?.users_pending ?? [];
+  // El backend devuelve la lista de pendientes como `pending_users` (no
+  // `users_pending`). El count `pending_count` SÍ coincidía, por eso se veía
+  // "57 Faltan" en el contador pero la lista vacía ("¡Todos apostaron!").
+  const usersPending = report?.pending_users ?? [];
 
   const formatDate = (dateStr?: string) => {
     try {
