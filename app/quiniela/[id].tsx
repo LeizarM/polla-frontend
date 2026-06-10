@@ -96,6 +96,18 @@ export default function MatchdayDetailScreen() {
     enabled: !!id,
   });
 
+  // ── Inscritos aprobados (N) → pozo POTENCIAL + cuántos faltan apostar ──────
+  const tournamentId: string = matchday?.tournament_id ?? matchday?.tournament?.id ?? '';
+  const { data: roster } = useQuery({
+    queryKey: ['tournament-participants', tournamentId],
+    queryFn: async () => {
+      if (!tournamentId) return [];
+      const res = await api.get(`/api/tournament-participants/tournament/${tournamentId}/roster`);
+      return res?.data ?? [];
+    },
+    enabled: !!tournamentId,
+  });
+
   // Auto-refresh when the screen comes into focus (so scores entered elsewhere
   // are visible immediately on navigation back to this screen).
   useFocusEffect(useCallback(() => {
@@ -121,6 +133,13 @@ export default function MatchdayDetailScreen() {
   // Nº de apuestas que ya formaron el pozo (pozo / monto fijo por jornada)
   const betsCount = betPerMatchday > 0 ? Math.round(currentPool / betPerMatchday) : 0;
   const currency = tournament?.currency ?? 'Bs';
+
+  // Pozo POTENCIAL (si TODOS los inscritos aprobados apuestan) y cuántos faltan.
+  // El pozo real (currentPool) sigue siendo lo efectivamente apostado — es lo que
+  // se reparte. Potencial y "No apostaron" son solo informativos / de seguimiento.
+  const approvedCount = (roster ?? []).filter((p: any) => p?.status === 'approved').length;
+  const potentialPool = approvedCount * betPerMatchday;
+  const notBetCount   = Math.max(0, approvedCount - betsCount);
 
   // The user's real ticket (amount_bet > 0)
   const existingTicket = (myTickets ?? []).find((t: any) => Number(t.amount_bet) > 0) ?? null;
@@ -390,6 +409,24 @@ export default function MatchdayDetailScreen() {
           </View>
         </View>
 
+        {/* 2ª fila — Pozo POTENCIAL (si todos los inscritos apuestan) + cuántos faltan.
+            Solo se muestra cuando ya cargó el roster (approvedCount > 0). */}
+        {approvedCount > 0 && (
+          <View style={styles.poolBar}>
+            <View style={styles.poolItem}>
+              <Ionicons name="trending-up-outline" size={16} color={theme.colors.primaryLight} />
+              <Text style={styles.poolLabel}>Potencial</Text>
+              <Text style={styles.poolValue}>{formatCurrency(potentialPool, currency)}</Text>
+            </View>
+            <View style={styles.poolDivider} />
+            <View style={styles.poolItem}>
+              <Ionicons name="time-outline" size={16} color="#F59E0B" />
+              <Text style={styles.poolLabel}>No apostaron</Text>
+              <Text style={styles.poolValue}>{notBetCount}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Pool formula hint — clarifies how the pot grows */}
         <View style={styles.poolHint}>
           <Ionicons name="information-circle-outline" size={13} color={theme.colors.textMuted} />
@@ -514,6 +551,15 @@ export default function MatchdayDetailScreen() {
                           <View style={styles.pickedBadge}>
                             <Ionicons name="checkmark-circle" size={11} color={theme.colors.success} />
                             <Text style={styles.pickedBadgeText}>Seleccionado</Text>
+                          </View>
+                        )}
+                        {/* Sin pick: deja CLARO que este partido quedó sin predicción.
+                            Deseleccionar es válido — la apuesta es por partido individual
+                            (no hace falta elegir todos los partidos de la jornada). */}
+                        {!locked && match.status === 'open' && !myPick && (
+                          <View style={styles.noPickBadge}>
+                            <Ionicons name="alert-circle-outline" size={11} color="#F59E0B" />
+                            <Text style={styles.noPickBadgeText}>Sin predicción</Text>
                           </View>
                         )}
                       </View>
@@ -1000,6 +1046,12 @@ function makeStyles(t: typeof staticTheme) {
       paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
     },
     pickedBadgeText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: t.colors.success },
+    noPickBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 3,
+      backgroundColor: 'rgba(245,158,11,0.12)',
+      paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+    },
+    noPickBadgeText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: '#F59E0B' },
     matchTeams: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14,
     },
