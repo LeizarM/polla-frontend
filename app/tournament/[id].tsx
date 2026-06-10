@@ -944,12 +944,45 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
     },
   });
 
+  // Todos los usuarios (admin) → para mostrar los ACTIVOS que NO están inscritos
+  // y poder inscribirlos (el pozo es de TODOS los inscritos, conviene tenerlos a
+  // todos). Solo se pide si sos admin.
+  const { data: allUsers } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      try { const res = await api.get('/api/admin/users'); return res?.data ?? []; }
+      catch { return []; }
+    },
+    enabled: user?.role === 'admin',
+  });
+
+  const adminEnrollMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await api.post('/api/tournament-participants/admin/enroll', {
+        tournament_id: tournamentId, user_id: userId,
+      });
+      return res?.data;
+    },
+    onSuccess: () => {
+      showToast('success', 'Usuario inscrito');
+      queryClient.invalidateQueries({ queryKey: ['tournament-participants', tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (err: any) => showToast('error', err?.response?.data?.message ?? 'Error al inscribir'),
+  });
+
   // Orden alfabético por nombre completo (español) en todas las listas.
   const byName = (a: any, b: any) =>
     (a?.user?.full_name ?? '').localeCompare(b?.user?.full_name ?? '', 'es');
   const pending = (participants ?? []).filter((p: any) => p?.status === 'pending').sort(byName);
   const approved = (participants ?? []).filter((p: any) => p?.status === 'approved').sort(byName);
   const rejected = (participants ?? []).filter((p: any) => p?.status === 'rejected').sort(byName);
+
+  // Usuarios ACTIVOS (no bloqueados) que todavía NO están inscritos en el torneo.
+  const enrolledIds = new Set((participants ?? []).map((p: any) => p?.user?.id ?? p?.user_id));
+  const notEnrolledActive = (allUsers ?? [])
+    .filter((u: any) => u?.status === 'active' && !enrolledIds.has(u?.id))
+    .sort((a: any, b: any) => (a?.full_name ?? '').localeCompare(b?.full_name ?? '', 'es'));
 
   const renderUser = (p: any, showActions: boolean, num: number) => (
     <View key={p?.id} style={tabStyles.participantRow}>
@@ -1010,7 +1043,7 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
 
       {isLoading ? (
         [1, 2, 3].map(i => <Skeleton key={i} width="100%" height={50} style={{ marginBottom: 8 }} />)
-      ) : (participants?.length ?? 0) === 0 ? (
+      ) : ((participants?.length ?? 0) === 0 && notEnrolledActive.length === 0) ? (
         <EmptyState icon="person-add-outline" title="Sin solicitudes" description="Aún nadie ha solicitado participar" />
       ) : (
         <View>
@@ -1024,6 +1057,26 @@ function ParticipantsTab({ tournamentId }: { tournamentId: string }) {
             <View style={{ marginTop: 16 }}>
               <Text style={tabStyles.subSectionTitle}>✅ Aprobados ({approved.length})</Text>
               {approved.map((p: any, i: number) => renderUser(p, false, i + 1))}
+            </View>
+          )}
+          {notEnrolledActive.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={tabStyles.subSectionTitle}>➕ Activos sin inscribir ({notEnrolledActive.length})</Text>
+              {notEnrolledActive.map((u: any, i: number) => (
+                <View key={u?.id} style={tabStyles.participantRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={tabStyles.participantName}>{i + 1}. {u?.full_name ?? u?.username ?? '—'}</Text>
+                  </View>
+                  <Pressable
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: theme.colors.primaryLight + '22' }}
+                    disabled={adminEnrollMutation.isPending}
+                    onPress={() => adminEnrollMutation.mutate(u?.id)}
+                  >
+                    <Ionicons name="person-add" size={14} color={theme.colors.primaryLight} />
+                    <Text style={{ color: theme.colors.primaryLight, fontSize: 12, fontFamily: 'Poppins_600SemiBold' }}>Inscribir</Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
           )}
           {rejected.length > 0 && (
