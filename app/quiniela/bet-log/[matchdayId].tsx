@@ -500,7 +500,7 @@ export default function BetLogScreen() {
       </Animated.View>
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primaryLight} />
@@ -1038,7 +1038,7 @@ export default function BetLogScreen() {
             {(
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={false}
+                showsHorizontalScrollIndicator={true}
                 nestedScrollEnabled
                 bounces={false}
                 style={{ marginHorizontal: -20 }}
