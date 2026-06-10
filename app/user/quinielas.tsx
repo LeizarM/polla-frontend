@@ -25,7 +25,7 @@ type FilterType = 'all' | 'open' | 'finished';
 
 interface MatchdayItem {
   id: string; name: string; date: string; status: string;
-  total_pool: number;
+  total_pool: number; expected_pool?: number;
   tournament?: { id: string; name: string; min_bet: number | string; max_bet: number | string; currency?: string };
   matches?: any[];
 }
@@ -109,7 +109,7 @@ function MatchdayCard({
           <View style={styles.stat}>
             <Ionicons name="cash-outline" size={13} color="#10B981" />
             <Text style={[styles.statText, { color: '#10B981', fontFamily: 'Poppins_600SemiBold' }]}>
-              {formatCurrency(item?.total_pool ?? 0, currency)}
+              {formatCurrency(item?.expected_pool ?? item?.total_pool ?? 0, currency)}
             </Text>
           </View>
         </View>

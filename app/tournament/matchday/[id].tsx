@@ -89,7 +89,7 @@ export default function MatchdayManageScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle} numberOfLines={1}>{matchday?.name ?? 'Jornada'}</Text>
               <Text style={styles.headerSubtitle} numberOfLines={1}>
-                {matchday?.tournament?.name} · Pozo: ${Number(matchday?.total_pool ?? 0).toFixed(2)}
+                {matchday?.tournament?.name} · Pozo: ${Number(matchday?.expected_pool ?? matchday?.total_pool ?? 0).toFixed(2)}
               </Text>
             </View>
 
