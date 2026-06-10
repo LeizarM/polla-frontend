@@ -24,7 +24,7 @@ import { useToast } from '../../../../components/ui/Toast';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../../../constants/theme';
 import api from '../../../../services/api';
-import { exportMatchdayReportPDF } from '../../../../services/pdfService';
+import { downloadPdf } from '../../../../services/downloadPdf';
 import { formatMoney } from '../../../../utils/currency';
 
 type TabKey = 'bet' | 'pending';
@@ -54,10 +54,13 @@ export default function MatchdayReportScreen() {
   };
 
   const handleExportPDF = async () => {
-    if (!report) return;
+    if (!report || !id) return;
     setExporting(true);
     try {
-      await exportMatchdayReportPDF(report);
+      // PDF ESTILIZADO del backend (sin @usuario por privacidad, CON la lista de
+      // los que NO apostaron, y pozo = inscritos × bet). Reemplaza al generador
+      // cliente roto (services/pdfService.ts, eliminado).
+      await downloadPdf(`/api/reports/matchday/${id}/pdf`, `Reporte-${report?.matchday?.name ?? 'Jornada'}.pdf`);
     } catch {
       showToast('error', 'Error al exportar PDF');
     } finally {
