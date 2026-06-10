@@ -780,9 +780,7 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
         sortedMatchdays.map((md: any) => {
           // Expected pozo = participants × bet_per_matchday (full potential pool).
           // Fall back to backend's `total_pool` if no tournament data yet.
-          const pozo = expectedPool > 0
-            ? expectedPool
-            : Number(md?.total_pool ?? 0);
+          const pozo = Number(md?.expected_pool ?? (expectedPool > 0 ? expectedPool : md?.total_pool ?? 0));
           const parsedDate = parseBackendDate(md?.date);
           return (
             <Card key={md?.id} style={{ marginBottom: 8 }} onPress={() => router.push(`/tournament/matchday/${md?.id}` as any)}>

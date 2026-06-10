@@ -181,7 +181,7 @@ export default function AdminParticiparScreen() {
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
                           <Badge status={hasTicket ? 'approved' : 'pending'} text={hasTicket ? 'Apostado' : 'Pendiente'} />
-                          <Text style={styles.poolText}>Pozo: {formatMoney(md?.total_pool ?? 0, md?.tournament?.currency ?? 'Bs')}</Text>
+                          <Text style={styles.poolText}>Pozo: {formatMoney(md?.expected_pool ?? md?.total_pool ?? 0, md?.tournament?.currency ?? 'Bs')}</Text>
                         </View>
                       </View>
                     </Card>

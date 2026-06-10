@@ -1196,7 +1196,7 @@ export default function RankingScreen() {
         >
           <Ionicons name="cash-outline" size={14} color="#10B981" />
           <Text style={[styles.poolText, { color: theme.colors.textSecondary }]}>
-            Pozo: {formatCurrency(matchday?.total_pool ?? 0, currency)}
+            Pozo: {formatCurrency(matchday?.expected_pool ?? matchday?.total_pool ?? 0, currency)}
           </Text>
           <View style={[styles.poolDot, { backgroundColor: theme.colors.border }]} />
           <Text style={[styles.poolText, { color: theme.colors.textSecondary }]}>
