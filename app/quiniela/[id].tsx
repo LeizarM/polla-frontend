@@ -74,6 +74,15 @@ export default function MatchdayDetailScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [picksInitialized, setPicksInitialized] = useState(false);
 
+  // Reloj vivo: re-renderiza cada segundo para que los partidos se BLOQUEEN y
+  // muestren "Iniciado" SOLOS al llegar su hora, sin recargar la página. El
+  // backend igual valida el corte por partido (esto es solo UX).
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   // ── matchday ────────────────────────────────────────────────────────────────
   const { data: matchday, isLoading } = useQuery({
     queryKey: ['matchday-detail', id],
@@ -83,6 +92,8 @@ export default function MatchdayDetailScreen() {
       return res?.data ?? null;
     },
     enabled: !!id,
+    // Refresca en vivo (scores/estado del partido) sin recargar la página.
+    refetchInterval: 20000,
   });
 
   // ── my ticket for this matchday ─────────────────────────────────────────────
@@ -173,7 +184,8 @@ export default function MatchdayDetailScreen() {
   }, [ticketDetail, picksInitialized]);
 
   // ── Per-match lock status (no longer all-or-nothing) ────────────────────────
-  const now = new Date();
+  // `now` es estado vivo (late cada segundo, ver arriba) → todo lo derivado de la
+  // hora (bloqueo, badge "Iniciado", canEdit) se recalcula solo sin recargar.
   // First match that has already started — used in messaging
   const startedMatch = (() => {
     const started = matches
@@ -209,7 +221,7 @@ export default function MatchdayDetailScreen() {
       const match = matches.find((m) => m.id === matchId);
       if (match) {
         const t = new Date(match.match_date).getTime();
-        if (!isNaN(t) && t <= now.getTime()) {
+        if (!isNaN(t) && t <= Date.now()) {
           showToast('error', 'Este partido ya inició, no puedes cambiar tu predicción');
           return;
         }

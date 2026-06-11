@@ -68,7 +68,7 @@ export default function BetLogScreen() {
       } catch { return null; }
     },
     enabled: !!matchdayId,
-    refetchInterval: 30000,
+    refetchInterval: 15000, // revela picks / actualiza estado en vivo más rápido
   });
 
   // Pull matchday detail to get tournament_id and match list (with start times for
