@@ -1148,9 +1148,13 @@ export default function RankingScreen() {
                 {tab === 'matchday' ? (matchday?.name ?? 'Jornada') : (accumulated?.tournament?.name ?? matchday?.tournament?.name ?? 'Torneo')}
               </Text>
             </View>
-            <View style={styles.headerIcon}>
-              <Ionicons name="podium" size={22} color="#FFD700" />
-            </View>
+            <Pressable
+              onPress={() => router.push(`/quiniela/bet-log/${matchdayId}` as any)}
+              style={styles.headerBetLogBtn}
+            >
+              <Ionicons name="eye-outline" size={16} color="#fff" />
+              <Text style={styles.headerBetLogText}>Apuestas</Text>
+            </Pressable>
           </View>
         </LinearGradient>
       </Animated.View>
@@ -1267,6 +1271,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 22, fontFamily: 'Poppins_800ExtraBold', color: '#fff', letterSpacing: -0.4 },
   headerSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  headerBetLogBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)',
+    borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7,
+  },
+  headerBetLogText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#fff' },
   headerIcon: {
     width: 42, height: 42, borderRadius: 13,
     backgroundColor: 'rgba(0,0,0,0.22)',
