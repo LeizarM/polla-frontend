@@ -535,7 +535,9 @@ export default function BetLogScreen() {
         {/* ─── LEADERBOARD ────────────────────────────────────────────────────
             Real-time ranking by correct picks. Only shown once at least one
             match has resolved (otherwise everyone is tied at 0). */}
-        {anyMatchResolved && leaders.length > 0 && (
+        {/* Clasificación "Empate en primer lugar" FUSIONADA en la matriz de abajo:
+            los líderes ahora se resaltan en oro dentro de la matriz, sin duplicar. */}
+        {false && leaders.length > 0 && (
           <Animated.View
             entering={FadeInDown.delay(80).duration(400)}
             style={[styles.leaderBox, {
@@ -669,13 +671,7 @@ export default function BetLogScreen() {
                         </Text>
                         <TeamFlag team={m.match?.team_b} size={18} />
                       </View>
-                      {m.hasResult && (
-                        <Ionicons
-                          name={expanded ? 'chevron-up' : 'chevron-down'}
-                          size={16}
-                          color={theme.colors.textMuted}
-                        />
-                      )}
+                      {/* Sin chevron: la tarjeta ya no expande (los nombres viven en la matriz). */}
                     </View>
 
                     {/* Sub-row: status pill + leader chips + counts */}
@@ -770,7 +766,8 @@ export default function BetLogScreen() {
                   </Pressable>
 
                   {/* Expanded detail (only for resolved matches that user tapped) */}
-                  {m.hasResult && expanded && (
+                  {/* Listas "Acertaron/Fallaron" por partido FUSIONADAS en la matriz. */}
+                  {false && expanded && (
                     <View style={styles.matchSlimDetail}>
                       {/* Acertaron */}
                       <View style={styles.detailGroup}>
@@ -930,7 +927,14 @@ export default function BetLogScreen() {
               <Text style={[styles.sectionHeaderBarTitle, { color: theme.colors.textPrimary, flex: 1 }]}>
                 Participantes ({visibleBets.length}{userSearch ? ` de ${sortedBets.length}` : ''})
               </Text>
-
+              {anyMatchResolved && topCorrect > 0 && leaders.length > 0 && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFD70018', borderColor: '#FFD70055', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Ionicons name="trophy" size={12} color="#FFD700" />
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#D4A017' }}>
+                    {leaders.length} en 1.º
+                  </Text>
+                </View>
+              )}
             </View>
             {false && visibleBets.map((bet: any, idx: number) => {
               const isLeader  = anyMatchResolved && bet.totalCorrect === topCorrect && topCorrect > 0;
@@ -1129,18 +1133,23 @@ export default function BetLogScreen() {
                     const userPicksList = picksMapByUser.get(uid) ?? bet?.picks ?? [];
                     const isMe     = user?.id && uid === user.id;
                     const posColor = idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : theme.colors.primaryLight;
+                    // Líder = empatado en el MÁXIMO de aciertos. Reemplaza la sección
+                    // "Empate en primer lugar": los punteros se resaltan acá, en la matriz.
+                    const isLeader = anyMatchResolved && topCorrect > 0 && bet.totalCorrect === topCorrect;
                     return (
                       <View
                         key={uid ?? idx}
                         style={[styles.pivotRow, {
-                          backgroundColor: isMe ? theme.colors.primaryLight + '10' : idx % 2 === 0 ? theme.colors.surface : theme.colors.inputBg,
+                          backgroundColor: isLeader ? 'rgba(255,215,0,0.10)' : isMe ? theme.colors.primaryLight + '10' : idx % 2 === 0 ? theme.colors.surface : theme.colors.inputBg,
                           borderBottomColor: theme.colors.border,
                         }]}
                       >
                         {/* User info cell */}
                         <View style={[styles.pivotUserCell, { width: userColW, borderRightColor: theme.colors.border }]}>
-                          <View style={[styles.pivotPosCircle, { backgroundColor: posColor }]}>
-                            <Text style={[styles.pivotPosText, { color: '#fff' }]}>{idx + 1}</Text>
+                          <View style={[styles.pivotPosCircle, { backgroundColor: isLeader ? '#FFD700' : posColor }]}>
+                            {isLeader
+                              ? <Ionicons name="trophy" size={12} color="#7B5A00" />
+                              : <Text style={[styles.pivotPosText, { color: '#fff' }]}>{idx + 1}</Text>}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.pivotUserName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
