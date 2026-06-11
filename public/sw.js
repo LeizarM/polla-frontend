@@ -7,7 +7,8 @@
 //    3) Background Sync    → reintentar apuestas cuando vuelva la red
 //
 //  Estrategias por tipo de recurso:
-//    /api/* (GET)              → stale-while-revalidate (sirve cache si no hay red)
+//    Imagen cross-origin (avatar)→ passthrough directo a la red (NO interceptar)
+//    /api/* (GET)              → network-first (fresco; cache solo offline)
 //    /api/* (POST/PATCH/DELETE)→ network-only + Background Sync si falla offline
 //    Static (.js/.css/.png/…)  → cache-first
 //    Navegación HTML            → network-first con fallback a /offline.html
@@ -136,6 +137,14 @@ async function networkFirstHtml(req) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
+
+  // Imágenes cross-origin (ej. avatares servidos por el backend en OTRO dominio):
+  // una request de <img> es `no-cors`; si la metemos en la lógica de API-cache,
+  // fetch() devuelve una respuesta OPACA que no podemos leer y terminábamos
+  // sirviendo un 503 sintético → la foto no se veía. Que vayan DIRECTO a la red.
+  if (req.destination === 'image' && url.origin !== self.location.origin) {
+    return; // sin respondWith → el navegador la maneja normal
+  }
 
   // Solo manejamos same-origin (el backend en otro dominio sigue camino normal)
   if (url.origin !== self.location.origin && !isApiRequest(url)) return;
