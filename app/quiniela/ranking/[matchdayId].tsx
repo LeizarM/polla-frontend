@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Skeleton }   from '../../../components/ui/Skeleton';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { UserAvatar } from '../../../components/ui/UserAvatar';
 import { useAuthStore } from '../../../store/authStore';
 import { useTheme }    from '../../../contexts/ThemeContext';
 import api from '../../../services/api';
@@ -161,6 +162,7 @@ function RaceLanes({
               <RaceLane
                 key={u.uid}
                 index={i}
+                uid={u.uid}
                 username={u.full_name ?? u.username ?? '?'}
                 emoji={emojiFor(u.uid, i)}
                 pct={pct}
@@ -180,9 +182,9 @@ function RaceLanes({
 }
 
 function RaceLane({
-  index, username, emoji, pct, val, metric, currency, isMe, isLeader, theme,
+  index, uid, username, emoji, pct, val, metric, currency, isMe, isLeader, theme,
 }: {
-  index: number; username: string; emoji: string; pct: number; val: number;
+  index: number; uid: string; username: string; emoji: string; pct: number; val: number;
   metric: 'aciertos' | 'dinero'; currency: string; isMe: boolean; isLeader: boolean; theme: any;
 }) {
   // Animated horse position
@@ -228,7 +230,8 @@ function RaceLane({
         <View style={[raceStyles.trackLine, { borderTopColor: theme.colors.border }]} />
         {/* Horse */}
         <Animated.View style={[raceStyles.horse, horseStyle]}>
-          <Text style={raceStyles.horseEmoji}>{emoji}</Text>
+          {/* Foto del usuario corriendo; si no tiene, el emoji por defecto */}
+          <UserAvatar userId={uid} name={username} size={26} fallbackEmoji={emoji} />
         </Animated.View>
       </View>
 

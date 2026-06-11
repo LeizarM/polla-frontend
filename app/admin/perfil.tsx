@@ -24,6 +24,8 @@ import { semantic }       from '../../constants/semantic-colors';
 import Animated, { FadeInDown, FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import api from '../../services/api';
+import { pickAndUploadAvatar } from '../../services/avatar';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 // ─── InfoRow ──────────────────────────────────────────────────────────────────
 function InfoRow({
@@ -85,6 +87,25 @@ export default function PerfilScreen() {
       showToast('error', err?.friendlyMessage || 'Error al actualizar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Avatar: elegir + subir foto de perfil ───────────────────────────────────
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const handlePickAvatar = async () => {
+    if (avatarLoading) return;
+    setAvatarLoading(true);
+    try {
+      const r = await pickAndUploadAvatar();
+      if (r) {
+        await refreshUser();           // recarga el user (avatar_url nuevo)
+        queryClient.invalidateQueries(); // refresca avatares en ranking/etc.
+        showToast('success', 'Foto actualizada');
+      }
+    } catch (err: any) {
+      showToast('error', err?.response?.data?.message ?? err?.message ?? 'Error al subir la foto');
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
@@ -156,19 +177,31 @@ export default function PerfilScreen() {
         ]}
       >
 
-        {/* Avatar + name */}
+        {/* Avatar + name — tocá la foto para cambiarla */}
         <Animated.View entering={FadeInDown.delay(60).duration(400)} style={styles.avatarSection}>
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.primaryLight]}
-            style={styles.avatarRingOuter}
-          >
+          <Pressable onPress={handlePickAvatar} disabled={avatarLoading} style={{ position: 'relative' }}>
             <LinearGradient
-              colors={[theme.colors.surfaceElevated, theme.colors.surface]}
-              style={styles.avatarRingInner}
+              colors={[theme.colors.primary, theme.colors.primaryLight]}
+              style={styles.avatarRingOuter}
             >
-              <Text style={[styles.avatarInitials, { color: theme.colors.primaryLight }]}>{initials}</Text>
+              <LinearGradient
+                colors={[theme.colors.surfaceElevated, theme.colors.surface]}
+                style={styles.avatarRingInner}
+              >
+                <UserAvatar
+                  userId={user?.id}
+                  name={user?.full_name}
+                  size={90}
+                  version={(user as any)?.avatar_updated_at}
+                  style={{ backgroundColor: 'transparent', borderRadius: 48 }}
+                  textStyle={{ color: theme.colors.primaryLight, fontSize: 32, fontFamily: 'Poppins_800ExtraBold' }}
+                />
+              </LinearGradient>
             </LinearGradient>
-          </LinearGradient>
+            <View style={[styles.avatarCamBadge, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.bg }]}>
+              <Ionicons name={avatarLoading ? 'hourglass' : 'camera'} size={14} color="#fff" />
+            </View>
+          </Pressable>
           <Text style={[styles.avatarName, { color: theme.colors.textPrimary }]}>{user?.full_name ?? '—'}</Text>
           <Text style={[styles.avatarHandle, { color: theme.colors.textSecondary }]}>@{user?.username ?? '—'}</Text>
           <View style={[styles.roleBadge, { backgroundColor: theme.colors.primaryLight + '18', borderColor: theme.colors.primaryLight + '40' }]}>
@@ -366,6 +399,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   avatarInitials: { fontSize: 32, fontFamily: 'Poppins_800ExtraBold' },
+  avatarCamBadge: {
+    position: 'absolute', right: 2, bottom: 16,
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2,
+  },
   avatarName:     { fontSize: 20, fontFamily: 'Poppins_700Bold', letterSpacing: -0.3 },
   avatarHandle:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2 },
   roleBadge: {

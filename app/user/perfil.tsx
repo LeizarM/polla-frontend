@@ -29,6 +29,8 @@ import { queryClient }    from '../../services/queryClient';
 import { useTheme }       from '../../contexts/ThemeContext';
 import { semantic }       from '../../constants/semantic-colors';
 import api from '../../services/api';
+import { pickAndUploadAvatar } from '../../services/avatar';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 // ─── Info row ─────────────────────────────────────────────────────────────────
 
@@ -66,6 +68,23 @@ export default function PerfilScreen() {
 
   const [editing,  setEditing]  = useState(false);
   const [loading,  setLoading]  = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const handlePickAvatar = async () => {
+    if (avatarLoading) return;
+    setAvatarLoading(true);
+    try {
+      const r = await pickAndUploadAvatar();
+      if (r) {
+        await refreshUser();
+        queryClient.invalidateQueries();
+        showToast('success', 'Foto actualizada');
+      }
+    } catch (err: any) {
+      showToast('error', err?.response?.data?.message ?? err?.message ?? 'Error al subir la foto');
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
   const [formData, setFormData] = useState({
     full_name: user?.full_name ?? '',
     phone:     user?.phone     ?? '',
@@ -206,37 +225,47 @@ export default function PerfilScreen() {
 
         {/* ── Avatar section ─────────────────────────────────────────────── */}
         <Animated.View entering={FadeInDown.duration(400)} style={styles.avatarSection}>
-          {/* Glow ring */}
-          <View style={{
-            shadowColor: theme.colors.primary,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.65,
-            shadowRadius: 22,
-            elevation: 10,
-            marginBottom: 16,
-          }}>
-            <LinearGradient
-              colors={[theme.colors.primary, theme.colors.primaryLight]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ width: 90, height: 90, borderRadius: 26, padding: 2.5 }}
-            >
+          {/* Glow ring — tocá la foto para cambiarla */}
+          <Pressable onPress={handlePickAvatar} disabled={avatarLoading} style={{ position: 'relative', marginBottom: 16 }}>
+            <View style={{
+              shadowColor: theme.colors.primary,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.65,
+              shadowRadius: 22,
+              elevation: 10,
+            }}>
               <LinearGradient
-                colors={[theme.colors.surfaceElevated, theme.colors.surface]}
-                style={{
-                  flex: 1, borderRadius: 23.5,
-                  alignItems: 'center', justifyContent: 'center',
-                }}
+                colors={[theme.colors.primary, theme.colors.primaryLight]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={{ width: 90, height: 90, borderRadius: 26, padding: 2.5 }}
               >
-                <Text style={{
-                  fontSize: 30, fontWeight: '700',
-                  color: theme.colors.primaryLight,
-                  fontFamily: 'Poppins_700Bold',
-                }}>
-                  {initials}
-                </Text>
+                <LinearGradient
+                  colors={[theme.colors.surfaceElevated, theme.colors.surface]}
+                  style={{
+                    flex: 1, borderRadius: 23.5,
+                    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  }}
+                >
+                  <UserAvatar
+                    userId={user?.id}
+                    name={user?.full_name}
+                    size={85}
+                    version={(user as any)?.avatar_updated_at}
+                    style={{ backgroundColor: 'transparent', borderRadius: 22 }}
+                    textStyle={{ color: theme.colors.primaryLight, fontSize: 30, fontFamily: 'Poppins_700Bold' }}
+                  />
+                </LinearGradient>
               </LinearGradient>
-            </LinearGradient>
-          </View>
+            </View>
+            <View style={{
+              position: 'absolute', right: 0, bottom: 2,
+              width: 28, height: 28, borderRadius: 14,
+              alignItems: 'center', justifyContent: 'center', borderWidth: 2,
+              backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.bg,
+            }}>
+              <Ionicons name={avatarLoading ? 'hourglass' : 'camera'} size={14} color="#fff" />
+            </View>
+          </Pressable>
 
           <Text style={[styles.avatarName, { color: theme.colors.textPrimary }]}>
             {user?.full_name}
