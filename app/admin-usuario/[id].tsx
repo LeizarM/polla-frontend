@@ -109,7 +109,10 @@ export default function UsuarioDetailScreen() {
 
   const passwordMutation = useMutation({
     mutationFn: async () => {
-      if (!newPassword || newPassword.length < 6) throw new Error('Mínimo 6 caracteres');
+      // Regla del backend: mín 8 + al menos una letra y un número. Validamos acá
+      // para feedback inmediato (si no, el PATCH devuelve 400).
+      if (!newPassword || newPassword.length < 8) throw new Error('Mínimo 8 caracteres');
+      if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) throw new Error('Debe incluir al menos una letra y un número');
       if (newPassword !== confirmPassword)        throw new Error('Las contraseñas no coinciden');
       const res = await api.patch(`/api/admin/users/${id}/password`, { new_password: newPassword });
       return res?.data;
@@ -119,7 +122,7 @@ export default function UsuarioDetailScreen() {
       setShowPasswordModal(false);
       setNewPassword(''); setConfirmPassword(''); setPasswordError('');
     },
-    onError: (err: any) => { setPasswordError(err?.message ?? 'Error al resetear contraseña'); },
+    onError: (err: any) => { setPasswordError(err?.response?.data?.message ?? err?.friendlyMessage ?? err?.message ?? 'Error al resetear contraseña'); },
   });
 
   const handleHaptic = () => {

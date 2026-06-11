@@ -96,6 +96,10 @@ api.interceptors.response.use(
       error.friendlyMessage = serverMsg || 'No tienes permisos para esta acción';
     } else if (status === 404) {
       error.friendlyMessage = 'Recurso no encontrado';
+    } else if (status === 400) {
+      // Validación del backend (ej. reglas de contraseña) → mostrar SU mensaje,
+      // no el crudo "Request failed with status code 400".
+      error.friendlyMessage = serverMsg || 'Datos inválidos';
     } else if (status === 422) {
       error.friendlyMessage = serverMsg || 'Datos inválidos';
     } else if (status === 500) {
