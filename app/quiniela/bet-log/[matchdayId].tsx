@@ -1117,11 +1117,28 @@ export default function BetLogScreen() {
                           if (!pick || !revealed) {
                             return <View key={mi} style={[styles.pivotCell, { borderRightColor: theme.colors.border }]} />;
                           }
-                          const isCorrect = pick?.is_correct ?? computeIsCorrect(pick?.pick, match?.result);
+                          // Partido iniciado + pick revelado: mostramos POR QUIÉN apostó
+                          // (bandera del equipo elegido, o "E" de empate) y, si ya hay
+                          // resultado, el ✓/✗ al lado. Antes solo salía ✓/✗ → en un partido
+                          // en curso (sin resultado todavía) la celda quedaba vacía.
+                          const code = pick?.pick;
+                          const pickedLocal   = PICK_LABELS_LOCAL.includes(code);
+                          const pickedVisitor = PICK_LABELS_VISITOR.includes(code);
+                          const pickedDraw    = PICK_LABELS_DRAW.includes(code);
+                          const isCorrect = pick?.is_correct ?? computeIsCorrect(code, match?.result);
                           return (
                             <View key={mi} style={[styles.pivotCell, { borderRightColor: theme.colors.border }]}>
-                              {isCorrect === true  && <Ionicons name="checkmark-circle" size={22} color="#10B981" />}
-                              {isCorrect === false && <Ionicons name="close-circle"     size={22} color="#EF4444" />}
+                              <View style={styles.pivotPickWrap}>
+                                {pickedLocal   && <TeamFlag team={match?.team_a} size={20} />}
+                                {pickedVisitor && <TeamFlag team={match?.team_b} size={20} />}
+                                {pickedDraw    && (
+                                  <View style={styles.pivotDrawBadge}>
+                                    <Text style={styles.pivotDrawText}>E</Text>
+                                  </View>
+                                )}
+                                {isCorrect === true  && <Ionicons name="checkmark-circle" size={14} color="#10B981" />}
+                                {isCorrect === false && <Ionicons name="close-circle"     size={14} color="#EF4444" />}
+                              </View>
                             </View>
                           );
                         })}
@@ -1805,6 +1822,27 @@ const styles = StyleSheet.create({
     height: 48,
     borderRightWidth: StyleSheet.hairlineWidth,
     marginLeft: 4,
+  },
+  pivotPickWrap: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 3,
+  },
+  pivotDrawBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: '#F59E0B22',
+    borderWidth: 1,
+    borderColor: '#F59E0B66',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  pivotDrawText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_800ExtraBold',
+    color: '#F59E0B',
   },
   pivotCellDash: {
     fontSize: 16,
