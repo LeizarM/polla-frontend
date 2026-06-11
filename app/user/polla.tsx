@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Pressable,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
+} from 'react-native-reanimated';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -50,6 +54,23 @@ function PollaFinalScreenInner() {
   const [showBetModal, setShowBetModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<any>(null);
   const [showRules, setShowRules] = useState(false);
+
+  // ── Shimmer dorado que barre el premio gordo (mismo efecto que en admin) ─────
+  const SCREEN_W = Dimensions.get('window').width;
+  const shine = useSharedValue(0);
+  React.useEffect(() => {
+    shine.value = withRepeat(
+      withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      false,
+    );
+  }, []);
+  const shineStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: -120 + shine.value * (SCREEN_W + 120) },
+      { skewX: '-22deg' },
+    ],
+  }));
 
   const { data: tournaments, isLoading: loadingTournaments, refetch: refetchTournaments } = useQuery({
     queryKey: ['active-tournaments-polla'],
@@ -217,18 +238,26 @@ function PollaFinalScreenInner() {
                 </View>
 
                 {/* ─── Premio Gordo callout — visible to everyone ──────────── */}
-                <View style={styles.pozoGordoBox}>
+                <View style={[styles.pozoGordoBox, { shadowOpacity: 0.75, shadowRadius: 22, elevation: 16 }]}>
                   <LinearGradient
-                    colors={['#FFD700', '#FFA500', '#D4A017']}
+                    colors={['#FFE680', '#FFD700', '#FFA500', '#D4A017']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={styles.pozoGordoGradient}
                   >
-                    <Text style={styles.pozoGordoLabel}>PREMIO GORDO</Text>
+                    <Text style={styles.pozoGordoLabel}>✨  PREMIO GORDO  ✨</Text>
                     <Text style={styles.pozoGordoValue}>{cur} {grandPrize}</Text>
                     <Text style={styles.pozoGordoFormula}>
                       {jornadasCount} jornadas × {inscritosCount} inscritos × {cur} {betFinal}
                     </Text>
                   </LinearGradient>
+                  {/* Shimmer dorado que barre el premio gordo */}
+                  <Animated.View pointerEvents="none" style={[styles.pozoGordoShine, shineStyle]}>
+                    <LinearGradient
+                      colors={['transparent', 'rgba(255,255,255,0.65)', 'transparent']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={{ flex: 1 }}
+                    />
+                  </Animated.View>
                 </View>
                 <View style={styles.tieRow}>
                   <Ionicons name="information-circle-outline" size={11} color={theme.colors.textMuted} />
@@ -586,11 +615,20 @@ function makeStyles(t: typeof staticTheme) {
       letterSpacing: 1.4,
     },
     pozoGordoValue: {
-      fontSize: 30,
+      fontSize: 40,
       fontFamily: 'Poppins_800ExtraBold',
       color: '#3D2A00',
-      letterSpacing: -0.8,
+      letterSpacing: -1.2,
       marginTop: 2,
+      textShadowColor: 'rgba(255,255,255,0.5)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 1,
+    },
+    pozoGordoShine: {
+      position: 'absolute',
+      top: -12, bottom: -12,
+      left: 0,
+      width: 70,
     },
     pozoGordoFormula: {
       fontSize: 10,

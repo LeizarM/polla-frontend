@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Pressable,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   FadeInDown, FadeIn, ZoomIn,
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing,
 } from 'react-native-reanimated';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -261,6 +262,23 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
     transform: [{ scale: pulse.value }],
   }));
 
+  // ── Shimmer dorado que barre el pozo (efecto "lingote reluciente") ───────────
+  const SCREEN_W = Dimensions.get('window').width;
+  const shine = useSharedValue(0);
+  useEffect(() => {
+    shine.value = withRepeat(
+      withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      false,
+    );
+  }, []);
+  const shineStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: -120 + shine.value * (SCREEN_W + 120) },
+      { skewX: '-22deg' },
+    ],
+  }));
+
   const { data: teams } = useQuery({
     queryKey: ['teams'],
     queryFn: async () => { const res = await api.get('/api/teams'); return res?.data ?? []; },
@@ -352,13 +370,13 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         )}
 
         {/* ─── BIG PRIZE display with animated pulse ───────────────────── */}
-        <Animated.View style={[cardStyles.prizeBox, prizeAnimStyle, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 18, elevation: 14 }]}>
+        <Animated.View style={[cardStyles.prizeBox, prizeAnimStyle, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.85, shadowRadius: 26, elevation: 20 }]}>
           <LinearGradient
-            colors={['#FFD700', '#FFA500', '#D4A017']}
+            colors={['#FFE680', '#FFD700', '#FFA500', '#D4A017']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={cardStyles.prizeGradient}
           >
-            <Text style={cardStyles.prizeLabel}>POZO TOTAL</Text>
+            <Text style={cardStyles.prizeLabel}>✨  POZO TOTAL  ✨</Text>
             <Text style={cardStyles.prizeValue}>
               {currency} {grandPrize}
             </Text>
@@ -366,6 +384,14 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               {jornadasCount} jornadas × {inscritosCount} inscritos × {currency} {betFinal}
             </Text>
           </LinearGradient>
+          {/* Shimmer dorado que barre el pozo */}
+          <Animated.View pointerEvents="none" style={[cardStyles.prizeShine, shineStyle]}>
+            <LinearGradient
+              colors={['transparent', 'rgba(255,255,255,0.65)', 'transparent']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
         </Animated.View>
 
         {/* Tie-split note */}
@@ -758,20 +784,26 @@ function makeCardStyles(t: typeof staticTheme) {
       letterSpacing: 1.4,
     },
     prizeValue: {
-      fontSize: 36,
+      fontSize: 46,
       fontFamily: 'Poppins_800ExtraBold',
       color: '#3D2A00',
-      letterSpacing: -1,
+      letterSpacing: -1.5,
       marginTop: 2,
-      textShadowColor: 'rgba(255,255,255,0.4)',
+      textShadowColor: 'rgba(255,255,255,0.5)',
       textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 0,
+      textShadowRadius: 1,
     },
     prizeFormula: {
       fontSize: 11,
       fontFamily: 'Poppins_600SemiBold',
       color: '#5B3F00',
       marginTop: 4,
+    },
+    prizeShine: {
+      position: 'absolute',
+      top: -12, bottom: -12,
+      left: 0,
+      width: 70,
     },
     tieNote: {
       flexDirection: 'row',
