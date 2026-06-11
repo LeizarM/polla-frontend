@@ -84,6 +84,25 @@ async function staleWhileRevalidate(req, cacheName) {
   );
 }
 
+// network-first para API GET: SIEMPRE intenta la red primero (datos frescos),
+// y solo cae al cache si NO hay red. Antes era stale-while-revalidate, que servía
+// el cache VIEJO primero → en web mostraba datos de OTRO usuario / apuestas viejas
+// hasta recargar (el cache no varía por el token Authorization).
+async function networkFirstApi(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  try {
+    const res = await fetch(req);
+    if (res && res.status === 200) cache.put(req, res.clone());
+    return res;
+  } catch {
+    const cached = await cache.match(req);
+    return cached || new Response(
+      JSON.stringify({ error: 'offline', cached: false }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+}
+
 // cache-first: estático
 async function cacheFirst(req, cacheName) {
   const cache = await caches.open(cacheName);
@@ -127,9 +146,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Lecturas a la API → stale-while-revalidate
+  // Lecturas a la API → NETWORK-FIRST (fresco si hay red; cache solo offline).
+  // /api/auth/me NUNCA se cachea: la sesión debe ser siempre fresca y por-usuario.
+  // (Antes, con stale-while-revalidate, al cambiar de usuario el reload servía el
+  //  /api/auth/me cacheado del usuario anterior → volvía al usuario viejo. Mismo
+  //  problema con los tickets: mostraba la apuesta vieja hasta recargar.)
   if (isApiRequest(url) && req.method === 'GET') {
-    event.respondWith(staleWhileRevalidate(req, API_CACHE));
+    if (url.pathname === '/api/auth/me') {
+      event.respondWith(
+        fetch(req).catch(() => new Response(
+          JSON.stringify({ error: 'offline' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } },
+        )),
+      );
+    } else {
+      event.respondWith(networkFirstApi(req, API_CACHE));
+    }
     return;
   }
 
