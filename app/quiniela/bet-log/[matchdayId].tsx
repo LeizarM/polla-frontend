@@ -427,6 +427,11 @@ export default function BetLogScreen() {
         else                                              resultLabel = 'Empate';
       }
 
+      // Conteo de picks por opción (cuántos eligieron cada lado) — para el resumen.
+      const localCount   = userPicks.filter((u: any) => PICK_LABELS_LOCAL.includes(u.pick)).length;
+      const drawCount    = userPicks.filter((u: any) => PICK_LABELS_DRAW.includes(u.pick)).length;
+      const visitorCount = userPicks.filter((u: any) => PICK_LABELS_VISITOR.includes(u.pick)).length;
+
       return {
         match,
         hasStarted,
@@ -437,6 +442,9 @@ export default function BetLogScreen() {
         wrong,
         noPickInThisMatch,
         skipped,
+        localCount,
+        drawCount,
+        visitorCount,
       };
     });
   }, [matchday?.matches, data?.bets, nonBettors, now]);
@@ -710,6 +718,37 @@ export default function BetLogScreen() {
                         </>
                       )}
                     </View>
+
+                    {/* Distribución de picks: cuántos eligieron cada opción (solo si el partido arrancó) */}
+                    {m.hasStarted && (m.localCount + m.drawCount + m.visitorCount) > 0 && (
+                      <View style={[styles.distWrap, { borderTopColor: theme.colors.border }]}>
+                        <View style={styles.distBar}>
+                          {m.localCount   > 0 && <View style={{ flex: m.localCount,   backgroundColor: '#3B82F6' }} />}
+                          {m.drawCount    > 0 && <View style={{ flex: m.drawCount,    backgroundColor: '#F59E0B' }} />}
+                          {m.visitorCount > 0 && <View style={{ flex: m.visitorCount, backgroundColor: '#EF4444' }} />}
+                        </View>
+                        <View style={styles.distLabels}>
+                          <View style={styles.distItem}>
+                            <TeamFlag team={m.match?.team_a} size={15} />
+                            <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+                              {m.match?.team_a?.name ?? 'Local'}
+                            </Text>
+                            <Text style={[styles.distCount, { color: '#3B82F6' }]}>{m.localCount}</Text>
+                          </View>
+                          <View style={styles.distItem}>
+                            <Text style={[styles.distName, { color: theme.colors.textSecondary }]}>Empate</Text>
+                            <Text style={[styles.distCount, { color: '#F59E0B' }]}>{m.drawCount}</Text>
+                          </View>
+                          <View style={styles.distItem}>
+                            <TeamFlag team={m.match?.team_b} size={15} />
+                            <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+                              {m.match?.team_b?.name ?? 'Visitante'}
+                            </Text>
+                            <Text style={[styles.distCount, { color: '#EF4444' }]}>{m.visitorCount}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
                   </Pressable>
 
                   {/* Expanded detail (only for resolved matches that user tapped) */}
@@ -1843,6 +1882,39 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Poppins_800ExtraBold',
     color: '#F59E0B',
+  },
+  distWrap: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  distBar: {
+    flexDirection: 'row' as const,
+    height: 7,
+    borderRadius: 4,
+    overflow: 'hidden' as const,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  distLabels: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  distItem: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 4,
+  },
+  distName: {
+    fontSize: 11,
+    fontFamily: 'Poppins_500Medium',
+    maxWidth: 78,
+  },
+  distCount: {
+    fontSize: 14,
+    fontFamily: 'Poppins_800ExtraBold',
   },
   pivotCellDash: {
     fontSize: 16,
