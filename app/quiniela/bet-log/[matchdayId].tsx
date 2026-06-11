@@ -28,6 +28,9 @@ const PICK_LABELS_LOCAL    = ['L', '1'];
 const PICK_LABELS_DRAW     = ['E', 'X'];
 const PICK_LABELS_VISITOR  = ['V', '2'];
 
+// Cuántos líderes mostrar antes de colapsar la lista (puede haber decenas empatados).
+const LEADERS_PREVIEW = 5;
+
 // Compute is_correct client-side when backend didn't set it (e.g., result just entered).
 // Module-level so it's available everywhere without TDZ issues.
 function computeIsCorrect(pickCode: any, matchResult: any): boolean | null {
@@ -58,6 +61,8 @@ export default function BetLogScreen() {
   const toggleBet = (id: string) =>
     setExpandedBets((prev) => ({ ...prev, [id]: !prev[id] }));
   const [userSearch, setUserSearch] = useState('');
+  // La lista de empatados en 1er lugar puede ser enorme (decenas) → colapsable.
+  const [leadersExpanded, setLeadersExpanded] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['bet-log', matchdayId],
@@ -544,7 +549,10 @@ export default function BetLogScreen() {
               style={{ height: 2 }}
             />
             <View style={styles.leaderBody}>
-              <View style={styles.leaderHeader}>
+              <Pressable
+                onPress={() => leaders.length > LEADERS_PREVIEW && setLeadersExpanded((v) => !v)}
+                style={styles.leaderHeader}
+              >
                 <Ionicons name="trophy" size={18} color="#FFD700" />
                 <Text style={[styles.leaderHeaderTitle, { color: theme.colors.textPrimary }]}>
                   {leaders.length === 1
@@ -557,32 +565,42 @@ export default function BetLogScreen() {
                     {topCorrect} acierto{topCorrect === 1 ? '' : 's'}
                   </Text>
                 </View>
-              </View>
+                {leaders.length > LEADERS_PREVIEW && (
+                  <Ionicons
+                    name={leadersExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={18}
+                    color={theme.colors.textMuted}
+                  />
+                )}
+              </Pressable>
               <View style={styles.leaderList}>
-                {leaders.map((l: any, i: number) => (
+                {(leaders.length > LEADERS_PREVIEW && !leadersExpanded
+                  ? leaders.slice(0, LEADERS_PREVIEW)
+                  : leaders
+                ).map((l: any, i: number) => (
                   <View key={l.user_id ?? i} style={styles.leaderRow}>
-                    <Text style={styles.leaderMedal}>
-                      {leaders.length === 1 ? '🏆' : '🥇'}
+                    <Text style={styles.leaderMedal}>{leaders.length === 1 ? '🏆' : '🥇'}</Text>
+                    <Text style={[styles.leaderName, { color: theme.colors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                      {l.full_name ?? '-'}
                     </Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.leaderName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
-                        {l.full_name ?? '-'}
-                      </Text>
-                      {/* Privacidad: solo nombre — sin @usuario */}
-                    </View>
-                    {l.pendingPicks > 0 && (
-                      <Text style={[styles.leaderPending, { color: theme.colors.textMuted }]}>
-                        +{l.pendingPicks} pendiente{l.pendingPicks === 1 ? '' : 's'}
-                      </Text>
-                    )}
                   </View>
                 ))}
               </View>
-              {sortedBets.length > leaders.length && (
-                <Text style={[styles.leaderFootnote, { color: theme.colors.textMuted }]}>
-                  Ranking en vivo · se actualiza al resolverse cada partido
-                </Text>
+              {leaders.length > LEADERS_PREVIEW && (
+                <Pressable onPress={() => setLeadersExpanded((v) => !v)} style={styles.leaderToggle}>
+                  <Text style={[styles.leaderToggleText, { color: theme.colors.primaryLight }]}>
+                    {leadersExpanded ? 'Ver menos' : `Ver los ${leaders.length}`}
+                  </Text>
+                  <Ionicons
+                    name={leadersExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color={theme.colors.primaryLight}
+                  />
+                </Pressable>
               )}
+              <Text style={[styles.leaderFootnote, { color: theme.colors.textMuted }]}>
+                Ranking en vivo · se actualiza al resolverse cada partido
+              </Text>
             </View>
           </Animated.View>
         )}
@@ -1348,6 +1366,18 @@ const styles = StyleSheet.create({
   leaderPending: {
     fontSize: 10,
     fontFamily: 'Poppins_500Medium',
+  },
+  leaderToggle: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 5,
+    paddingVertical: 8,
+    marginTop: 2,
+  },
+  leaderToggleText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
   leaderFootnote: {
     fontSize: 10,
