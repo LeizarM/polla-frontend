@@ -10,7 +10,7 @@ import {
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons }       from '@expo/vector-icons';
-import { useQuery }       from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useLocalSearchParams, router } from 'expo-router';
 import { safeGoBack }     from '../../../utils/navigation';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -47,10 +47,31 @@ export default function TicketDetailScreen() {
     },
     enabled: !!id,
     refetchInterval: 30000,
+    // Al volver atrás conservamos el último boleto cargado mientras refetchea
+    // (evita el parpadeo de "No se pudo cargar" cuando el cache está caliente).
+    placeholderData: keepPreviousData,
     // No reintentar un 404 real (boleto inexistente), pero SÍ reintentar fallas
-    // transitorias (red/429). Antes cualquier error mostraba "Boleto no encontrado".
-    retry: (count, err: any) => err?.response?.status !== 404 && count < 3,
+    // transitorias (red/429/503). Antes cualquier error mostraba "Boleto no encontrado".
+    retry: (count, err: any) => err?.response?.status !== 404 && count < 4,
+    retryDelay: (count) => Math.min(800 * 2 ** count, 5000),
   });
+
+  // Auto-recuperación al volver atrás: si la carga falla por algo transitorio
+  // (no un 404 real) — típico cuando la app refetchea todo de golpe al re-enfocar,
+  // o el service worker devuelve un 503 momentáneo — reintentamos SOLOS un par de
+  // veces mostrando el skeleton, y recién ahí mostramos el cartel de error.
+  const [softRetries, setSoftRetries] = React.useState(0);
+  React.useEffect(() => { setSoftRetries(0); }, [id]);
+  const errStatus = (error as any)?.response?.status;
+  const isSelfHealing = !!error && errStatus !== 404 && !ticket && softRetries < 2;
+  React.useEffect(() => {
+    if (!isSelfHealing) return;
+    const t = setTimeout(() => {
+      setSoftRetries((n) => n + 1);
+      refetch();
+    }, 1000 + softRetries * 1500);
+    return () => clearTimeout(t);
+  }, [isSelfHealing, softRetries, refetch]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -84,8 +105,8 @@ export default function TicketDetailScreen() {
   const canEditBet = !matchdayClosed && someMatchNotStarted && !isResolved;
   const goEditBet  = () => matchday?.id && router.push(`/quiniela/${matchday.id}` as any);
 
-  // ─── Loading ───────────────────────────────────────────────────────────────
-  if (isLoading) {
+  // ─── Loading (incluye auto-reintento silencioso al volver atrás) ────────────
+  if (isLoading || isSelfHealing) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]} edges={['top']}>
         <LinearGradient
