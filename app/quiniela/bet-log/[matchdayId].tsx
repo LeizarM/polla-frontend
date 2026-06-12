@@ -1108,7 +1108,24 @@ export default function BetLogScreen() {
                 <View>
                   {/* Column headers: one cell per match */}
                   <View style={styles.pivotHeaderRow}>
-                    <View style={[styles.pivotUserCell, { width: userColW }]} />
+                    {/* Esquina = encabezado de la columna + leyenda de símbolos */}
+                    <View style={{ width: userColW, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: theme.colors.textSecondary, letterSpacing: 0.4, marginBottom: 4 }}>PARTICIPANTE</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>acertó</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Ionicons name="close-circle" size={12} color="#EF4444" />
+                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>falló</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Ionicons name="time-outline" size={12} color={theme.colors.textMuted} />
+                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>no jugó</Text>
+                        </View>
+                      </View>
+                    </View>
                     {(matchday?.matches ?? []).map((match: any, mi: number) => {
                       const scoreStr = match?.score_a != null ? `${match.score_a}-${match.score_b}` : null;
                       const resColor = PICK_LABELS_LOCAL.includes(match?.result)   ? '#3B82F6'
