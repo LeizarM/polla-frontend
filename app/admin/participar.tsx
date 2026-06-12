@@ -101,7 +101,14 @@ export default function AdminParticiparScreen() {
     setRefreshing(false);
   };
 
-  const openMatchdays = (matchdays ?? []).filter((m: any) => m?.status === 'open');
+  // Mostramos TODAS las jornadas: abiertas (para apostar) + finalizadas (para ver
+  // la tabla/ranking) — paridad con la pestaña "Apuestas" del usuario normal.
+  const visibleMatchdays = [...(matchdays ?? [])].sort((a: any, b: any) => {
+    const ao = a?.status === 'open' ? 0 : 1;
+    const bo = b?.status === 'open' ? 0 : 1;
+    if (ao !== bo) return ao - bo;                                    // abiertas primero
+    return String(b?.date ?? '').localeCompare(String(a?.date ?? '')); // luego fecha desc
+  });
   const ticketMap = new Map<string, any>();
   (myTickets ?? []).forEach((t: any) => { ticketMap.set(t?.matchday_id, t); });
 
@@ -155,14 +162,18 @@ export default function AdminParticiparScreen() {
           /* ── Apuestas Tab ─────────────────────────────────────────────── */
           matchdaysLoading ? (
             [1, 2, 3].map(i => <Skeleton key={i} width="100%" height={80} style={{ marginBottom: 12 }} />)
-          ) : (openMatchdays?.length ?? 0) === 0 ? (
-            <EmptyState icon="football-outline" title="Sin jornadas abiertas" description="No hay jornadas disponibles para apostar" />
+          ) : (visibleMatchdays?.length ?? 0) === 0 ? (
+            <EmptyState icon="football-outline" title="Sin jornadas" description="No hay jornadas en este momento" />
           ) : (
-            openMatchdays.map((md: any, idx: number) => {
+            visibleMatchdays.map((md: any, idx: number) => {
               const hasTicket = ticketMap.has(md?.id);
               return (
                 <Animated.View key={md?.id} entering={FadeInDown.delay(idx * 80)}>
-                  <Pressable onPress={() => router.push(`/quiniela/${md?.id}` as any)}>
+                  <Pressable onPress={() => router.push(
+                    (md?.status === 'open'
+                      ? `/quiniela/${md?.id}`
+                      : `/quiniela/ranking/${md?.id}?tournamentId=${md?.tournament_id ?? md?.tournament?.id ?? ''}`) as any,
+                  )}>
                     <Card style={styles.card}>
                       <View style={styles.cardRow}>
                         <View style={{ flex: 1 }}>
@@ -181,7 +192,9 @@ export default function AdminParticiparScreen() {
                           </Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                          <Badge status={hasTicket ? 'approved' : 'pending'} text={hasTicket ? 'Apostado' : 'Pendiente'} />
+                          {md?.status === 'open'
+                            ? <Badge status={hasTicket ? 'approved' : 'pending'} text={hasTicket ? 'Apostado' : 'Pendiente'} />
+                            : <Badge status={'finished' as any} text="Finalizada" />}
                           <Text style={styles.poolText}>Pozo: {formatMoney(md?.expected_pool ?? md?.total_pool ?? 0, md?.tournament?.currency ?? 'Bs')}</Text>
                         </View>
                       </View>
