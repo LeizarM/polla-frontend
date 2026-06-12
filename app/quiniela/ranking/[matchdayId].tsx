@@ -6,7 +6,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, useWindowDimensions,
-  Pressable, RefreshControl, Platform,
+  Pressable, RefreshControl, Platform, TextInput,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -101,7 +101,7 @@ function RaceLanes({
     return m;
   }, [sorted, metric]);
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // colapsado por defecto
 
   if (!sorted.length) return null;
 
@@ -384,6 +384,7 @@ export default function RankingScreen() {
   const pivotRowsMaxH = Math.max(260, winH - 340);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabKey>('matchday');
+  const [pivotSearch, setPivotSearch] = useState(''); // buscador de la matriz acumulada
   // Pivot cell view: 'aciertos' or 'dinero'. Default auto-set below based on whether
   // the tournament's matchdays are fully resolved (then dinero) or still in progress
   // (then aciertos). The user can still toggle manually.
@@ -693,6 +694,13 @@ export default function RankingScreen() {
     }, 'Participante'.length);
     const nameColW = Math.round(Math.min(340, Math.max(150, longestNameLen * 8 + 44)));
 
+    // Buscador: filtra las filas pero MANTIENE la posición/rank original de cada uno.
+    const q = pivotSearch.trim().toLowerCase();
+    const indexed = rows.map((u: any, i: number) => ({ u, pos: i + 1 }));
+    const displayRows = q
+      ? indexed.filter(({ u }: any) => (u.full_name ?? u.username ?? '').toLowerCase().includes(q))
+      : indexed;
+
     return (
       <View style={styles.pivotWrap}>
 
@@ -811,6 +819,28 @@ export default function RankingScreen() {
           </Pressable>
         </View>
 
+        {/* Buscador por participante — para encontrar a cualquiera en la tabla. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, marginBottom: 10 }}>
+          <Ionicons name="search" size={16} color={theme.colors.textMuted} />
+          <TextInput
+            value={pivotSearch}
+            onChangeText={setPivotSearch}
+            placeholder="Buscar participante..."
+            placeholderTextColor={theme.colors.textMuted}
+            style={[{ flex: 1, color: theme.colors.textPrimary, fontSize: 14, paddingVertical: 10, fontFamily: 'Poppins_400Regular' }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+          />
+          {pivotSearch ? (
+            <Pressable onPress={() => setPivotSearch('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+        {q && displayRows.length === 0 && (
+          <Text style={{ color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 16, fontFamily: 'Poppins_400Regular' }}>
+            Sin resultados para "{pivotSearch}"
+          </Text>
+        )}
+
         {/* Tabla N participantes × M jornadas con scroll 2D (ver Pivot2DScroll). */}
         <Pivot2DScroll maxHeight={pivotRowsMaxH}>
           <View>
@@ -844,9 +874,8 @@ export default function RankingScreen() {
             </View>
 
             {/* Body rows */}
-            {rows.map((u: any, i: number) => {
+            {displayRows.map(({ u, pos }: any, i: number) => {
               const isMe = u.uid === user?.id;
-              const pos  = i + 1;
               const isTop = pos <= 3;
               const medal = getMedalEmoji(pos);
               const rowBg = isTop
@@ -1234,7 +1263,7 @@ export default function RankingScreen() {
             keyExtractor={(item, i) => item?.user_id ?? String(i)}
             renderItem={renderRankItem}
             contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={Platform.OS === 'web'}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primaryLight} />
             }
