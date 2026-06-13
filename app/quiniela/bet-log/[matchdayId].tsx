@@ -6,7 +6,7 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  RefreshControl, Pressable, TextInput,
+  RefreshControl, Pressable, TextInput, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -344,6 +344,24 @@ export default function BetLogScreen() {
     }, 0);
     return Math.round(Math.min(360, Math.max(170, 64 + longest * 8.8)));
   }, [sortedBets, user?.id]);
+
+  // ── Anchos RESPONSIVOS del tablero ────────────────────────────────────────
+  // El layout congelado+scroll necesita anchos EXPLÍCITOS: en RN-web (Safari
+  // iOS) un ScrollView horizontal con flex:1 no acota su viewport → desborda y
+  // NO scrollea. Calculamos el ancho real disponible y repartimos:
+  //   • columna de participante: acotada (en móvil máx 150 → caben más partidos)
+  //   • panel de partidos: ancho fijo restante (siempre scrolleable)
+  const winW = useWindowDimensions().width;
+  const isNarrow   = winW < 480;
+  const boardAvail = Math.min(960, winW) - 40;                 // - padding 20*2
+  const frozenW    = isNarrow
+    ? Math.min(userColW, 160)
+    : Math.min(userColW, Math.max(160, boardAvail - 200));
+  const scrollPaneW = Math.max(120, boardAvail - frozenW);
+  // ¿Hay más columnas de las que entran? → mostramos hint "desliza →"
+  const matchCount    = (matchday?.matches ?? []).length;
+  const colsTotalW    = matchCount * (COL_W + 4);
+  const canScrollBoard = colsTotalW > scrollPaneW + 4;
 
   // Leaders = users tied for the top correct count (only meaningful if > 0).
   // Se calcula con MAX (no sortedBets[0]) porque la lista ahora está en orden
@@ -1200,12 +1218,18 @@ export default function BetLogScreen() {
                 <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
                 <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>sellado · abre al pitazo</Text>
               </View>
+              {canScrollBoard && (
+                <View style={[styles.scrollHint, { backgroundColor: theme.colors.primaryLight + '18', borderColor: theme.colors.primaryLight + '40' }]}>
+                  <Ionicons name="swap-horizontal" size={13} color={theme.colors.primaryLight} />
+                  <Text style={[styles.scrollHintTx, { color: theme.colors.primaryLight }]}>desliza para ver los partidos</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.boardRow}>
               {/* Columna congelada — Participante */}
               <View style={[styles.boardFrozen, {
-                width: userColW,
+                width: frozenW,
                 backgroundColor: theme.colors.bg,
                 borderRightColor: theme.colors.border,
               }]}>
@@ -1255,8 +1279,8 @@ export default function BetLogScreen() {
                 showsHorizontalScrollIndicator={true}
                 nestedScrollEnabled
                 bounces={false}
-                style={{ flex: 1, marginRight: -20 }}
-                contentContainerStyle={{ paddingRight: 20 }}
+                style={{ width: scrollPaneW }}
+                contentContainerStyle={{ paddingRight: 16 }}
               >
                 <View>
                   {/* Encabezados de columna — sellada (candado + hora) / abierta (EN VIVO o marcador) */}
@@ -2176,6 +2200,20 @@ const styles = StyleSheet.create({
   boardLegendTx: {
     fontSize: 12,
     fontFamily: 'Poppins_500Medium',
+  },
+  scrollHint: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 5,
+    marginLeft: 'auto' as any,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  scrollHintTx: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
   },
   boardRow: {
     flexDirection: 'row' as const,
