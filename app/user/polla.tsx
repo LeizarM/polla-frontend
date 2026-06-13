@@ -31,6 +31,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
 import api from '../../services/api';
 import { usePollaFinalEnabled } from '../../hooks/useAppSettings';
+import { formatMoney } from '../../utils/currency';
 import { Redirect } from 'expo-router';
 
 // Posiciones del podio (campeón → 4°). short = numeral grabado en la peana.
@@ -318,9 +319,9 @@ function PollaFinalScreenInner() {
                       <Ionicons name="trophy" size={13} color="#7B5A00" />
                       <Text style={styles.pozoGordoLabel}>PREMIO GORDO</Text>
                     </View>
-                    <Text style={styles.pozoGordoValue}>{cur} {grandPrize}</Text>
+                    <Text style={styles.pozoGordoValue}>{formatMoney(grandPrize, cur)}</Text>
                     <Text style={styles.pozoGordoFormula}>
-                      {jornadasCount} jornadas × {inscritosCount} inscritos × {cur} {betFinal}
+                      {jornadasCount} jornadas × {inscritosCount} inscritos × {formatMoney(betFinal, cur)}
                     </Text>
                   </LinearGradient>
                   {/* Shimmer dorado que barre el premio gordo */}
@@ -382,7 +383,7 @@ function PollaFinalScreenInner() {
                     {myBet?.status === 'won' && (
                       <View style={styles.wonBadge}>
                         <Ionicons name="trophy" size={15} color="#10B981" />
-                        <Text style={styles.wonText}>Ganaste {cur} {Number(myBet?.prize_won ?? 0).toFixed(2)}</Text>
+                        <Text style={styles.wonText}>Ganaste {formatMoney(myBet?.prize_won ?? 0, cur)}</Text>
                       </View>
                     )}
                     {myBet?.status === 'lost' && (

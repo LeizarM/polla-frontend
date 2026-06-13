@@ -354,7 +354,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
                     {w?.total_points ?? 0} pts
                   </Text>
                   <Text style={{ color: '#34D399', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
-                    {currency} {Number(w?.prize_won ?? 0).toFixed(2)}
+                    {formatMoney(w?.prize_won ?? 0, currency)}
                   </Text>
                 </View>
               ))}
@@ -374,10 +374,10 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               <Text style={cardStyles.prizeLabel}>POZO TOTAL</Text>
             </View>
             <Text style={cardStyles.prizeValue}>
-              {currency} {grandPrize}
+              {formatMoney(grandPrize, currency)}
             </Text>
             <Text style={cardStyles.prizeFormula}>
-              {jornadasCount} jornadas × {inscritosCount} inscritos × {currency} {betFinal}
+              {jornadasCount} jornadas × {inscritosCount} inscritos × {formatMoney(betFinal, currency)}
             </Text>
           </LinearGradient>
           {/* Shimmer dorado que barre el pozo */}
@@ -491,7 +491,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               <View style={cardStyles.wonBanner}>
                 <Ionicons name="trophy" size={14} color="#FFD700" />
                 <Text style={cardStyles.wonText}>
-                  ¡Ganaste {currency} {Number(myBet?.prize_won ?? 0).toFixed(2)}!
+                  ¡Ganaste {formatMoney(myBet?.prize_won ?? 0, currency)}!
                 </Text>
               </View>
             )}
