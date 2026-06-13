@@ -18,7 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   FadeInDown, FadeIn, ZoomIn,
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing,
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
 } from 'react-native-reanimated';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -259,22 +259,6 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
   const deadline = t?.final_bet_deadline ? new Date(t.final_bet_deadline) : null;
   const isPastDeadline = !!deadline && new Date() > deadline;
 
-  // ── Pulse animation on the prize amount (premium "this is BIG" feel) ─────────
-  const pulse = useSharedValue(1);
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1.04, { duration: 1100 }),
-        withTiming(1,    { duration: 1100 }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
-  const prizeAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
-
   // ── Shimmer dorado que barre el pozo (efecto "lingote reluciente") ───────────
   const SCREEN_W = Dimensions.get('window').width;
   const shine = useSharedValue(0);
@@ -330,10 +314,6 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={cardStyles.gradientHeader}
       >
-        {/* Decorative gold dust orbs */}
-        <View style={[cardStyles.orb, { top: -20, right: -10, backgroundColor: '#FFD700', opacity: 0.15 }]} />
-        <View style={[cardStyles.orb, { bottom: -30, left: -20, backgroundColor: '#E11D48', opacity: 0.15 }]} />
-
         <View style={cardStyles.headerTop}>
           <View style={cardStyles.titleRow}>
             <Text style={cardStyles.trophy}>🏆</Text>
@@ -382,14 +362,17 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           </View>
         )}
 
-        {/* ─── BIG PRIZE display with animated pulse ───────────────────── */}
-        <Animated.View style={[cardStyles.prizeBox, prizeAnimStyle, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.85, shadowRadius: 26, elevation: 20 }]}>
+        {/* ─── POZO TOTAL — joya dorada (lingote reluciente) ───────────── */}
+        <View style={[cardStyles.prizeBox, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 22, elevation: 18 }]}>
           <LinearGradient
             colors={['#FFE680', '#FFD700', '#FFA500', '#D4A017']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={cardStyles.prizeGradient}
           >
-            <Text style={cardStyles.prizeLabel}>✨  POZO TOTAL  ✨</Text>
+            <View style={cardStyles.prizeLabelRow}>
+              <Ionicons name="trophy" size={13} color="#7B5A00" />
+              <Text style={cardStyles.prizeLabel}>POZO TOTAL</Text>
+            </View>
             <Text style={cardStyles.prizeValue}>
               {currency} {grandPrize}
             </Text>
@@ -405,7 +388,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               style={{ flex: 1 }}
             />
           </Animated.View>
-        </Animated.View>
+        </View>
 
         {/* Tie-split note */}
         <View style={cardStyles.tieNote}>
@@ -415,59 +398,78 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           </Text>
         </View>
 
-        {/* Podium visual */}
+        {/* ─── PODIO — escenario escalonado (1° más alto) con peana y numeral ──
+            Es el héroe interactivo: la altura de cada escalón codifica los puntos. */}
         {hasBet ? (
-          <View style={[cardStyles.podiumRow, { alignItems: 'flex-end' }]}>
+          <View style={cardStyles.podiumStage}>
             {POSITIONS.map((pos, idx) => {
               const team = getTeam(myBet?.[pos.key]);
-              const h = [124, 106, 92, 82][idx];
+              const h = [150, 120, 100, 86][idx];
               const first = idx === 0;
               return (
-                <View key={pos.key} style={[
-                  cardStyles.podiumSlot,
-                  { height: h, justifyContent: 'flex-end', gap: 3, borderColor: pos.color + '80', backgroundColor: pos.color + '1A' },
-                  first && { shadowColor: pos.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 12, elevation: 10 },
-                ]}>
-                  <Text style={{ fontSize: first ? 22 : 16 }}>{pos.emoji}</Text>
-                  {team ? (
-                    <>
-                      <TeamFlag team={team} size={first ? 30 : 24} />
-                      <Text style={[cardStyles.podiumTeamName, { color: pos.color }]} numberOfLines={1}>
-                        {team?.name}
-                      </Text>
-                    </>
-                  ) : (
-                    <Text style={cardStyles.podiumEmpty}>—</Text>
-                  )}
+                <View key={pos.key} style={cardStyles.podiumCol}>
+                  <View style={[
+                    cardStyles.podiumSlot,
+                    { height: h, borderColor: pos.color + '80', backgroundColor: pos.color + '1A' },
+                    first && cardStyles.podiumSlotFirst,
+                    first && { shadowColor: pos.color },
+                  ]}>
+                    <Text style={{ fontSize: first ? 26 : 20 }}>{pos.emoji}</Text>
+                    {team ? (
+                      <>
+                        <TeamFlag team={team} size={first ? 34 : 26} />
+                        <Text style={[cardStyles.podiumTeamName, { color: pos.color, fontSize: first ? 12 : 11 }]} numberOfLines={1}>
+                          {team?.name}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={cardStyles.podiumEmpty}>—</Text>
+                    )}
+                    <Text style={cardStyles.podiumPts}>{pos.pts}</Text>
+                  </View>
+                  <View style={[cardStyles.plinth, { backgroundColor: pos.color + '26', borderColor: pos.color + '66' }]}>
+                    <Text style={[cardStyles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                  </View>
                 </View>
               );
             })}
           </View>
         ) : (
-          /* Empty podium slots — TOCABLE para apostar (salvo deadline pasado) */
+          /* Escenario vacío — TOCABLE para apostar (salvo deadline pasado) */
           <Pressable onPress={isPastDeadline ? undefined : onBet} disabled={isPastDeadline}>
-            <View style={[cardStyles.podiumRow, { alignItems: 'flex-end' }]}>
+            <View style={cardStyles.podiumStage}>
               {POSITIONS.map((pos, idx) => {
-                const h = [124, 106, 92, 82][idx];
+                const h = [150, 120, 100, 86][idx];
                 const first = idx === 0;
                 return (
-                  <View key={pos.key} style={[
-                    cardStyles.podiumSlot, cardStyles.podiumSlotEmpty,
-                    { height: h, justifyContent: 'flex-end', gap: 3, borderColor: pos.color + '66', backgroundColor: pos.color + '14' },
-                    first && { shadowColor: pos.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 12, elevation: 8 },
-                  ]}>
-                    <Text style={{ fontSize: first ? 24 : 18 }}>{pos.emoji}</Text>
-                    <Ionicons name="help-circle-outline" size={first ? 24 : 18} color="rgba(255,255,255,0.45)" />
-                    <Text style={[cardStyles.podiumSlotLabel, { color: pos.color, fontSize: first ? 12 : 10 }]}>{pos.short}</Text>
-                    <Text style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontFamily: 'Poppins_600SemiBold' }}>{pos.pts}</Text>
+                  <View key={pos.key} style={cardStyles.podiumCol}>
+                    <View style={[
+                      cardStyles.podiumSlot, cardStyles.podiumSlotEmpty,
+                      { height: h, borderColor: pos.color + '66', backgroundColor: pos.color + '12' },
+                      first && cardStyles.podiumSlotFirst,
+                      first && { shadowColor: pos.color },
+                    ]}>
+                      <Text style={{ fontSize: first ? 30 : 22 }}>{pos.emoji}</Text>
+                      <View style={[
+                        cardStyles.pickAffordance,
+                        { borderColor: pos.color + '99' },
+                        first && { width: 30, height: 30, borderRadius: 15 },
+                      ]}>
+                        <Ionicons name="add" size={first ? 20 : 15} color={pos.color} />
+                      </View>
+                      <Text style={cardStyles.podiumPts}>{pos.pts}</Text>
+                    </View>
+                    <View style={[cardStyles.plinth, { backgroundColor: pos.color + '1F', borderColor: pos.color + '55' }]}>
+                      <Text style={[cardStyles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                    </View>
                   </View>
                 );
               })}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
-              <Ionicons name={isPastDeadline ? 'lock-closed' : 'hand-left-outline'} size={12} color={isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.55)'} />
-              <Text style={{ color: isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.55)', fontFamily: 'Poppins_500Medium', fontSize: 11 }}>
-                {isPastDeadline ? 'Apuestas cerradas — pasó la fecha límite' : 'Toca para elegir tu podio'}
+            <View style={cardStyles.podiumHint}>
+              <Ionicons name={isPastDeadline ? 'lock-closed' : 'hand-left-outline'} size={13} color={isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.6)'} />
+              <Text style={[cardStyles.podiumHintText, { color: isPastDeadline ? '#F87171' : 'rgba(255,255,255,0.6)' }]}>
+                {isPastDeadline ? 'Apuestas cerradas — pasó la fecha límite' : 'Toca para armar tu podio'}
               </Text>
             </View>
           </Pressable>
@@ -749,6 +751,9 @@ function makeCardStyles(t: typeof staticTheme) {
       borderWidth: 1, borderColor: t.colors.border,
       shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.18, shadowRadius: 10, elevation: 5,
+      // Responsive: en escritorio NO se estira a lo ancho (se centra); en móvil
+      // ocupa todo el ancho disponible (la pantalla siempre es < maxWidth).
+      width: '100%', maxWidth: 880, alignSelf: 'center',
     },
     gradientHeader: { padding: 20, paddingBottom: 14, position: 'relative', overflow: 'hidden' },
     orb: {
@@ -790,8 +795,13 @@ function makeCardStyles(t: typeof staticTheme) {
       borderColor: 'rgba(255,255,255,0.3)',
       borderRadius: 14,
     },
+    prizeLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+    },
     prizeLabel: {
-      fontSize: 10,
+      fontSize: 11,
       fontFamily: 'Poppins_800ExtraBold',
       color: '#7B5A00',
       letterSpacing: 1.4,
@@ -846,18 +856,41 @@ function makeCardStyles(t: typeof staticTheme) {
       paddingHorizontal: 10, paddingVertical: 4,
     },
     pendienteText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#F59E0B' },
-    podiumRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    // ── Podio: escenario escalonado (slot variable + peana fija) ───────────
+    podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginTop: 10 },
+    podiumCol: { flex: 1, gap: 4 },
     podiumSlot: {
-      flex: 1, alignItems: 'center', gap: 4,
+      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 4,
       backgroundColor: 'rgba(255,255,255,0.08)',
       borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
       paddingVertical: 10, paddingHorizontal: 4,
     },
-    podiumSlotEmpty: { borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed' as 'dashed' },
+    podiumSlotFirst: {
+      borderWidth: 1.5,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.6, shadowRadius: 14, elevation: 10,
+    },
+    podiumSlotEmpty: { borderStyle: 'dashed' as 'dashed' },
     podiumEmoji: { fontSize: 16 },
     podiumTeamName: { fontSize: 10, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
-    podiumEmpty: { fontSize: 18, color: 'rgba(255,255,255,0.2)' },
-    podiumSlotLabel: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.4)' },
+    podiumEmpty: { fontSize: 20, color: 'rgba(255,255,255,0.25)' },
+    podiumPts: { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.65)' },
+    pickAffordance: {
+      width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+      borderStyle: 'dashed' as 'dashed',
+      alignItems: 'center', justifyContent: 'center', marginVertical: 2,
+    },
+    // Peana: base fija que unifica los escalones en un podio sobre un mismo piso
+    plinth: {
+      width: '100%', height: 34, borderRadius: 10, borderWidth: 1,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    plinthNum: { fontSize: 18, fontFamily: 'Poppins_800ExtraBold' },
+    podiumHint: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 6, marginTop: 12,
+    },
+    podiumHintText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
     footer: { backgroundColor: t.colors.surface, padding: 14 },
     ptsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     ptsBadge: { flex: 1, alignItems: 'center', borderRadius: 8, paddingVertical: 6 },
