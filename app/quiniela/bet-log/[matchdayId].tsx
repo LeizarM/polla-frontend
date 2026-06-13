@@ -726,6 +726,8 @@ export default function BetLogScreen() {
                             : PICK_LABELS_VISITOR.includes(m.match?.result) ? '#EF4444'
                             : PICK_LABELS_DRAW.includes(m.match?.result)    ? '#F59E0B'
                             : theme.colors.textMuted;
+              // EN VIVO = ya inició pero aún sin resultado → banderas con brillo.
+              const matchLive = m.hasStarted && !m.hasResult;
 
               return (
                 <LinearGradient
@@ -755,7 +757,9 @@ export default function BetLogScreen() {
                   >
                     <View style={styles.fixtureRow}>
                       <View style={styles.fixtureSide}>
-                        <TeamFlag team={m.match?.team_a} size={32} />
+                        <View style={matchLive && styles.flagGlowLive}>
+                          <TeamFlag team={m.match?.team_a} size={32} />
+                        </View>
                         <Text style={[styles.fixtureTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamAName}
                         </Text>
@@ -772,7 +776,9 @@ export default function BetLogScreen() {
                         <Text style={[styles.fixtureTeam, styles.fixtureTeamRight, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamBName}
                         </Text>
-                        <TeamFlag team={m.match?.team_b} size={32} />
+                        <View style={matchLive && styles.flagGlowLive}>
+                          <TeamFlag team={m.match?.team_b} size={32} />
+                        </View>
                       </View>
                     </View>
 
@@ -1301,17 +1307,19 @@ export default function BetLogScreen() {
                         : PICK_LABELS_DRAW.includes(match?.result)    ? '#F59E0B'
                         : theme.colors.primaryLight;
                       const tint = hasResult ? resColor : theme.colors.primaryLight;
+                      const live = started && !hasResult; // en vivo (sin resultado aún)
                       return (
                         <View
                           key={match?.id ?? mi}
                           style={[styles.boardHeadCell, {
                             height: HEADER_H,
-                            backgroundColor: theme.colors.surface,
-                            borderColor: started ? tint + '55' : theme.colors.border,
-                          }]}
+                            backgroundColor: live ? theme.colors.primaryLight + '12' : theme.colors.surface,
+                            borderColor: started ? tint + (live ? '99' : '55') : theme.colors.border,
+                          }, live && styles.boardHeadLive]}
                         >
                           {started ? (
-                            <View style={[styles.boardHeadChip, { backgroundColor: tint + '22' }]}>
+                            <View style={[styles.boardHeadChip, { backgroundColor: tint + '22' }, live && styles.liveChip]}>
+                              {live && <View style={styles.liveChipDot} />}
                               <Text style={[styles.boardHeadChipTx, { color: tint }]} numberOfLines={1}>
                                 {hasResult ? (scoreStr ?? 'FIN') : 'EN VIVO'}
                               </Text>
@@ -1321,7 +1329,7 @@ export default function BetLogScreen() {
                               {match?.match_date ? formatHm(match.match_date) : '—'}
                             </Text>
                           )}
-                          <View style={styles.boardHeadFlags}>
+                          <View style={[styles.boardHeadFlags, live && styles.flagGlowLive]}>
                             <TeamFlag team={match?.team_a} size={22} />
                             <Ionicons
                               name={started ? 'lock-open-outline' : 'lock-closed'}
@@ -1347,6 +1355,9 @@ export default function BetLogScreen() {
                     >
                       {(matchday?.matches ?? []).map((match: any, mi: number) => {
                         const matchStarted = match?.match_date ? new Date(match.match_date).getTime() <= now : false;
+                        // Tinte "glass" en toda la columna del partido EN VIVO.
+                        const cellLive = matchStarted && !match?.result;
+                        const cellTint = cellLive ? { backgroundColor: theme.colors.primaryLight + '12' } : null;
                         const pick = userPicksList.find((p: any) => {
                           if (p?.match_id && match?.id && p.match_id === match.id) return true;
                           const pa = (p?.team_a?.name ?? p?.team_a ?? '').toString().toLowerCase().trim();
@@ -1369,7 +1380,7 @@ export default function BetLogScreen() {
                         // Abierto pero sin pick de este participante en este partido.
                         if (!pick || !revealed) {
                           return (
-                            <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
+                            <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }, cellTint]}>
                               <Text style={[styles.pivotEmptyDash, { color: theme.colors.textMuted }]}>–</Text>
                             </View>
                           );
@@ -1382,7 +1393,7 @@ export default function BetLogScreen() {
                         const pickedDraw    = PICK_LABELS_DRAW.includes(code);
                         const isCorrect = pick?.is_correct ?? computeIsCorrect(code, match?.result);
                         return (
-                          <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
+                          <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }, cellTint]}>
                             <View style={styles.pivotPickWrap}>
                               {pickedLocal   && <TeamFlag team={match?.team_a} size={24} />}
                               {pickedVisitor && <TeamFlag team={match?.team_b} size={24} />}
@@ -2298,6 +2309,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 5,
+  },
+  // ── EN VIVO: brillo/glass para banderas y columna del partido en curso ─────
+  flagGlowLive: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 10,
+    elevation: 10,
+    borderRadius: 999,
+  },
+  boardHeadLive: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  liveChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  liveChipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#3B82F6',
   },
   sealTile: {
     width: 32,

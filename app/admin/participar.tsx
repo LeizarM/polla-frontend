@@ -27,6 +27,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { TeamFlag } from '../../components/ui/TeamFlag';
+import { QuarterTeamsBanner } from '../../components/ui/QuarterTeamsBanner';
 import { useToast } from '../../components/ui/Toast';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -223,6 +224,7 @@ export default function AdminParticiparScreen() {
                       setShowBetModal(true);
                     }}
                   />
+                  <QuarterTeamsBanner tournamentId={t?.id} />
                 </Animated.View>
               );
             })
@@ -508,7 +510,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={cardStyles.betCtaGradient}
             >
-              <Text style={cardStyles.betCtaIcon}>⭐</Text>
+              <Ionicons name="star" size={18} color="#fff" />
               <Text style={cardStyles.betCtaText}>Hacer mi Predicción</Text>
               <Ionicons name="chevron-forward" size={18} color="#fff" />
             </LinearGradient>

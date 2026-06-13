@@ -26,6 +26,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { TeamFlag } from '../../components/ui/TeamFlag';
+import { QuarterTeamsBanner } from '../../components/ui/QuarterTeamsBanner';
 import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
@@ -404,6 +405,7 @@ function PollaFinalScreenInner() {
                   </Pressable>
                 )}
               </Card>
+              <QuarterTeamsBanner tournamentId={t?.id} />
               </Animated.View>
             );
           })

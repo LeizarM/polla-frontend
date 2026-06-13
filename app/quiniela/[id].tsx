@@ -533,6 +533,11 @@ export default function MatchdayDetailScreen() {
                 const locked = matchStarted;
                 // "Finalizado" cuando el partido ya tiene resultado; sino "Iniciado".
                 const matchFinished = match.status === 'finished' || (match.score_a != null && match.score_b != null);
+                const hasScore = match.score_a != null && match.score_b != null;
+                // Color del marcador segun resultado (local/empate/visitante).
+                const resCol = match.result === 'E' ? '#F59E0B' : match.result === 'V' ? '#EF4444' : '#3B82F6';
+                // Partido EN VIVO = ya inicio pero todavia sin resultado oficial.
+                const matchLive = matchStarted && !matchFinished;
 
                 return (
                   <Animated.View
@@ -553,9 +558,12 @@ export default function MatchdayDetailScreen() {
                       />
                       <View style={styles.matchCardBody}>
                       <View style={styles.matchDateRow}>
-                        <Text style={styles.matchDate}>
-                          {formatMatchDate(match?.match_date)}
-                        </Text>
+                        <View style={[styles.datePill, matchLive && { borderColor: theme.colors.primaryLight + '66', backgroundColor: theme.colors.primaryLight + '14' }]}>
+                          <Ionicons name="time-outline" size={13} color={matchLive ? theme.colors.primaryLight : theme.colors.textSecondary} />
+                          <Text style={[styles.matchDate, matchLive && { color: theme.colors.primaryLight }]}>
+                            {formatMatchDate(match?.match_date)}
+                          </Text>
+                        </View>
                         {locked && (
                           <View style={[styles.lockedBadge, matchFinished && { backgroundColor: 'rgba(16,185,129,0.15)' }]}>
                             <Ionicons name={matchFinished ? 'checkmark-done' : 'lock-closed'} size={11} color={matchFinished ? '#10B981' : '#EF4444'} />
@@ -581,21 +589,30 @@ export default function MatchdayDetailScreen() {
 
                       <View style={styles.matchTeams}>
                         <View style={styles.teamColumn}>
-                          <TeamFlag team={match?.team_a} size={36} />
+                          <View style={matchLive && styles.flagGlow}>
+                            <TeamFlag team={match?.team_a} size={48} />
+                          </View>
                           <Text style={styles.teamName} numberOfLines={2}>
                             {match?.team_a?.name ?? 'Local'}
                           </Text>
                         </View>
                         <View style={styles.vsBlock}>
-                          <Text style={styles.vsText}>VS</Text>
-                          {(match.score_a != null && match.score_b != null) && (
-                            <Text style={styles.scoreText}>
-                              {match.score_a} - {match.score_b}
-                            </Text>
+                          {hasScore ? (
+                            <View style={[styles.scorePill, { borderColor: resCol + '66', backgroundColor: resCol + '1A' }]}>
+                              <Text style={[styles.scoreText, { color: resCol }]}>
+                                {match.score_a} - {match.score_b}
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={styles.vsPill}>
+                              <Text style={styles.vsText}>VS</Text>
+                            </View>
                           )}
                         </View>
                         <View style={styles.teamColumn}>
-                          <TeamFlag team={match?.team_b} size={36} />
+                          <View style={matchLive && styles.flagGlow}>
+                            <TeamFlag team={match?.team_b} size={48} />
+                          </View>
                           <Text style={styles.teamName} numberOfLines={2}>
                             {match?.team_b?.name ?? 'Visitante'}
                           </Text>
@@ -1045,9 +1062,14 @@ function makeStyles(t: typeof staticTheme) {
       flexDirection: 'row', alignItems: 'center',
       justifyContent: 'center', gap: 8, marginBottom: 10,
     },
+    datePill: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+      borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.inputBg,
+    },
     matchDate: {
-      fontSize: 11, fontFamily: 'Poppins_400Regular',
-      color: t.colors.textSecondary, textAlign: 'center',
+      fontSize: 13, fontFamily: 'Poppins_600SemiBold',
+      color: t.colors.textSecondary, textAlign: 'center', letterSpacing: 0.2,
     },
     lockedBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 3,
@@ -1068,16 +1090,30 @@ function makeStyles(t: typeof staticTheme) {
     },
     noPickBadgeText: { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: '#F59E0B' },
     matchTeams: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14,
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 4,
     },
     teamColumn: { flex: 1, alignItems: 'center' },
     teamName: {
-      fontSize: 12, fontFamily: 'Poppins_600SemiBold',
-      color: t.colors.textPrimary, textAlign: 'center', marginTop: 4,
+      fontSize: 14, fontFamily: 'Poppins_700Bold',
+      color: t.colors.textPrimary, textAlign: 'center', marginTop: 8, letterSpacing: -0.2,
     },
-    vsBlock: { alignItems: 'center', minWidth: 36 },
-    vsText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: t.colors.textMuted },
-    scoreText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: t.colors.textPrimary, marginTop: 2 },
+    flagGlow: {
+      shadowColor: t.colors.primaryLight,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.9, shadowRadius: 12, elevation: 10,
+      borderRadius: 999,
+    },
+    vsBlock: { alignItems: 'center', justifyContent: 'center', minWidth: 64 },
+    vsPill: {
+      paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+      borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.inputBg,
+    },
+    vsText: { fontSize: 14, fontFamily: 'Poppins_800ExtraBold', color: t.colors.textMuted, letterSpacing: 0.5 },
+    scorePill: {
+      paddingHorizontal: 16, paddingVertical: 7, borderRadius: 14, borderWidth: 1.5,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    scoreText: { fontSize: 26, fontFamily: 'Poppins_800ExtraBold', letterSpacing: -0.5 },
     pickRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 14 },
     pickButton: {
       flex: 1, minHeight: 44, paddingHorizontal: 6, paddingVertical: 8,
