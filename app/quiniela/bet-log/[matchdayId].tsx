@@ -31,10 +31,12 @@ const PICK_LABELS_VISITOR  = ['V', '2'];
 // Cuántos líderes mostrar antes de colapsar la lista (puede haber decenas empatados).
 const LEADERS_PREVIEW = 5;
 
-// Tablero de Quiniela: alturas FIJAS para que la columna congelada (Participante)
-// y el panel de partidos desplazable mantengan sus filas perfectamente alineadas.
-const HEADER_H = 66;
-const ROW_H    = 52;
+// Tablero de Quiniela: alturas/ancho FIJOS para que la columna congelada
+// (Participante) y el panel de partidos desplazable mantengan sus filas
+// perfectamente alineadas. Escalados para legibilidad (vista web/escritorio).
+const HEADER_H = 80;
+const ROW_H    = 62;
+const COL_W    = 92; // ancho de cada columna de partido (header + celdas)
 
 // Compute is_correct client-side when backend didn't set it (e.g., result just entered).
 // Module-level so it's available everywhere without TDZ issues.
@@ -327,17 +329,17 @@ export default function BetLogScreen() {
 
   // ── Autosize de la columna de usuario en la matriz ───────────────────────
   // Era fija (150px) -> los nombres largos se cortaban. Se ajusta al nombre más
-  // largo de la lista (incluye sufijo " · TÚ"). pivotUserCell tiene 39px fijos
-  // (posCircle 22 + gap 7 + paddingRight 10); el nombre es 12px Poppins SemiBold
-  // ≈ 7.2px/char. Clamp 150–300px. Basado en sortedBets (lista completa) para
-  // que la columna NO salte de ancho al filtrar por búsqueda.
+  // largo de la lista (incluye sufijo " · TÚ"). Parte fija de boardUserRow ≈ 64px
+  // (posCircle 28 + gap 8 + paddingLeft 12 + paddingRight 8 + holgura); el nombre
+  // es 15px Poppins SemiBold ≈ 8.8px/char. Clamp 170–360px. Basado en sortedBets
+  // (lista completa) para que la columna NO salte de ancho al filtrar.
   const userColW = useMemo(() => {
     const longest = sortedBets.reduce((m: number, b: any) => {
       const uid   = b?.user_id ?? b?.id;
       const extra = user?.id && uid === user.id ? 5 : 0; // sufijo " · TÚ"
       return Math.max(m, String(b?.full_name ?? '-').length + extra);
     }, 0);
-    return Math.round(Math.min(320, Math.max(150, 51 + longest * 7.2 + 6)));
+    return Math.round(Math.min(360, Math.max(170, 64 + longest * 8.8)));
   }, [sortedBets, user?.id]);
 
   // Leaders = users tied for the top correct count (only meaningful if > 0).
@@ -706,7 +708,7 @@ export default function BetLogScreen() {
                   >
                     <View style={styles.fixtureRow}>
                       <View style={styles.fixtureSide}>
-                        <TeamFlag team={m.match?.team_a} size={22} />
+                        <TeamFlag team={m.match?.team_a} size={28} />
                         <Text style={[styles.fixtureTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamAName}
                         </Text>
@@ -723,7 +725,7 @@ export default function BetLogScreen() {
                         <Text style={[styles.fixtureTeam, styles.fixtureTeamRight, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamBName}
                         </Text>
-                        <TeamFlag team={m.match?.team_b} size={22} />
+                        <TeamFlag team={m.match?.team_b} size={28} />
                       </View>
                     </View>
 
@@ -732,7 +734,7 @@ export default function BetLogScreen() {
                       {m.hasResult ? (
                         <>
                           <View style={[styles.statusChip, { backgroundColor: resColor + '20', borderColor: resColor + '60' }]}>
-                            <Ionicons name="trophy" size={11} color={resColor} />
+                            <Ionicons name="trophy" size={13} color={resColor} />
                             <Text style={[styles.statusChipText, { color: resColor }]}>
                               {m.resultLabel}
                             </Text>
@@ -740,14 +742,14 @@ export default function BetLogScreen() {
                           {/* Leaders for this match (acertaron) */}
                           {m.correct.length > 0 ? (
                             <View style={[styles.correctCountPill, { backgroundColor: '#10B98118', borderColor: '#10B98155' }]}>
-                              <Ionicons name="checkmark-circle" size={11} color="#10B981" />
+                              <Ionicons name="checkmark-circle" size={13} color="#10B981" />
                               <Text style={[styles.correctCountText, { color: '#10B981' }]}>
                                 {m.correct.length} acertaron
                               </Text>
                             </View>
                           ) : (
                             <View style={[styles.correctCountPill, { backgroundColor: theme.colors.inputBg, borderColor: theme.colors.border }]}>
-                              <Ionicons name="time-outline" size={11} color={theme.colors.textMuted} />
+                              <Ionicons name="time-outline" size={13} color={theme.colors.textMuted} />
                               <Text style={[styles.correctCountText, { color: theme.colors.textMuted }]}>
                                 Pendiente
                               </Text>
@@ -770,7 +772,7 @@ export default function BetLogScreen() {
                           }]}>
                             <Ionicons
                               name={m.hasStarted ? 'play-circle' : 'time-outline'}
-                              size={11}
+                              size={13}
                               color={m.hasStarted ? '#F59E0B' : theme.colors.textMuted}
                             />
                             <Text style={[styles.statusChipText, { color: m.hasStarted ? '#F59E0B' : theme.colors.textMuted }]}>
@@ -796,7 +798,7 @@ export default function BetLogScreen() {
                         </View>
                         <View style={styles.distLabels}>
                           <View style={styles.distItem}>
-                            <TeamFlag team={m.match?.team_a} size={15} />
+                            <TeamFlag team={m.match?.team_a} size={18} />
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                               {m.match?.team_a?.name ?? 'Local'}
                             </Text>
@@ -807,7 +809,7 @@ export default function BetLogScreen() {
                             <Text style={[styles.distCount, { color: '#F59E0B' }]}>{m.drawCount}</Text>
                           </View>
                           <View style={styles.distItem}>
-                            <TeamFlag team={m.match?.team_b} size={15} />
+                            <TeamFlag team={m.match?.team_b} size={18} />
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                               {m.match?.team_b?.name ?? 'Visitante'}
                             </Text>
@@ -1162,15 +1164,15 @@ export default function BetLogScreen() {
                 HEADER_H y boardRows para que las filas queden alineadas. */}
             <View style={styles.boardLegend}>
               <View style={styles.boardLegendItem}>
-                <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={14} color="#10B981" />
                 <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>acertó</Text>
               </View>
               <View style={styles.boardLegendItem}>
-                <Ionicons name="close-circle" size={12} color="#EF4444" />
+                <Ionicons name="close-circle" size={14} color="#EF4444" />
                 <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>falló</Text>
               </View>
               <View style={styles.boardLegendItem}>
-                <Ionicons name="lock-closed" size={11} color={theme.colors.textMuted} />
+                <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
                 <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>sellado · abre al pitazo</Text>
               </View>
             </View>
@@ -1207,7 +1209,7 @@ export default function BetLogScreen() {
                         : { borderWidth: 1.5, borderColor: theme.colors.border },
                     ]}>
                       {isLeader
-                        ? <Ionicons name="trophy" size={12} color="#7B5A00" />
+                        ? <Ionicons name="trophy" size={15} color="#7B5A00" />
                         : <Text style={[styles.pivotPosText, { color: isMe ? '#fff' : theme.colors.textSecondary }]}>{idx + 1}</Text>}
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
@@ -1264,13 +1266,13 @@ export default function BetLogScreen() {
                             </Text>
                           )}
                           <View style={styles.boardHeadFlags}>
-                            <TeamFlag team={match?.team_a} size={18} />
+                            <TeamFlag team={match?.team_a} size={22} />
                             <Ionicons
                               name={started ? 'lock-open-outline' : 'lock-closed'}
-                              size={11}
+                              size={13}
                               color={started ? tint : theme.colors.textMuted}
                             />
-                            <TeamFlag team={match?.team_b} size={18} />
+                            <TeamFlag team={match?.team_b} size={22} />
                           </View>
                         </View>
                       );
@@ -1303,7 +1305,7 @@ export default function BetLogScreen() {
                           return (
                             <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
                               <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
-                                <Ionicons name="lock-closed" size={11} color={theme.colors.textMuted} />
+                                <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
                               </View>
                             </View>
                           );
@@ -1326,15 +1328,15 @@ export default function BetLogScreen() {
                         return (
                           <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
                             <View style={styles.pivotPickWrap}>
-                              {pickedLocal   && <TeamFlag team={match?.team_a} size={20} />}
-                              {pickedVisitor && <TeamFlag team={match?.team_b} size={20} />}
+                              {pickedLocal   && <TeamFlag team={match?.team_a} size={24} />}
+                              {pickedVisitor && <TeamFlag team={match?.team_b} size={24} />}
                               {pickedDraw    && (
                                 <View style={styles.pivotDrawBadge}>
                                   <Text style={styles.pivotDrawText}>E</Text>
                                 </View>
                               )}
-                              {isCorrect === true  && <Ionicons name="checkmark-circle" size={14} color="#10B981" />}
-                              {isCorrect === false && <Ionicons name="close-circle"     size={14} color="#EF4444" />}
+                              {isCorrect === true  && <Ionicons name="checkmark-circle" size={18} color="#10B981" />}
+                              {isCorrect === false && <Ionicons name="close-circle"     size={18} color="#EF4444" />}
                             </View>
                           </View>
                         );
@@ -1663,9 +1665,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   matchSlimHeader: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 12,
   },
 
   // ── Fixture row (equipo A · VS/marcador · equipo B) ────────────────────────
@@ -1685,7 +1687,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end' as const,
   },
   fixtureTeam: {
-    fontSize: 13,
+    fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: -0.2,
     flexShrink: 1,
@@ -1694,16 +1696,16 @@ const styles = StyleSheet.create({
     textAlign: 'right' as const,
   },
   fixtureVs: {
-    minWidth: 46,
+    minWidth: 58,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
   },
   fixtureVsText: {
-    fontSize: 12,
+    fontSize: 16,
     fontFamily: 'Poppins_800ExtraBold',
     letterSpacing: 0.5,
   },
@@ -1726,20 +1728,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   matchSlimDate: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: 'Poppins_500Medium',
   },
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
   },
   statusChipText: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },
   leaderChipsRow: {
@@ -1779,7 +1781,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto' as any,
   },
   countItem: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: 'Poppins_700Bold',
   },
 
@@ -1880,14 +1882,14 @@ const styles = StyleSheet.create({
   correctCountPill: {
     flexDirection: 'row' as const,
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
   },
   correctCountText: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins_700Bold',
   },
 
@@ -1895,23 +1897,23 @@ const styles = StyleSheet.create({
   sectionHeaderBar: {
     flexDirection: 'row' as const,
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     borderRadius: 10,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     marginBottom: 12,
   },
   sectionHeaderBarTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: -0.2,
   },
   sectionHeaderBarSub: {
-    fontSize: 11,
+    fontSize: 12.5,
     fontFamily: 'Poppins_400Regular',
-    marginTop: 1,
+    marginTop: 2,
   },
 
   // ── Flat list rows in expanded per-match detail ────────────────────────────
@@ -2048,31 +2050,31 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   pivotPosCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     flexShrink: 0,
   },
   pivotPosText: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: 'Poppins_700Bold',
   },
   pivotUserName: {
-    fontSize: 12,
+    fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
   },
   pivotStats: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins_500Medium',
     marginTop: 1,
   },
   pivotCell: {
-    width: 70,
+    width: COL_W,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    height: 48,
+    height: ROW_H,
     borderRightWidth: StyleSheet.hairlineWidth,
     marginLeft: 4,
   },
@@ -2080,7 +2082,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: 3,
+    gap: 4,
   },
   pivotPending: {
     width: 24,
@@ -2091,7 +2093,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' as const,
   },
   pivotEmptyDash: {
-    fontSize: 14,
+    fontSize: 18,
     fontFamily: 'Poppins_700Bold',
     opacity: 0.5,
   },
@@ -2101,17 +2103,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     flexWrap: 'wrap' as const,
-    gap: 14,
-    marginBottom: 10,
+    gap: 16,
+    marginBottom: 12,
     paddingHorizontal: 2,
   },
   boardLegendItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 4,
+    gap: 5,
   },
   boardLegendTx: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: 'Poppins_500Medium',
   },
   boardRow: {
@@ -2134,12 +2136,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   boardCornerEyebrow: {
-    fontSize: 10,
+    fontSize: 11.5,
     fontFamily: 'Poppins_800ExtraBold',
     letterSpacing: 1,
   },
   boardCornerHint: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Poppins_500Medium',
   },
   boardUserRow: {
@@ -2154,7 +2156,7 @@ const styles = StyleSheet.create({
   boardAccent: {
     position: 'absolute' as const,
     left: 0, top: 0, bottom: 0,
-    width: 3,
+    width: 4,
   },
   boardDataRow: {
     flexDirection: 'row' as const,
@@ -2162,39 +2164,39 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   boardHeadCell: {
-    width: 70,
+    width: COL_W,
     marginLeft: 4,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    paddingVertical: 6,
-    gap: 5,
+    paddingVertical: 8,
+    gap: 6,
     borderRadius: 10,
     borderWidth: 1,
   },
   boardHeadChip: {
-    maxWidth: 64,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    maxWidth: COL_W - 12,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: 999,
   },
   boardHeadChipTx: {
-    fontSize: 9,
+    fontSize: 12,
     fontFamily: 'Poppins_800ExtraBold',
     letterSpacing: 0.4,
   },
   boardHeadTime: {
-    fontSize: 11,
+    fontSize: 14,
     fontFamily: 'Poppins_700Bold',
   },
   boardHeadFlags: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 4,
+    gap: 5,
   },
   sealTile: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     borderWidth: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
@@ -2213,9 +2215,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   pivotDrawBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
     backgroundColor: '#F59E0B22',
     borderWidth: 1,
     borderColor: '#F59E0B66',
@@ -2223,7 +2225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center' as const,
   },
   pivotDrawText: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: 'Poppins_800ExtraBold',
     color: '#F59E0B',
   },
@@ -2235,8 +2237,8 @@ const styles = StyleSheet.create({
   },
   distBar: {
     flexDirection: 'row' as const,
-    height: 7,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     overflow: 'hidden' as const,
     backgroundColor: 'rgba(255,255,255,0.07)',
   },
@@ -2252,12 +2254,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   distName: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    maxWidth: 78,
+    maxWidth: 130,
   },
   distCount: {
-    fontSize: 14,
+    fontSize: 17,
     fontFamily: 'Poppins_800ExtraBold',
   },
   pivotCellDash: {
