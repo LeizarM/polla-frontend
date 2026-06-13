@@ -31,6 +31,11 @@ const PICK_LABELS_VISITOR  = ['V', '2'];
 // Cuántos líderes mostrar antes de colapsar la lista (puede haber decenas empatados).
 const LEADERS_PREVIEW = 5;
 
+// Tablero de Quiniela: alturas FIJAS para que la columna congelada (Participante)
+// y el panel de partidos desplazable mantengan sus filas perfectamente alineadas.
+const HEADER_H = 66;
+const ROW_H    = 52;
+
 // Compute is_correct client-side when backend didn't set it (e.g., result just entered).
 // Module-level so it's available everywhere without TDZ issues.
 function computeIsCorrect(pickCode: any, matchResult: any): boolean | null {
@@ -351,6 +356,25 @@ export default function BetLogScreen() {
     return (matchday?.matches ?? []).some((m: any) => !!m?.result);
   }, [matchday?.matches]);
 
+  // Próximo partido en "abrir" (revelarse): el kickoff más cercano aún por jugarse.
+  const nextKickoff = (matchday?.matches ?? [])
+    .filter((m: any) => m?.match_date && new Date(m.match_date).getTime() > now)
+    .sort((a: any, b: any) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0] ?? null;
+
+  // Filas del Tablero de Quiniela — se calculan UNA vez y se reusan en la columna
+  // congelada y en el panel desplazable, de modo que altura, color de fila y orden
+  // coincidan exactamente entre ambos lados (si difieren, las filas se desalinean).
+  const boardRows = visibleBets.map((bet: any, idx: number) => {
+    const uid      = bet?.user_id ?? bet?.id;
+    const isMe     = !!(user?.id && uid === user.id);
+    const isLeader = anyMatchResolved && topCorrect > 0 && bet.totalCorrect === topCorrect;
+    const userPicksList = picksMapByUser.get(uid) ?? bet?.picks ?? [];
+    const rowBg = isLeader ? 'rgba(255,215,0,0.10)'
+      : isMe ? theme.colors.primaryLight + '14'
+      : idx % 2 === 0 ? theme.colors.surface : theme.colors.inputBg;
+    return { bet, idx, uid, isMe, isLeader, userPicksList, rowBg };
+  });
+
   // ── PER-MATCH BREAKDOWN ────────────────────────────────────────────────────
   // For each match, group users into: acertaron / fallaron / sin apuesta.
   // Used by the "Aciertos por Partido" section.
@@ -478,6 +502,14 @@ export default function BetLogScreen() {
       const mm  = String(d.getMinutes()).padStart(2, '0');
       return `${day}/${mo}  ${hh}:${mm}`;
     } catch { return '-'; }
+  };
+
+  // Solo HH:MM — para los encabezados de columna del tablero.
+  const formatHm = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch { return ''; }
   };
 
   return (
@@ -656,6 +688,14 @@ export default function BetLogScreen() {
                     borderColor: m.hasResult ? resColor + '50' : theme.colors.border,
                   }]}
                 >
+                  {/* Franja superior de color = resultado (solo partidos resueltos) */}
+                  {m.hasResult && (
+                    <LinearGradient
+                      colors={[resColor, resColor + '00']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={{ height: 2 }}
+                    />
+                  )}
                   {/* Single-line match summary — always visible */}
                   <Pressable
                     onPress={() => m.hasResult && toggleMatch(matchKey)}
@@ -664,21 +704,27 @@ export default function BetLogScreen() {
                       pressed && m.hasResult && { opacity: 0.75 },
                     ]}
                   >
-                    <View style={styles.matchSlimTitleRow}>
-                      <View style={styles.matchTeamsInline}>
-                        <TeamFlag team={m.match?.team_a} size={18} />
-                        <Text style={[styles.matchSlimTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                    <View style={styles.fixtureRow}>
+                      <View style={styles.fixtureSide}>
+                        <TeamFlag team={m.match?.team_a} size={22} />
+                        <Text style={[styles.fixtureTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamAName}
                         </Text>
-                        <Text style={[styles.matchSlimScore, { color: theme.colors.textMuted }]}>
-                          {scoreLabel ?? 'vs'}
+                      </View>
+                      <View style={[styles.fixtureVs, {
+                        backgroundColor: m.hasResult ? resColor + '1F' : theme.colors.inputBg,
+                        borderColor: m.hasResult ? resColor + '55' : theme.colors.border,
+                      }]}>
+                        <Text style={[styles.fixtureVsText, { color: scoreLabel ? resColor : theme.colors.textMuted }]}>
+                          {scoreLabel ?? 'VS'}
                         </Text>
-                        <Text style={[styles.matchSlimTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                      </View>
+                      <View style={[styles.fixtureSide, styles.fixtureSideRight]}>
+                        <Text style={[styles.fixtureTeam, styles.fixtureTeamRight, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamBName}
                         </Text>
-                        <TeamFlag team={m.match?.team_b} size={18} />
+                        <TeamFlag team={m.match?.team_b} size={22} />
                       </View>
-                      {/* Sin chevron: la tarjeta ya no expande (los nombres viven en la matriz). */}
                     </View>
 
                     {/* Sub-row: status pill + leader chips + counts */}
@@ -934,14 +980,21 @@ export default function BetLogScreen() {
               <Text style={[styles.sectionHeaderBarTitle, { color: theme.colors.textPrimary, flex: 1 }]}>
                 Participantes ({visibleBets.length}{userSearch ? ` de ${sortedBets.length}` : ''})
               </Text>
-              {anyMatchResolved && topCorrect > 0 && leaders.length > 0 && (
+              {anyMatchResolved && topCorrect > 0 && leaders.length > 0 ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFD70018', borderColor: '#FFD70055', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
                   <Ionicons name="trophy" size={12} color="#FFD700" />
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#D4A017' }}>
                     {leaders.length} en 1.º
                   </Text>
                 </View>
-              )}
+              ) : nextKickoff ? (
+                <View style={[styles.nextChip, { backgroundColor: theme.colors.primaryLight + '14', borderColor: theme.colors.primaryLight + '40' }]}>
+                  <Ionicons name="lock-closed" size={11} color={theme.colors.primaryLight} />
+                  <Text style={[styles.nextChipText, { color: theme.colors.primaryLight }]} numberOfLines={1}>
+                    Abre {formatHm(nextKickoff.match_date)}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             {false && visibleBets.map((bet: any, idx: number) => {
               const isLeader  = anyMatchResolved && bet.totalCorrect === topCorrect && topCorrect > 0;
@@ -1103,150 +1156,194 @@ export default function BetLogScreen() {
               );
             })}
 
-            {(
+            {/* ── TABLERO DE QUINIELA ───────────────────────────────────────────
+                Columna "Participante" CONGELADA + columnas de partido que se
+                desplazan y se "abren" en su pitazo. Ambos lados comparten ROW_H /
+                HEADER_H y boardRows para que las filas queden alineadas. */}
+            <View style={styles.boardLegend}>
+              <View style={styles.boardLegendItem}>
+                <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>acertó</Text>
+              </View>
+              <View style={styles.boardLegendItem}>
+                <Ionicons name="close-circle" size={12} color="#EF4444" />
+                <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>falló</Text>
+              </View>
+              <View style={styles.boardLegendItem}>
+                <Ionicons name="lock-closed" size={11} color={theme.colors.textMuted} />
+                <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>sellado · abre al pitazo</Text>
+              </View>
+            </View>
+
+            <View style={styles.boardRow}>
+              {/* Columna congelada — Participante */}
+              <View style={[styles.boardFrozen, {
+                width: userColW,
+                backgroundColor: theme.colors.bg,
+                borderRightColor: theme.colors.border,
+              }]}>
+                <View style={[styles.boardCorner, { height: HEADER_H, borderBottomColor: theme.colors.border }]}>
+                  <Text style={[styles.boardCornerEyebrow, { color: theme.colors.textSecondary }]}>PARTICIPANTE</Text>
+                  <Text style={[styles.boardCornerHint, { color: theme.colors.textMuted }]} numberOfLines={1}>
+                    {boardRows.length} en juego
+                  </Text>
+                </View>
+                {boardRows.map(({ bet, idx, uid, isMe, isLeader, rowBg }) => (
+                  <View
+                    key={uid ?? idx}
+                    style={[styles.boardUserRow, {
+                      height: ROW_H,
+                      backgroundColor: rowBg,
+                      borderBottomColor: theme.colors.border,
+                    }]}
+                  >
+                    {(isLeader || isMe) && (
+                      <View style={[styles.boardAccent, { backgroundColor: isLeader ? '#FFD700' : theme.colors.primary }]} pointerEvents="none" />
+                    )}
+                    <View style={[
+                      styles.pivotPosCircle,
+                      isLeader ? { backgroundColor: '#FFD700' }
+                        : isMe ? { backgroundColor: theme.colors.primary }
+                        : { borderWidth: 1.5, borderColor: theme.colors.border },
+                    ]}>
+                      {isLeader
+                        ? <Ionicons name="trophy" size={12} color="#7B5A00" />
+                        : <Text style={[styles.pivotPosText, { color: isMe ? '#fff' : theme.colors.textSecondary }]}>{idx + 1}</Text>}
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.pivotUserName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                        {bet?.full_name ?? '-'}{isMe ? ' · TÚ' : ''}
+                      </Text>
+                      <Text style={[styles.pivotStats, { color: theme.colors.textMuted }]}>
+                        ✓{bet.correctSoFar}{bet.wrongSoFar > 0 ? `  ✗${bet.wrongSoFar}` : ''}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Panel desplazable — columnas de partido */}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={true}
                 nestedScrollEnabled
                 bounces={false}
-                style={{ marginHorizontal: -20 }}
-                contentContainerStyle={{ paddingHorizontal: 20 }}
+                style={{ flex: 1, marginRight: -20 }}
+                contentContainerStyle={{ paddingRight: 20 }}
               >
                 <View>
-                  {/* Column headers: one cell per match */}
-                  <View style={styles.pivotHeaderRow}>
-                    {/* Esquina = encabezado de la columna + leyenda de símbolos */}
-                    <View style={{ width: userColW, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: theme.colors.textSecondary, letterSpacing: 0.4, marginBottom: 4 }}>PARTICIPANTE</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>acertó</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          <Ionicons name="close-circle" size={12} color="#EF4444" />
-                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>falló</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          <Ionicons name="time-outline" size={12} color={theme.colors.textMuted} />
-                          <Text style={{ fontSize: 9, color: theme.colors.textMuted, fontFamily: 'Poppins_500Medium' }}>no jugó</Text>
-                        </View>
-                      </View>
-                    </View>
+                  {/* Encabezados de columna — sellada (candado + hora) / abierta (EN VIVO o marcador) */}
+                  <View style={{ flexDirection: 'row', height: HEADER_H }}>
                     {(matchday?.matches ?? []).map((match: any, mi: number) => {
-                      const scoreStr = match?.score_a != null ? `${match.score_a}-${match.score_b}` : null;
-                      const resColor = PICK_LABELS_LOCAL.includes(match?.result)   ? '#3B82F6'
+                      const started   = match?.match_date ? new Date(match.match_date).getTime() <= now : false;
+                      const scoreStr  = match?.score_a != null ? `${match.score_a}-${match.score_b}` : null;
+                      const hasResult = !!match?.result;
+                      const resColor  = PICK_LABELS_LOCAL.includes(match?.result)   ? '#3B82F6'
                         : PICK_LABELS_VISITOR.includes(match?.result) ? '#EF4444'
                         : PICK_LABELS_DRAW.includes(match?.result)    ? '#F59E0B'
-                        : theme.colors.textMuted;
+                        : theme.colors.primaryLight;
+                      const tint = hasResult ? resColor : theme.colors.primaryLight;
                       return (
-                        <View key={match?.id ?? mi} style={[styles.pivotMatchCell, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-                          <TeamFlag team={match?.team_a} size={22} />
-                          <Text style={[styles.pivotMatchScore, { color: scoreStr ? resColor : theme.colors.textMuted }]}>
-                            {scoreStr ?? 'vs'}
-                          </Text>
-                          <TeamFlag team={match?.team_b} size={22} />
+                        <View
+                          key={match?.id ?? mi}
+                          style={[styles.boardHeadCell, {
+                            height: HEADER_H,
+                            backgroundColor: theme.colors.surface,
+                            borderColor: started ? tint + '55' : theme.colors.border,
+                          }]}
+                        >
+                          {started ? (
+                            <View style={[styles.boardHeadChip, { backgroundColor: tint + '22' }]}>
+                              <Text style={[styles.boardHeadChipTx, { color: tint }]} numberOfLines={1}>
+                                {hasResult ? (scoreStr ?? 'FIN') : 'EN VIVO'}
+                              </Text>
+                            </View>
+                          ) : (
+                            <Text style={[styles.boardHeadTime, { color: theme.colors.textMuted }]}>
+                              {match?.match_date ? formatHm(match.match_date) : '—'}
+                            </Text>
+                          )}
+                          <View style={styles.boardHeadFlags}>
+                            <TeamFlag team={match?.team_a} size={18} />
+                            <Ionicons
+                              name={started ? 'lock-open-outline' : 'lock-closed'}
+                              size={11}
+                              color={started ? tint : theme.colors.textMuted}
+                            />
+                            <TeamFlag team={match?.team_b} size={18} />
+                          </View>
                         </View>
                       );
                     })}
                   </View>
 
-                  {/* Data rows — one per user */}
-                  {visibleBets.map((bet: any, idx: number) => {
-                    const uid = bet?.user_id ?? bet?.id;
-                    const userPicksList = picksMapByUser.get(uid) ?? bet?.picks ?? [];
-                    const isMe     = user?.id && uid === user.id;
-                    const posColor = idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : theme.colors.primaryLight;
-                    // Líder = empatado en el MÁXIMO de aciertos. Reemplaza la sección
-                    // "Empate en primer lugar": los punteros se resaltan acá, en la matriz.
-                    const isLeader = anyMatchResolved && topCorrect > 0 && bet.totalCorrect === topCorrect;
-                    return (
-                      <View
-                        key={uid ?? idx}
-                        style={[styles.pivotRow, {
-                          backgroundColor: isLeader ? 'rgba(255,215,0,0.10)' : isMe ? theme.colors.primaryLight + '10' : idx % 2 === 0 ? theme.colors.surface : theme.colors.inputBg,
-                          borderBottomColor: theme.colors.border,
-                        }]}
-                      >
-                        {/* Borde rainbow sutil para TU fila */}
-                        {isMe && (
-                          <LinearGradient
-                            colors={['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#A66BFF']}
-                            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-                            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, zIndex: 2 }}
-                            pointerEvents="none"
-                          />
-                        )}
-                        {/* User info cell */}
-                        <View style={[styles.pivotUserCell, { width: userColW, borderRightColor: theme.colors.border }]}>
-                          <View style={[styles.pivotPosCircle, { backgroundColor: isLeader ? '#FFD700' : posColor }]}>
-                            {isLeader
-                              ? <Ionicons name="trophy" size={12} color="#7B5A00" />
-                              : <Text style={[styles.pivotPosText, { color: '#fff' }]}>{idx + 1}</Text>}
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.pivotUserName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
-                              {bet?.full_name ?? '-'}{isMe ? ' · TÚ' : ''}
-                            </Text>
-                            <Text style={[styles.pivotStats, { color: theme.colors.textMuted }]}>
-                              ✓{bet.correctSoFar}{bet.wrongSoFar > 0 ? `  ✗${bet.wrongSoFar}` : ''}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Pick cells — one per match */}
-                        {(matchday?.matches ?? []).map((match: any, mi: number) => {
-                          const matchStarted = match?.match_date ? new Date(match.match_date).getTime() <= now : false;
-                          const pick = userPicksList.find((p: any) => {
-                            if (p?.match_id && match?.id && p.match_id === match.id) return true;
-                            const pa = (p?.team_a?.name ?? p?.team_a ?? '').toString().toLowerCase().trim();
-                            const pb = (p?.team_b?.name ?? p?.team_b ?? '').toString().toLowerCase().trim();
-                            const ma = (match?.team_a?.name ?? '').toString().toLowerCase().trim();
-                            const mb = (match?.team_b?.name ?? '').toString().toLowerCase().trim();
-                            return pa && pb && pa === ma && pb === mb;
-                          });
-                          const revealed = pick ? isPickRevealed(pick) : false;
-                          if (!matchStarted) {
-                            return (
-                              <View key={mi} style={[styles.pivotCell, { borderRightColor: theme.colors.border }]}>
-                                <Ionicons name="time-outline" size={13} color={theme.colors.textMuted} />
-                              </View>
-                            );
-                          }
-                          if (!pick || !revealed) {
-                            return <View key={mi} style={[styles.pivotCell, { borderRightColor: theme.colors.border }]} />;
-                          }
-                          // Partido iniciado + pick revelado: mostramos POR QUIÉN apostó
-                          // (bandera del equipo elegido, o "E" de empate) y, si ya hay
-                          // resultado, el ✓/✗ al lado. Antes solo salía ✓/✗ → en un partido
-                          // en curso (sin resultado todavía) la celda quedaba vacía.
-                          const code = pick?.pick;
-                          const pickedLocal   = PICK_LABELS_LOCAL.includes(code);
-                          const pickedVisitor = PICK_LABELS_VISITOR.includes(code);
-                          const pickedDraw    = PICK_LABELS_DRAW.includes(code);
-                          const isCorrect = pick?.is_correct ?? computeIsCorrect(code, match?.result);
+                  {/* Filas de datos — una por participante */}
+                  {boardRows.map(({ bet, idx, uid, userPicksList, rowBg }) => (
+                    <View
+                      key={uid ?? idx}
+                      style={[styles.boardDataRow, {
+                        height: ROW_H,
+                        backgroundColor: rowBg,
+                        borderBottomColor: theme.colors.border,
+                      }]}
+                    >
+                      {(matchday?.matches ?? []).map((match: any, mi: number) => {
+                        const matchStarted = match?.match_date ? new Date(match.match_date).getTime() <= now : false;
+                        const pick = userPicksList.find((p: any) => {
+                          if (p?.match_id && match?.id && p.match_id === match.id) return true;
+                          const pa = (p?.team_a?.name ?? p?.team_a ?? '').toString().toLowerCase().trim();
+                          const pb = (p?.team_b?.name ?? p?.team_b ?? '').toString().toLowerCase().trim();
+                          const ma = (match?.team_a?.name ?? '').toString().toLowerCase().trim();
+                          const mb = (match?.team_b?.name ?? '').toString().toLowerCase().trim();
+                          return pa && pb && pa === ma && pb === mb;
+                        });
+                        const revealed = pick ? isPickRevealed(pick) : false;
+                        // Sellado: el partido aún no arranca → pick oculto bajo candado.
+                        if (!matchStarted) {
                           return (
-                            <View key={mi} style={[styles.pivotCell, { borderRightColor: theme.colors.border }]}>
-                              <View style={styles.pivotPickWrap}>
-                                {pickedLocal   && <TeamFlag team={match?.team_a} size={20} />}
-                                {pickedVisitor && <TeamFlag team={match?.team_b} size={20} />}
-                                {pickedDraw    && (
-                                  <View style={styles.pivotDrawBadge}>
-                                    <Text style={styles.pivotDrawText}>E</Text>
-                                  </View>
-                                )}
-                                {isCorrect === true  && <Ionicons name="checkmark-circle" size={14} color="#10B981" />}
-                                {isCorrect === false && <Ionicons name="close-circle"     size={14} color="#EF4444" />}
+                            <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                              <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
+                                <Ionicons name="lock-closed" size={11} color={theme.colors.textMuted} />
                               </View>
                             </View>
                           );
-                        })}
-                      </View>
-                    );
-                  })}
+                        }
+                        // Abierto pero sin pick de este participante en este partido.
+                        if (!pick || !revealed) {
+                          return (
+                            <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                              <Text style={[styles.pivotEmptyDash, { color: theme.colors.textMuted }]}>–</Text>
+                            </View>
+                          );
+                        }
+                        // Abierto + revelado: bandera del equipo elegido (o "E" de empate)
+                        // y, si ya hay resultado, el ✓/✗ al lado.
+                        const code = pick?.pick;
+                        const pickedLocal   = PICK_LABELS_LOCAL.includes(code);
+                        const pickedVisitor = PICK_LABELS_VISITOR.includes(code);
+                        const pickedDraw    = PICK_LABELS_DRAW.includes(code);
+                        const isCorrect = pick?.is_correct ?? computeIsCorrect(code, match?.result);
+                        return (
+                          <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                            <View style={styles.pivotPickWrap}>
+                              {pickedLocal   && <TeamFlag team={match?.team_a} size={20} />}
+                              {pickedVisitor && <TeamFlag team={match?.team_b} size={20} />}
+                              {pickedDraw    && (
+                                <View style={styles.pivotDrawBadge}>
+                                  <Text style={styles.pivotDrawText}>E</Text>
+                                </View>
+                              )}
+                              {isCorrect === true  && <Ionicons name="checkmark-circle" size={14} color="#10B981" />}
+                              {isCorrect === false && <Ionicons name="close-circle"     size={14} color="#EF4444" />}
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ))}
                 </View>
               </ScrollView>
-            )}
+            </View>
           </View>
         )}
 
@@ -1555,15 +1652,60 @@ const styles = StyleSheet.create({
 
   // ── Slim match card (per-match breakdown) ─────────────────────────────────
   matchSlim: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
   },
   matchSlimHeader: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+
+  // ── Fixture row (equipo A · VS/marcador · equipo B) ────────────────────────
+  fixtureRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center',
+    gap: 10,
+  },
+  fixtureSide: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  fixtureSideRight: {
+    justifyContent: 'flex-end' as const,
+  },
+  fixtureTeam: {
+    fontSize: 13,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.2,
+    flexShrink: 1,
+  },
+  fixtureTeamRight: {
+    textAlign: 'right' as const,
+  },
+  fixtureVs: {
+    minWidth: 46,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  fixtureVsText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_800ExtraBold',
+    letterSpacing: 0.5,
   },
   matchSlimTitleRow: {
     flexDirection: 'row',
@@ -1939,6 +2081,136 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: 3,
+  },
+  pivotPending: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  pivotEmptyDash: {
+    fontSize: 14,
+    fontFamily: 'Poppins_700Bold',
+    opacity: 0.5,
+  },
+
+  // ── Tablero de Quiniela (columna congelada + panel desplazable) ────────────
+  boardLegend: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    flexWrap: 'wrap' as const,
+    gap: 14,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  boardLegendItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  boardLegendTx: {
+    fontSize: 10,
+    fontFamily: 'Poppins_500Medium',
+  },
+  boardRow: {
+    flexDirection: 'row' as const,
+  },
+  boardFrozen: {
+    borderRightWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
+    // Sombra a la derecha = pista visual de columna "fijada" sobre lo que scrollea.
+    shadowColor: '#000',
+    shadowOffset: { width: 3, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  boardCorner: {
+    justifyContent: 'center' as const,
+    paddingHorizontal: 12,
+    gap: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  boardCornerEyebrow: {
+    fontSize: 10,
+    fontFamily: 'Poppins_800ExtraBold',
+    letterSpacing: 1,
+  },
+  boardCornerHint: {
+    fontSize: 10,
+    fontFamily: 'Poppins_500Medium',
+  },
+  boardUserRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingLeft: 12,
+    paddingRight: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    position: 'relative' as const,
+  },
+  boardAccent: {
+    position: 'absolute' as const,
+    left: 0, top: 0, bottom: 0,
+    width: 3,
+  },
+  boardDataRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  boardHeadCell: {
+    width: 70,
+    marginLeft: 4,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: 6,
+    gap: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  boardHeadChip: {
+    maxWidth: 64,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  boardHeadChipTx: {
+    fontSize: 9,
+    fontFamily: 'Poppins_800ExtraBold',
+    letterSpacing: 0.4,
+  },
+  boardHeadTime: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+  },
+  boardHeadFlags: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  sealTile: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    borderWidth: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  nextChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  nextChipText: {
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
   },
   pivotDrawBadge: {
     width: 22,
