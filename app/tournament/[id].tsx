@@ -726,11 +726,15 @@ function MatchdaysTab({ tournamentId }: { tournamentId: string }) {
   // Jornadas ordenadas por fecha según el toggle (desc = nuevas primero).
   const sortedMatchdays = useMemo(() => {
     const list = [...(matchdays ?? [])];
-    list.sort((a: any, b: any) =>
-      mdSortOrder === 'desc'
+    list.sort((a: any, b: any) => {
+      // Abiertas primero, resueltas/cerradas al final; dentro de cada grupo, por fecha.
+      const ao = a?.status === 'open' ? 0 : 1;
+      const bo = b?.status === 'open' ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      return mdSortOrder === 'desc'
         ? (b?.date ?? '').localeCompare(a?.date ?? '')
-        : (a?.date ?? '').localeCompare(b?.date ?? ''),
-    );
+        : (a?.date ?? '').localeCompare(b?.date ?? '');
+    });
     return list;
   }, [matchdays, mdSortOrder]);
 

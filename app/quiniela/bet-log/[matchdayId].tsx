@@ -496,13 +496,20 @@ export default function BetLogScreen() {
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle}>Registro de Apuestas</Text>
-              <View style={styles.liveRow}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveLabel}>EN VIVO</Text>
-                <Text style={styles.headerSub} numberOfLines={1}>
-                  · {data?.matchday_name ?? 'Cargando...'}
-                </Text>
-              </View>
+              {(() => {
+                const fin = ['resolved', 'finished', 'closed'].includes(data?.status ?? '');
+                return (
+                  <View style={styles.liveRow}>
+                    <View style={[styles.liveDot, fin && { backgroundColor: '#94A3B8' }]} />
+                    <Text style={[styles.liveLabel, fin && { color: '#94A3B8' }]}>
+                      {fin ? 'FINALIZADA' : 'EN VIVO'}
+                    </Text>
+                    <Text style={styles.headerSub} numberOfLines={1}>
+                      · {data?.matchday_name ?? 'Cargando...'}
+                    </Text>
+                  </View>
+                );
+              })()}
             </View>
             <View style={styles.countBadge}>
               <Text style={styles.countNum}>{data?.total_bets ?? 0}</Text>
@@ -1161,6 +1168,15 @@ export default function BetLogScreen() {
                           borderBottomColor: theme.colors.border,
                         }]}
                       >
+                        {/* Borde rainbow sutil para TU fila */}
+                        {isMe && (
+                          <LinearGradient
+                            colors={['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#A66BFF']}
+                            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, zIndex: 2 }}
+                            pointerEvents="none"
+                          />
+                        )}
                         {/* User info cell */}
                         <View style={[styles.pivotUserCell, { width: userColW, borderRightColor: theme.colors.border }]}>
                           <View style={[styles.pivotPosCircle, { backgroundColor: isLeader ? '#FFD700' : posColor }]}>
