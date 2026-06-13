@@ -33,6 +33,14 @@ import api from '../../services/api';
 import { usePollaFinalEnabled } from '../../hooks/useAppSettings';
 import { Redirect } from 'expo-router';
 
+// Posiciones del podio (campeón → 4°). short = numeral grabado en la peana.
+const PODIUM_POS = [
+  { key: 'pick_1st' as const, short: '1°', pts: '12 pts', emoji: '🥇', color: '#FFD700' },
+  { key: 'pick_2nd' as const, short: '2°', pts: '8 pts',  emoji: '🥈', color: '#C0C0C0' },
+  { key: 'pick_3rd' as const, short: '3°', pts: '4 pts',  emoji: '🥉', color: '#CD7F32' },
+  { key: 'pick_4th' as const, short: '4°', pts: '2 pts',  emoji: '4️⃣', color: '#94A3B8' },
+];
+
 // Wrapper que decide si renderizar la pantalla o redirigir. Mantiene a
 // `PollaFinalScreenInner` libre del check para no romper Rules-of-Hooks.
 export default function PollaFinalScreenGuard() {
@@ -91,6 +99,17 @@ function PollaFinalScreenInner() {
       } catch { return []; }
     },
   });
+
+  // Equipos — para pintar las banderas en el podio cuando ya hay apuesta.
+  const { data: teams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      try { const res = await api.get('/api/teams'); return res?.data ?? []; }
+      catch { return []; }
+    },
+    staleTime: 60000,
+  });
+  const getTeam = (id?: string) => (teams ?? []).find((tt: any) => tt?.id === id);
 
   useFocusEffect(useCallback(() => {
     refetchTournaments();
@@ -224,6 +243,57 @@ function PollaFinalScreenInner() {
             const deadlineLabel  = deadline
               ? `${String(deadline.getDate()).padStart(2,'0')}/${String(deadline.getMonth()+1).padStart(2,'0')}/${deadline.getFullYear()} ${String(deadline.getHours()).padStart(2,'0')}:${String(deadline.getMinutes()).padStart(2,'0')}`
               : null;
+
+            // Escenario escalonado: 1° más alto, peana con numeral. Con apuesta
+            // muestra banderas; vacío muestra "+" tocable; cerrado muestra candado.
+            const podiumStage = (
+              <View style={styles.podiumStage}>
+                {PODIUM_POS.map((pos, i) => {
+                  const h = [150, 120, 100, 86][i];
+                  const first = i === 0;
+                  const team = hasBet ? getTeam(myBet?.[pos.key]) : null;
+                  return (
+                    <View key={pos.key} style={styles.podiumCol}>
+                      <View style={[
+                        styles.podiumSlot,
+                        !hasBet && styles.podiumSlotEmpty,
+                        { height: h, borderColor: pos.color + (hasBet ? '80' : '66'), backgroundColor: pos.color + (hasBet ? '1A' : '12') },
+                        first && styles.podiumSlotFirst,
+                        first && { shadowColor: pos.color },
+                      ]}>
+                        <Text style={{ fontSize: first ? 28 : 21 }}>{pos.emoji}</Text>
+                        {hasBet ? (
+                          team ? (
+                            <>
+                              <TeamFlag team={team} size={first ? 32 : 26} />
+                              <Text style={[styles.podiumTeamName, { color: pos.color, fontSize: first ? 12 : 11 }]} numberOfLines={1}>
+                                {team?.name}
+                              </Text>
+                            </>
+                          ) : (
+                            <Text style={styles.podiumEmpty}>—</Text>
+                          )
+                        ) : isPastDeadline ? (
+                          <Ionicons name="lock-closed" size={first ? 20 : 16} color={pos.color} />
+                        ) : (
+                          <View style={[
+                            styles.pickAffordance,
+                            { borderColor: pos.color + '99' },
+                            first && { width: 30, height: 30, borderRadius: 15 },
+                          ]}>
+                            <Ionicons name="add" size={first ? 20 : 15} color={pos.color} />
+                          </View>
+                        )}
+                        <Text style={styles.podiumPts}>{pos.pts}</Text>
+                      </View>
+                      <View style={[styles.plinth, { backgroundColor: pos.color + (hasBet ? '26' : '1F'), borderColor: pos.color + (hasBet ? '66' : '55') }]}>
+                        <Text style={[styles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            );
             return (
               <Animated.View key={t?.id} entering={FadeInDown.delay(idx * 90).duration(360).springify()}>
               <Card style={styles.tournamentCard}>
@@ -244,7 +314,10 @@ function PollaFinalScreenInner() {
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={styles.pozoGordoGradient}
                   >
-                    <Text style={styles.pozoGordoLabel}>✨  PREMIO GORDO  ✨</Text>
+                    <View style={styles.pozoGordoLabelRow}>
+                      <Ionicons name="trophy" size={13} color="#7B5A00" />
+                      <Text style={styles.pozoGordoLabel}>PREMIO GORDO</Text>
+                    </View>
                     <Text style={styles.pozoGordoValue}>{cur} {grandPrize}</Text>
                     <Text style={styles.pozoGordoFormula}>
                       {jornadasCount} jornadas × {inscritosCount} inscritos × {cur} {betFinal}
@@ -280,26 +353,45 @@ function PollaFinalScreenInner() {
                   </View>
                 )}
 
+                {/* ─── PODIO — escenario sobre panel oscuro (héroe interactivo) ── */}
+                {(!hasBet && !isPastDeadline) ? (
+                  <Pressable onPress={() => openBetModal(t)}>
+                    <LinearGradient colors={['#102643', '#0B1A30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.stageWrap}>
+                      {podiumStage}
+                      <View style={styles.podiumHint}>
+                        <Ionicons name="hand-left-outline" size={13} color="rgba(255,255,255,0.6)" />
+                        <Text style={styles.podiumHintText}>Toca para armar tu podio</Text>
+                      </View>
+                    </LinearGradient>
+                  </Pressable>
+                ) : (
+                  <LinearGradient colors={['#102643', '#0B1A30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.stageWrap}>
+                    {podiumStage}
+                    {!hasBet && isPastDeadline && (
+                      <View style={styles.podiumHint}>
+                        <Ionicons name="lock-closed" size={13} color="#F87171" />
+                        <Text style={[styles.podiumHintText, { color: '#F87171' }]}>Apuestas cerradas — pasó la fecha límite</Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                )}
+
+                {/* ─── Acción / estado ──────────────────────────────────────── */}
                 {hasBet ? (
-                  <View style={styles.betSummary}>
-                    <Text style={styles.betLabel}>Tu predicción:</Text>
-                    <BetPickRow label="🥇 1°" pickId={myBet?.pick_1st} pts="12 pts" />
-                    <BetPickRow label="🥈 2°" pickId={myBet?.pick_2nd} pts="8 pts" />
-                    <BetPickRow label="🥉 3°" pickId={myBet?.pick_3rd} pts="4 pts" />
-                    <BetPickRow label="4️⃣ 4°" pickId={myBet?.pick_4th} pts="2 pts" />
+                  <>
                     {myBet?.status === 'won' && (
                       <View style={styles.wonBadge}>
-                        <Text style={styles.wonText}>Ganaste {t?.currency ?? 'Bs'} {Number(myBet?.prize_won ?? 0).toFixed(2)}</Text>
+                        <Ionicons name="trophy" size={15} color="#10B981" />
+                        <Text style={styles.wonText}>Ganaste {cur} {Number(myBet?.prize_won ?? 0).toFixed(2)}</Text>
                       </View>
                     )}
                     {myBet?.status === 'lost' && (
                       <View style={[styles.wonBadge, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-                        <Text style={[styles.wonText, { color: '#EF4444' }]}>{myBet?.total_points ?? 0} puntos - No ganaste</Text>
+                        <Text style={[styles.wonText, { color: '#EF4444' }]}>{myBet?.total_points ?? 0} puntos · no ganaste</Text>
                       </View>
                     )}
-                  </View>
+                  </>
                 ) : isPastDeadline ? (
-                  // Deadline pasó y no apostó → cerrado, sin botón
                   <View style={[styles.betButton, { backgroundColor: theme.colors.inputBg, borderWidth: 1, borderColor: theme.colors.border }]}>
                     <Ionicons name="lock-closed" size={18} color={theme.colors.textMuted} />
                     <Text style={[styles.betButtonText, { color: theme.colors.textMuted }]}>Apuestas cerradas</Text>
@@ -329,30 +421,6 @@ function PollaFinalScreenInner() {
         />
       )}
     </SafeAreaView>
-  );
-}
-
-function BetPickRow({ label, pickId, pts }: { label: string; pickId?: string; pts: string }) {
-  const { theme } = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { data: teams } = useQuery({
-    queryKey: ['teams'],
-    queryFn: async () => {
-      const res = await api.get('/api/teams');
-      return res?.data ?? [];
-    },
-    staleTime: 60000,
-  });
-  const team = (teams ?? []).find((t: any) => t?.id === pickId);
-  return (
-    <View style={styles.pickRow}>
-      <Text style={styles.pickLabel}>{label}</Text>
-      <View style={styles.pickTeam}>
-        {team && <TeamFlag team={team} size={22} />}
-        <Text style={styles.pickName}>{team?.name ?? 'Sin seleccionar'}</Text>
-      </View>
-      <Text style={styles.pickPts}>{pts}</Text>
-    </View>
   );
 }
 
@@ -585,7 +653,9 @@ function makeStyles(t: typeof staticTheme) {
       color: 'rgba(255,255,255,0.6)',
       marginTop: 2,
     },
-    content: { padding: 20, paddingBottom: 80 },
+    // En escritorio el contenido se centra y no se estira a lo ancho; en móvil
+    // ocupa todo (la pantalla siempre es < maxWidth).
+    content: { padding: 20, paddingBottom: 80, width: '100%', maxWidth: 920, alignSelf: 'center' },
     tournamentCard: { marginBottom: 14 },
     tournamentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
 
@@ -608,8 +678,13 @@ function makeStyles(t: typeof staticTheme) {
       borderWidth: 1.5,
       borderColor: 'rgba(255,255,255,0.3)',
     },
+    pozoGordoLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+    },
     pozoGordoLabel: {
-      fontSize: 10,
+      fontSize: 11,
       fontFamily: 'Poppins_800ExtraBold',
       color: '#7B5A00',
       letterSpacing: 1.4,
@@ -683,14 +758,58 @@ function makeStyles(t: typeof staticTheme) {
     pickName: { color: t.colors.textPrimary, fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
     pickPts: { color: t.colors.textMuted, fontSize: 11 },
     wonBadge: {
+      flexDirection: 'row',
       backgroundColor: 'rgba(16,185,129,0.15)',
       borderRadius: 8,
-      paddingVertical: 6,
+      paddingVertical: 8,
       paddingHorizontal: 10,
-      marginTop: 8,
+      marginTop: 10,
       alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
     },
     wonText: { color: '#10B981', fontFamily: 'Poppins_700Bold', fontSize: 14 },
+
+    // ── Podio: escenario escalonado sobre panel oscuro ──────────────────────
+    stageWrap: {
+      borderRadius: 16,
+      padding: 14,
+      marginTop: 4,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
+      overflow: 'hidden',
+    },
+    podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+    podiumCol: { flex: 1, gap: 4 },
+    podiumSlot: {
+      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 4,
+      borderRadius: 12, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 4,
+    },
+    podiumSlotFirst: {
+      borderWidth: 1.5,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.6, shadowRadius: 14, elevation: 10,
+    },
+    podiumSlotEmpty: { borderStyle: 'dashed' as 'dashed' },
+    podiumTeamName: { fontSize: 11, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
+    podiumEmpty: { fontSize: 20, color: 'rgba(255,255,255,0.25)' },
+    podiumPts: { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.6)' },
+    pickAffordance: {
+      width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+      borderStyle: 'dashed' as 'dashed',
+      alignItems: 'center', justifyContent: 'center', marginVertical: 2,
+    },
+    plinth: {
+      width: '100%', height: 34, borderRadius: 10, borderWidth: 1,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    plinthNum: { fontSize: 18, fontFamily: 'Poppins_800ExtraBold' },
+    podiumHint: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 6, marginTop: 12,
+    },
+    podiumHintText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: 'rgba(255,255,255,0.6)' },
     betButton: {
       flexDirection: 'row',
       alignItems: 'center',
