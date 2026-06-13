@@ -358,6 +358,10 @@ export default function BetLogScreen() {
     ? Math.min(userColW, 160)
     : Math.min(userColW, Math.max(160, boardAvail - 200));
   const scrollPaneW = Math.max(120, boardAvail - frozenW);
+  // En móvil el nombre va en 2 líneas (full name visible aunque la columna sea
+  // angosta) → la fila es más alta. Ambos lados (congelado + panel) usan rowH,
+  // así siguen perfectamente alineados.
+  const rowH = isNarrow ? 82 : ROW_H;
   // ¿Hay más columnas de las que entran? → mostramos hint "desliza →"
   const matchCount    = (matchday?.matches ?? []).length;
   const colsTotalW    = matchCount * (COL_W + 4);
@@ -1243,7 +1247,7 @@ export default function BetLogScreen() {
                   <View
                     key={uid ?? idx}
                     style={[styles.boardUserRow, {
-                      height: ROW_H,
+                      height: rowH,
                       backgroundColor: rowBg,
                       borderBottomColor: theme.colors.border,
                     }]}
@@ -1262,7 +1266,10 @@ export default function BetLogScreen() {
                         : <Text style={[styles.pivotPosText, { color: isMe ? '#fff' : theme.colors.textSecondary }]}>{idx + 1}</Text>}
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[styles.pivotUserName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                      <Text
+                        style={[styles.pivotUserName, { color: theme.colors.textPrimary, fontSize: isNarrow ? 13 : 15, lineHeight: isNarrow ? 16 : 19 }]}
+                        numberOfLines={2}
+                      >
                         {bet?.full_name ?? '-'}{isMe ? ' · TÚ' : ''}
                       </Text>
                       <Text style={[styles.pivotStats, { color: theme.colors.textMuted }]}>
@@ -1333,7 +1340,7 @@ export default function BetLogScreen() {
                     <View
                       key={uid ?? idx}
                       style={[styles.boardDataRow, {
-                        height: ROW_H,
+                        height: rowH,
                         backgroundColor: rowBg,
                         borderBottomColor: theme.colors.border,
                       }]}
@@ -1352,7 +1359,7 @@ export default function BetLogScreen() {
                         // Sellado: el partido aún no arranca → pick oculto bajo candado.
                         if (!matchStarted) {
                           return (
-                            <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                            <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
                               <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
                                 <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
                               </View>
@@ -1362,7 +1369,7 @@ export default function BetLogScreen() {
                         // Abierto pero sin pick de este participante en este partido.
                         if (!pick || !revealed) {
                           return (
-                            <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                            <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
                               <Text style={[styles.pivotEmptyDash, { color: theme.colors.textMuted }]}>–</Text>
                             </View>
                           );
@@ -1375,7 +1382,7 @@ export default function BetLogScreen() {
                         const pickedDraw    = PICK_LABELS_DRAW.includes(code);
                         const isCorrect = pick?.is_correct ?? computeIsCorrect(code, match?.result);
                         return (
-                          <View key={mi} style={[styles.pivotCell, { height: ROW_H, borderRightColor: theme.colors.border }]}>
+                          <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
                             <View style={styles.pivotPickWrap}>
                               {pickedLocal   && <TeamFlag team={match?.team_a} size={24} />}
                               {pickedVisitor && <TeamFlag team={match?.team_b} size={24} />}
