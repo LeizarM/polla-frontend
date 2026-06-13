@@ -3,7 +3,7 @@
  * Shows: (a) users who bet (with per-match-revealed picks) and (b) users
  * who haven't bet yet. Picks reveal per-match as each starts.
  */
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   RefreshControl, Pressable, TextInput,
@@ -15,7 +15,10 @@ import { safeGoBack }     from '../../../utils/navigation';
 import { useQuery }       from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons }       from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown, FadeIn,
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
+} from 'react-native-reanimated';
 import { Skeleton }    from '../../../components/ui/Skeleton';
 import { EmptyState }  from '../../../components/ui/EmptyState';
 import { TeamFlag }    from '../../../components/ui/TeamFlag';
@@ -514,6 +517,21 @@ export default function BetLogScreen() {
     } catch { return ''; }
   };
 
+  // Pulso premium del indicador "EN VIVO": un halo que late hacia afuera y se
+  // desvanece, detrás de un punto sólido. Reanimated 3 (corre en el UI thread).
+  const livePulse = useSharedValue(0);
+  useEffect(() => {
+    livePulse.value = withRepeat(
+      withTiming(1, { duration: 1600, easing: Easing.out(Easing.ease) }),
+      -1,
+      false,
+    );
+  }, []);
+  const liveHaloStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + livePulse.value * 1.8 }],
+    opacity: 0.5 * (1 - livePulse.value),
+  }));
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg }]} edges={['top']}>
 
@@ -534,12 +552,17 @@ export default function BetLogScreen() {
                 const fin = ['resolved', 'finished', 'closed'].includes(data?.status ?? '');
                 return (
                   <View style={styles.liveRow}>
-                    <View style={[styles.liveDot, fin && { backgroundColor: '#94A3B8' }]} />
-                    <Text style={[styles.liveLabel, fin && { color: '#94A3B8' }]}>
-                      {fin ? 'FINALIZADA' : 'EN VIVO'}
-                    </Text>
+                    <View style={[styles.livePill, fin ? styles.livePillFin : styles.livePillLive]}>
+                      <View style={styles.liveDotWrap}>
+                        {!fin && <Animated.View style={[styles.liveHalo, liveHaloStyle]} pointerEvents="none" />}
+                        <View style={[styles.liveDotCore, fin && { backgroundColor: '#94A3B8' }]} />
+                      </View>
+                      <Text style={[styles.liveLabel, fin && { color: '#94A3B8' }]}>
+                        {fin ? 'FINALIZADA' : 'EN VIVO'}
+                      </Text>
+                    </View>
                     <Text style={styles.headerSub} numberOfLines={1}>
-                      · {data?.matchday_name ?? 'Cargando...'}
+                      {data?.matchday_name ?? 'Cargando...'}
                     </Text>
                   </View>
                 );
@@ -683,21 +706,23 @@ export default function BetLogScreen() {
                             : theme.colors.textMuted;
 
               return (
-                <View
+                <LinearGradient
                   key={matchKey}
+                  colors={[theme.colors.surfaceElevated, theme.colors.surface]}
+                  start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
                   style={[styles.matchSlim, {
-                    backgroundColor: theme.colors.surface,
                     borderColor: m.hasResult ? resColor + '50' : theme.colors.border,
                   }]}
                 >
-                  {/* Franja superior de color = resultado (solo partidos resueltos) */}
-                  {m.hasResult && (
-                    <LinearGradient
-                      colors={[resColor, resColor + '00']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                      style={{ height: 2 }}
-                    />
-                  )}
+                  {/* Catch-light superior (glass): color del resultado si está
+                      resuelto; si no, un brillo blanco tenue = borde "de vidrio". */}
+                  <LinearGradient
+                    colors={m.hasResult
+                      ? [resColor, resColor + '00']
+                      : ['rgba(255,255,255,0.16)', 'rgba(255,255,255,0.01)']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ height: m.hasResult ? 2 : 1.5 }}
+                  />
                   {/* Single-line match summary — always visible */}
                   <Pressable
                     onPress={() => m.hasResult && toggleMatch(matchKey)}
@@ -708,7 +733,7 @@ export default function BetLogScreen() {
                   >
                     <View style={styles.fixtureRow}>
                       <View style={styles.fixtureSide}>
-                        <TeamFlag team={m.match?.team_a} size={28} />
+                        <TeamFlag team={m.match?.team_a} size={32} />
                         <Text style={[styles.fixtureTeam, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamAName}
                         </Text>
@@ -725,7 +750,7 @@ export default function BetLogScreen() {
                         <Text style={[styles.fixtureTeam, styles.fixtureTeamRight, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                           {teamBName}
                         </Text>
-                        <TeamFlag team={m.match?.team_b} size={28} />
+                        <TeamFlag team={m.match?.team_b} size={32} />
                       </View>
                     </View>
 
@@ -776,7 +801,7 @@ export default function BetLogScreen() {
                               color={m.hasStarted ? '#F59E0B' : theme.colors.textMuted}
                             />
                             <Text style={[styles.statusChipText, { color: m.hasStarted ? '#F59E0B' : theme.colors.textMuted }]}>
-                              {m.hasStarted ? 'En curso' : 'Aún no juega'}
+                              {m.hasStarted ? 'En curso' : 'Próximamente'}
                             </Text>
                           </View>
                           {m.match?.match_date && (
@@ -937,7 +962,7 @@ export default function BetLogScreen() {
                       )}
                     </View>
                   )}
-                </View>
+                </LinearGradient>
               );
             })}
           </Animated.View>
@@ -1433,7 +1458,8 @@ const styles = StyleSheet.create({
   countNum:   { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#fff' },
   countLabel: { fontSize: 10, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)' },
 
-  scrollContent: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100 },
+  // Centrado en escritorio (no se estira a 1600px); full-width en móvil.
+  scrollContent: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100, width: '100%', maxWidth: 960, alignSelf: 'center' as const },
 
   noticeBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -1671,10 +1697,15 @@ const styles = StyleSheet.create({
   },
 
   // ── Fixture row (equipo A · VS/marcador · equipo B) ────────────────────────
+  // maxWidth + centrado evita que en pantallas anchas los equipos vuelen a los
+  // extremos con un vacío gigante; en móvil ocupa todo el ancho.
   fixtureRow: {
     flexDirection: 'row' as const,
     alignItems: 'center',
     gap: 10,
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center' as const,
   },
   fixtureSide: {
     flex: 1,
@@ -1862,10 +1893,40 @@ const styles = StyleSheet.create({
   liveRow: {
     flexDirection: 'row' as const,
     alignItems: 'center',
-    gap: 5,
-    marginTop: 3,
+    gap: 7,
+    marginTop: 5,
   },
-  liveDot: {
+  livePill: {
+    flexDirection: 'row' as const,
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  livePillLive: {
+    backgroundColor: 'rgba(255,59,48,0.16)',
+    borderColor: 'rgba(255,59,48,0.45)',
+  },
+  livePillFin: {
+    backgroundColor: 'rgba(148,163,184,0.16)',
+    borderColor: 'rgba(148,163,184,0.4)',
+  },
+  liveDotWrap: {
+    width: 8,
+    height: 8,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  liveHalo: {
+    position: 'absolute' as const,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
+  },
+  liveDotCore: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
