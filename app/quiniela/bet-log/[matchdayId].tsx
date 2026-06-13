@@ -735,8 +735,8 @@ export default function BetLogScreen() {
                   colors={[theme.colors.surfaceElevated, theme.colors.surface]}
                   start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
                   style={[styles.matchSlim, {
-                    borderColor: m.hasResult ? resColor + '50' : theme.colors.border,
-                  }]}
+                    borderColor: matchLive ? '#3B82F6AA' : m.hasResult ? resColor + '50' : theme.colors.border,
+                  }, matchLive && styles.matchSlimLive]}
                 >
                   {/* Catch-light superior (glass): color del resultado si está
                       resuelto; si no, un brillo blanco tenue = borde "de vidrio". */}
@@ -2310,21 +2310,29 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: 5,
   },
-  // ── EN VIVO: brillo/glass para banderas y columna del partido en curso ─────
+  // ── EN VIVO: halo/glass (mismo efecto que el "pozo dorado", en azul) ───────
+  // Tarjeta del partido en curso: halo azul suave y notorio.
+  matchSlimLive: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.85,
+    shadowRadius: 20,
+    elevation: 18,
+  },
   flagGlowLive: {
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.95,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 14,
     borderRadius: 999,
   },
   boardHeadLive: {
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOpacity: 0.9,
+    shadowRadius: 18,
+    elevation: 14,
   },
   liveChip: {
     flexDirection: 'row' as const,
