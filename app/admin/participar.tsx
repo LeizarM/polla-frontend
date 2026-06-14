@@ -262,6 +262,16 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
   const { theme } = useTheme();
   const cardStyles = useMemo(() => makeCardStyles(theme), [theme]);
   const hasBet = !!myBet;
+
+  // ¿La paleta activa es oscura? (luminancia del bg). Define contraste del marco.
+  const isDarkTheme = useMemo(() => {
+    const h = (theme.colors.bg || '#000000').replace('#', '');
+    if (h.length < 6) return true;
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+  }, [theme.colors.bg]);
+  // Dorado del header legible sobre el marco (claro u oscuro).
+  const goldText = isDarkTheme ? '#FFD700' : '#B45309';
   // Deadline de la Polla Final: una vez pasado, NADIE puede apostar. El backend
   // ya lo rechaza (create + update); acá lo reflejamos en la UI para que el
   // botón quede bloqueado y no genere un error feo. (Blindaje doble.)
@@ -317,22 +327,17 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
   return (
     <View style={cardStyles.wrapper}>
-      {/* Escena glassmorphism: fondo oscuro + orbes de color difuminados detrás */}
+      {/* Marco de la tarjeta — respeta la paleta activa (claro/oscuro) */}
       <LinearGradient
-        colors={['#0A0E1A', '#0D1322', '#0A0E1A']}
+        colors={[theme.colors.surfaceElevated, theme.colors.surface]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={cardStyles.gradientHeader}
       >
-        {/* Orbes glowing (azul, oro/naranja, rosa) — se ven difuminados a través del vidrio */}
-        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#3B82F6', width: 200, height: 200, top: -64, left: -44 }, ORB_BLUR_WEB]} />
-        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#FB923C', width: 250, height: 250, bottom: -96, left: '34%' }, ORB_BLUR_WEB]} />
-        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#E11D48', width: 180, height: 180, bottom: -50, right: -52 }, ORB_BLUR_WEB]} />
-
         <View style={cardStyles.headerTop}>
           <View style={cardStyles.titleRow}>
             <Text style={cardStyles.trophy}>🏆</Text>
             <View style={{ flex: 1 }}>
-              <Text style={cardStyles.pollaLabel}>POLLA FINAL · PREMIO GORDO</Text>
+              <Text style={[cardStyles.pollaLabel, { color: goldText }]}>POLLA FINAL · PREMIO GORDO</Text>
               <Text style={cardStyles.tournamentName}>{t?.name}</Text>
             </View>
           </View>
@@ -352,7 +357,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         {/* ─── Cartel GANADOR del premio gordo (cuando ya se resolvió) ──── */}
         {isResolved && (
           <View style={{ marginTop: 12, borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: '#FFD700' }}>
-            <LinearGradient colors={['rgba(255,215,0,0.18)', 'rgba(255,165,0,0.08)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 12 }}>
+            <LinearGradient colors={['rgba(13,18,32,0.62)', 'rgba(13,18,32,0.42)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[{ padding: 12 }, GLASS_WEB]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <Text style={{ fontSize: 16 }}>🏆</Text>
                 <Text style={{ color: '#FFD700', fontFamily: 'Poppins_800ExtraBold', fontSize: 12, letterSpacing: 0.5 }}>
@@ -376,10 +381,15 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           </View>
         )}
 
-        {/* ─── POZO TOTAL — panel de vidrio oscuro con número dorado glowing ─── */}
-        <View style={[cardStyles.prizeBox, { shadowColor: '#FB923C', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 26, elevation: 16 }]}>
+        {/* ─── POZO TOTAL — panel de vidrio OSCURO (legible en cualquier paleta) ─
+            con orbes de color difuminados detrás (glassmorphism, estilo referencia) */}
+        <View style={[cardStyles.prizeBox, { shadowColor: '#FB923C', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.45, shadowRadius: 26, elevation: 16 }]}>
+          {/* Orbes glowing detrás del vidrio (clipados al panel por overflow:hidden) */}
+          <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#3B82F6', width: 170, height: 170, top: -70, left: -30 }, ORB_BLUR_WEB]} />
+          <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#FB923C', width: 200, height: 200, bottom: -120, left: '38%' }, ORB_BLUR_WEB]} />
+          <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#E11D48', width: 150, height: 150, top: -50, right: -40 }, ORB_BLUR_WEB]} />
           <LinearGradient
-            colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)']}
+            colors={['rgba(13,18,32,0.62)', 'rgba(13,18,32,0.40)']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[cardStyles.prizeGradient, GLASS_WEB]}
           >
@@ -406,14 +416,15 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
         {/* Tie-split note */}
         <View style={cardStyles.tieNote}>
-          <Ionicons name="information-circle" size={11} color="rgba(255,215,0,0.85)" />
-          <Text style={cardStyles.tieNoteText}>
+          <Ionicons name="information-circle" size={11} color={theme.colors.textMuted} />
+          <Text style={[cardStyles.tieNoteText, { color: theme.colors.textMuted }]}>
             Si hay empate, el pozo se reparte entre los ganadores
           </Text>
         </View>
 
-        {/* ─── PODIO — escenario escalonado (1° más alto) con peana y numeral ──
-            Es el héroe interactivo: la altura de cada escalón codifica los puntos. */}
+        {/* ─── PODIO — sobre panel de vidrio OSCURO (contrasta en cualquier paleta) ──
+            1° más alto, peana + numeral; la altura codifica los puntos. */}
+        <View style={[cardStyles.podiumStageWrap, GLASS_WEB]}>
         {hasBet ? (
           <View style={cardStyles.podiumStage}>
             {POSITIONS.map((pos, idx) => {
@@ -488,6 +499,7 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
             </View>
           </Pressable>
         )}
+        </View>
       </LinearGradient>
 
       {/* Bottom action */}
@@ -783,7 +795,7 @@ function makeCardStyles(t: typeof staticTheme) {
       letterSpacing: 1.2,
       marginBottom: 2,
     },
-    tournamentName: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+    tournamentName: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: t.colors.textPrimary },
     tournamentInfo: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.65)', marginTop: 2 },
 
     // ── BIG PRIZE display ──────────────────────────────────────────────────
@@ -869,7 +881,18 @@ function makeCardStyles(t: typeof staticTheme) {
     },
     pendienteText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#F59E0B' },
     // ── Podio: escenario escalonado (slot variable + peana fija) ───────────
-    podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginTop: 10 },
+    // Panel "escenario" oscuro que envuelve el podio → medallas/textos blancos
+    // siempre contrastan, sin importar la paleta (claro/oscuro).
+    podiumStageWrap: {
+      marginTop: 6,
+      borderRadius: 16,
+      padding: 12,
+      backgroundColor: 'rgba(10,14,26,0.55)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
+      overflow: 'hidden',
+    },
+    podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginTop: 0 },
     podiumCol: { flex: 1, gap: 4 },
     podiumSlot: {
       width: '100%', alignItems: 'center', justifyContent: 'center', gap: 4,
