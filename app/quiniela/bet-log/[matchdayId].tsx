@@ -6,7 +6,7 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  RefreshControl, Pressable, TextInput, useWindowDimensions,
+  RefreshControl, Pressable, TextInput, useWindowDimensions, Platform,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -40,6 +40,13 @@ const LEADERS_PREVIEW = 5;
 const HEADER_H = 80;
 const ROW_H    = 62;
 const COL_W    = 92; // ancho de cada columna de partido (header + celdas)
+
+// Glassmorphism REAL (frosted) — backdrop-filter solo existe en web. En RN
+// nativo (APK/iOS) no aplica; ahí el efecto "vidrio" lo da el fondo translúcido
+// + borde claro. Por eso lo probamos en web primero.
+const GLASS_WEB: any = Platform.OS === 'web'
+  ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }
+  : null;
 
 // Compute is_correct client-side when backend didn't set it (e.g., result just entered).
 // Module-level so it's available everywhere without TDZ issues.
@@ -732,11 +739,13 @@ export default function BetLogScreen() {
               return (
                 <LinearGradient
                   key={matchKey}
-                  colors={[theme.colors.surfaceElevated, theme.colors.surface]}
+                  colors={matchLive
+                    ? ['rgba(96,165,250,0.18)', 'rgba(59,130,246,0.06)']
+                    : [theme.colors.surfaceElevated, theme.colors.surface]}
                   start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
                   style={[styles.matchSlim, {
-                    borderColor: matchLive ? '#3B82F6AA' : m.hasResult ? resColor + '50' : theme.colors.border,
-                  }, matchLive && styles.matchSlimLive]}
+                    borderColor: matchLive ? 'rgba(191,219,254,0.55)' : m.hasResult ? resColor + '50' : theme.colors.border,
+                  }, matchLive && styles.matchSlimLive, matchLive && GLASS_WEB]}
                 >
                   {/* Catch-light superior (glass): color del resultado si está
                       resuelto; si no, un brillo blanco tenue = borde "de vidrio". */}
@@ -1313,9 +1322,9 @@ export default function BetLogScreen() {
                           key={match?.id ?? mi}
                           style={[styles.boardHeadCell, {
                             height: HEADER_H,
-                            backgroundColor: live ? theme.colors.primaryLight + '12' : theme.colors.surface,
-                            borderColor: started ? tint + (live ? '99' : '55') : theme.colors.border,
-                          }, live && styles.boardHeadLive]}
+                            backgroundColor: live ? 'rgba(96,165,250,0.16)' : theme.colors.surface,
+                            borderColor: started ? (live ? 'rgba(191,219,254,0.55)' : tint + '55') : theme.colors.border,
+                          }, live && styles.boardHeadLive, live && GLASS_WEB]}
                         >
                           {started ? (
                             <View style={[styles.boardHeadChip, { backgroundColor: tint + '22' }, live && styles.liveChip]}>
@@ -2310,29 +2319,31 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: 5,
   },
-  // ── EN VIVO: halo/glass (mismo efecto que el "pozo dorado", en azul) ───────
-  // Tarjeta del partido en curso: halo azul suave y notorio.
+  // ── EN VIVO: glassmorphism (panel translúcido + blur web + borde de cristal)
+  // Sombra ambiente SUAVE (no halo) para el look de vidrio flotante.
   matchSlimLive: {
+    borderWidth: 1.5,
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 20,
-    elevation: 18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 10,
   },
   flagGlowLive: {
-    shadowColor: '#3B82F6',
+    shadowColor: '#60A5FA',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 14,
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 8,
     borderRadius: 999,
   },
   boardHeadLive: {
+    borderWidth: 1.5,
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 18,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
   },
   liveChip: {
     flexDirection: 'row' as const,
