@@ -37,8 +37,10 @@ import { Redirect } from 'expo-router';
 
 // Glassmorphism REAL (frosted) solo en web — backdrop-filter no existe en RN nativo.
 const GLASS_WEB: any = Platform.OS === 'web'
-  ? { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }
+  ? { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)' }
   : null;
+// Orbes de color glowing detrás del vidrio (blur fuerte, solo web).
+const ORB_BLUR_WEB: any = Platform.OS === 'web' ? { filter: 'blur(48px)' } : null;
 
 // Posiciones del podio (campeón → 4°). short = numeral grabado en la peana.
 const PODIUM_POS = [
@@ -315,14 +317,18 @@ function PollaFinalScreenInner() {
                 </View>
 
                 {/* ─── Premio Gordo callout — visible to everyone ──────────── */}
-                <View style={[styles.pozoGordoBox, { shadowOpacity: 0.75, shadowRadius: 22, elevation: 16 }]}>
+                <View style={[styles.pozoGordoBox, { shadowColor: '#FB923C', shadowOpacity: 0.45, shadowRadius: 26, elevation: 16 }]}>
+                  {/* Orbes glowing detrás del vidrio (clipados por overflow:hidden) */}
+                  <View pointerEvents="none" style={[styles.orb, { backgroundColor: '#3B82F6', width: 170, height: 170, top: -70, left: -30 }, ORB_BLUR_WEB]} />
+                  <View pointerEvents="none" style={[styles.orb, { backgroundColor: '#FB923C', width: 200, height: 200, bottom: -120, left: '38%' }, ORB_BLUR_WEB]} />
+                  <View pointerEvents="none" style={[styles.orb, { backgroundColor: '#E11D48', width: 150, height: 150, top: -50, right: -40 }, ORB_BLUR_WEB]} />
                   <LinearGradient
-                    colors={['rgba(255,230,128,0.72)', 'rgba(255,215,0,0.64)', 'rgba(255,165,0,0.60)', 'rgba(212,160,23,0.66)']}
+                    colors={['rgba(13,18,32,0.62)', 'rgba(13,18,32,0.40)']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={[styles.pozoGordoGradient, GLASS_WEB]}
                   >
                     <View style={styles.pozoGordoLabelRow}>
-                      <Ionicons name="trophy" size={13} color="#7B5A00" />
+                      <Ionicons name="trophy" size={13} color="#FFD700" />
                       <Text style={styles.pozoGordoLabel}>PREMIO GORDO</Text>
                     </View>
                     <Text style={styles.pozoGordoValue}>{formatMoney(grandPrize, cur)}</Text>
@@ -339,10 +345,10 @@ function PollaFinalScreenInner() {
                     />
                   </Animated.View>
                 </View>
-                <View style={styles.tieRow}>
-                  <Ionicons name="information-circle-outline" size={11} color={theme.colors.textMuted} />
-                  <Text style={styles.tieText}>
-                    Si hay empate en la predicción del podio, el pozo se reparte entre los ganadores
+                <View style={[styles.tieRow, { backgroundColor: theme.colors.inputBg, borderColor: theme.colors.border }]}>
+                  <Ionicons name="information-circle" size={13} color={theme.colors.primaryLight} />
+                  <Text style={[styles.tieText, { color: theme.colors.textSecondary }]}>
+                    Si hay empate, el pozo se reparte entre los ganadores
                   </Text>
                 </View>
 
@@ -694,19 +700,20 @@ function makeStyles(t: typeof staticTheme) {
     pozoGordoLabel: {
       fontSize: 11,
       fontFamily: 'Poppins_800ExtraBold',
-      color: '#7B5A00',
+      color: '#FFD700',
       letterSpacing: 1.4,
     },
     pozoGordoValue: {
       fontSize: 40,
       fontFamily: 'Poppins_800ExtraBold',
-      color: '#3D2A00',
+      color: '#FFD700',
       letterSpacing: -1.2,
       marginTop: 2,
-      textShadowColor: 'rgba(255,255,255,0.5)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 1,
+      textShadowColor: 'rgba(251,146,60,0.7)',
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 16,
     },
+    orb: { position: 'absolute', borderRadius: 9999, opacity: 0.55 },
     pozoGordoShine: {
       position: 'absolute',
       top: -12, bottom: -12,
@@ -716,23 +723,25 @@ function makeStyles(t: typeof staticTheme) {
     pozoGordoFormula: {
       fontSize: 10,
       fontFamily: 'Poppins_600SemiBold',
-      color: '#5B3F00',
+      color: 'rgba(255,255,255,0.7)',
       marginTop: 3,
     },
     tieRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 6,
       justifyContent: 'center',
-      marginBottom: 10,
-      paddingHorizontal: 4,
+      alignSelf: 'center',
+      marginTop: 4,
+      marginBottom: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
     },
     tieText: {
-      fontSize: 10,
-      fontFamily: 'Poppins_500Medium',
-      color: t.colors.textMuted,
-      fontStyle: 'italic' as const,
-      flex: 1,
+      fontSize: 11.5,
+      fontFamily: 'Poppins_600SemiBold',
     },
     tournamentName: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: t.colors.textPrimary },
     tournamentInfo: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: t.colors.textSecondary, marginTop: 2 },

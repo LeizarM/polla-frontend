@@ -415,9 +415,9 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         </View>
 
         {/* Tie-split note */}
-        <View style={cardStyles.tieNote}>
-          <Ionicons name="information-circle" size={11} color={theme.colors.textMuted} />
-          <Text style={[cardStyles.tieNoteText, { color: theme.colors.textMuted }]}>
+        <View style={[cardStyles.tieNote, { backgroundColor: theme.colors.inputBg, borderColor: theme.colors.border }]}>
+          <Ionicons name="information-circle" size={13} color={theme.colors.primaryLight} />
+          <Text style={[cardStyles.tieNoteText, { color: theme.colors.textSecondary }]}>
             Si hay empate, el pozo se reparte entre los ganadores
           </Text>
         </View>
@@ -855,16 +855,19 @@ function makeCardStyles(t: typeof staticTheme) {
     tieNote: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 6,
       justifyContent: 'center',
+      alignSelf: 'center',
+      marginTop: 12,
       marginBottom: 12,
-      paddingHorizontal: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
     },
     tieNoteText: {
-      fontSize: 10,
-      fontFamily: 'Poppins_500Medium',
-      color: 'rgba(255,215,0,0.85)',
-      fontStyle: 'italic' as const,
+      fontSize: 11.5,
+      fontFamily: 'Poppins_600SemiBold',
     },
     apostadoBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
