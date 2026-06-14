@@ -1237,6 +1237,10 @@ export default function BetLogScreen() {
                 <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
                 <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>sellado · abre al pitazo</Text>
               </View>
+              <View style={styles.boardLegendItem}>
+                <Ionicons name="remove-circle-outline" size={13} color={theme.colors.textMuted} />
+                <Text style={[styles.boardLegendTx, { color: theme.colors.textMuted }]}>no apostó este partido</Text>
+              </View>
               {canScrollBoard && (
                 <View style={[styles.scrollHint, { backgroundColor: theme.colors.primaryLight + '18', borderColor: theme.colors.primaryLight + '40' }]}>
                   <Ionicons name="swap-horizontal" size={13} color={theme.colors.primaryLight} />
@@ -1376,21 +1380,27 @@ export default function BetLogScreen() {
                           return pa && pb && pa === ma && pb === mb;
                         });
                         const revealed = pick ? isPickRevealed(pick) : false;
-                        // Sellado: el partido aún no arranca → pick oculto bajo candado.
+                        // Partido aún no arranca. Distinguimos: tiene pronóstico
+                        // (oculto bajo candado) VS NO pronosticó este partido (explícito).
                         if (!matchStarted) {
                           return (
                             <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
-                              <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
-                                <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
-                              </View>
+                              {pick ? (
+                                <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
+                                  <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
+                                </View>
+                              ) : (
+                                <Ionicons name="remove-circle-outline" size={18} color={theme.colors.textMuted} style={{ opacity: 0.55 }} />
+                              )}
                             </View>
                           );
                         }
                         // Abierto pero sin pick de este participante en este partido.
+                        // Inició y este participante NO pronosticó este partido → explícito.
                         if (!pick || !revealed) {
                           return (
                             <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }, cellTint]}>
-                              <Text style={[styles.pivotEmptyDash, { color: theme.colors.textMuted }]}>–</Text>
+                              <Ionicons name="remove-circle-outline" size={18} color={theme.colors.textMuted} style={{ opacity: 0.55 }} />
                             </View>
                           );
                         }
