@@ -1262,7 +1262,7 @@ export default function BetLogScreen() {
                     {boardRows.length} en juego
                   </Text>
                 </View>
-                {boardRows.map(({ bet, idx, uid, isMe, isLeader, rowBg }) => (
+                {boardRows.map(({ bet, idx, uid, isMe, isLeader, rowBg, userPicksList }) => (
                   <View
                     key={uid ?? idx}
                     style={[styles.boardUserRow, {
@@ -1291,8 +1291,8 @@ export default function BetLogScreen() {
                       >
                         {bet?.full_name ?? '-'}{isMe ? ' · TÚ' : ''}
                       </Text>
-                      <Text style={[styles.pivotStats, { color: theme.colors.textMuted }]}>
-                        ✓{bet.correctSoFar}{bet.wrongSoFar > 0 ? `  ✗${bet.wrongSoFar}` : ''}
+                      <Text style={[styles.pivotStats, { color: theme.colors.textMuted }]} numberOfLines={1}>
+                        {(userPicksList?.length ?? 0)}/{matchCount} pron.{(bet.correctSoFar + bet.wrongSoFar) > 0 ? `  ·  ✓${bet.correctSoFar}${bet.wrongSoFar > 0 ? ` ✗${bet.wrongSoFar}` : ''}` : ''}
                       </Text>
                     </View>
                   </View>
