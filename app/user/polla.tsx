@@ -35,6 +35,11 @@ import { usePollaFinalEnabled } from '../../hooks/useAppSettings';
 import { formatMoney } from '../../utils/currency';
 import { Redirect } from 'expo-router';
 
+// Glassmorphism REAL (frosted) solo en web — backdrop-filter no existe en RN nativo.
+const GLASS_WEB: any = Platform.OS === 'web'
+  ? { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }
+  : null;
+
 // Posiciones del podio (campeón → 4°). short = numeral grabado en la peana.
 const PODIUM_POS = [
   { key: 'pick_1st' as const, short: '1°', pts: '12 pts', emoji: '🥇', color: '#FFD700' },
@@ -312,9 +317,9 @@ function PollaFinalScreenInner() {
                 {/* ─── Premio Gordo callout — visible to everyone ──────────── */}
                 <View style={[styles.pozoGordoBox, { shadowOpacity: 0.75, shadowRadius: 22, elevation: 16 }]}>
                   <LinearGradient
-                    colors={['#FFE680', '#FFD700', '#FFA500', '#D4A017']}
+                    colors={['rgba(255,230,128,0.72)', 'rgba(255,215,0,0.64)', 'rgba(255,165,0,0.60)', 'rgba(212,160,23,0.66)']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={styles.pozoGordoGradient}
+                    style={[styles.pozoGordoGradient, GLASS_WEB]}
                   >
                     <View style={styles.pozoGordoLabelRow}>
                       <Ionicons name="trophy" size={13} color="#7B5A00" />

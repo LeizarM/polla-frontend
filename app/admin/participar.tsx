@@ -36,6 +36,11 @@ import api from '../../services/api';
 import { formatMoney } from '../../utils/currency';
 import { parseBackendDate, toDDMMYYYY } from '../../utils/date';
 
+// Glassmorphism REAL (frosted) solo en web — backdrop-filter no existe en RN nativo.
+const GLASS_WEB: any = Platform.OS === 'web'
+  ? { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }
+  : null;
+
 const POSITIONS = [
   { key: 'pick_1st' as const, label: '1° Lugar', short: '1°', pts: '12 pts', emoji: '🥇', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
   { key: 'pick_2nd' as const, label: '2° Lugar', short: '2°', pts: '8 pts',  emoji: '🥈', color: '#C0C0C0', bg: 'rgba(192,192,192,0.12)' },
@@ -367,9 +372,9 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
         {/* ─── POZO TOTAL — joya dorada (lingote reluciente) ───────────── */}
         <View style={[cardStyles.prizeBox, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 22, elevation: 18 }]}>
           <LinearGradient
-            colors={['#FFE680', '#FFD700', '#FFA500', '#D4A017']}
+            colors={['rgba(255,230,128,0.72)', 'rgba(255,215,0,0.64)', 'rgba(255,165,0,0.60)', 'rgba(212,160,23,0.66)']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={cardStyles.prizeGradient}
+            style={[cardStyles.prizeGradient, GLASS_WEB]}
           >
             <View style={cardStyles.prizeLabelRow}>
               <Ionicons name="trophy" size={13} color="#7B5A00" />
