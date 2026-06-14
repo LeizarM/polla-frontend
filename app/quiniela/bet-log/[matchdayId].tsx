@@ -850,13 +850,16 @@ export default function BetLogScreen() {
                       )}
                     </View>
 
-                    {/* Distribución de picks: cuántos eligieron cada opción (solo si el partido arrancó) */}
-                    {m.hasStarted && (m.localCount + m.drawCount + m.visitorCount) > 0 && (
+                    {/* Distribución de picks: cuántos eligieron cada opción (solo si el partido arrancó).
+                        Incluye un segmento "No apostó" para contar a TODOS los inscritos que no
+                        pronosticaron este partido (sin pick en este partido + los que no apostaron la jornada). */}
+                    {m.hasStarted && (m.localCount + m.drawCount + m.visitorCount + m.skipped.length) > 0 && (
                       <View style={[styles.distWrap, { borderTopColor: theme.colors.border }]}>
                         <View style={styles.distBar}>
-                          {m.localCount   > 0 && <View style={{ flex: m.localCount,   backgroundColor: '#3B82F6' }} />}
-                          {m.drawCount    > 0 && <View style={{ flex: m.drawCount,    backgroundColor: '#F59E0B' }} />}
-                          {m.visitorCount > 0 && <View style={{ flex: m.visitorCount, backgroundColor: '#EF4444' }} />}
+                          {m.localCount     > 0 && <View style={{ flex: m.localCount,     backgroundColor: '#3B82F6' }} />}
+                          {m.drawCount      > 0 && <View style={{ flex: m.drawCount,      backgroundColor: '#F59E0B' }} />}
+                          {m.visitorCount   > 0 && <View style={{ flex: m.visitorCount,   backgroundColor: '#EF4444' }} />}
+                          {m.skipped.length > 0 && <View style={{ flex: m.skipped.length, backgroundColor: '#64748B' }} />}
                         </View>
                         <View style={styles.distLabels}>
                           <View style={styles.distItem}>
@@ -876,6 +879,13 @@ export default function BetLogScreen() {
                               {m.match?.team_b?.name ?? 'Visitante'}
                             </Text>
                             <Text style={[styles.distCount, { color: '#EF4444' }]}>{m.visitorCount}</Text>
+                          </View>
+                          <View style={styles.distItem}>
+                            <Ionicons name="remove-circle-outline" size={16} color="#94A3B8" />
+                            <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+                              No apostó
+                            </Text>
+                            <Text style={[styles.distCount, { color: '#94A3B8' }]}>{m.skipped.length}</Text>
                           </View>
                         </View>
                       </View>
