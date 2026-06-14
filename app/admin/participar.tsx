@@ -38,8 +38,10 @@ import { parseBackendDate, toDDMMYYYY } from '../../utils/date';
 
 // Glassmorphism REAL (frosted) solo en web — backdrop-filter no existe en RN nativo.
 const GLASS_WEB: any = Platform.OS === 'web'
-  ? { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }
+  ? { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)' }
   : null;
+// Orbes de color glowing detrás del vidrio (blur fuerte, solo web).
+const ORB_BLUR_WEB: any = Platform.OS === 'web' ? { filter: 'blur(48px)' } : null;
 
 const POSITIONS = [
   { key: 'pick_1st' as const, label: '1° Lugar', short: '1°', pts: '12 pts', emoji: '🥇', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
@@ -315,12 +317,17 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
   return (
     <View style={cardStyles.wrapper}>
-      {/* Premium gold-tinted gradient header */}
+      {/* Escena glassmorphism: fondo oscuro + orbes de color difuminados detrás */}
       <LinearGradient
-        colors={['#0D1B2E', '#1D4ED8', '#0D1B2E']}
+        colors={['#0A0E1A', '#0D1322', '#0A0E1A']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={cardStyles.gradientHeader}
       >
+        {/* Orbes glowing (azul, oro/naranja, rosa) — se ven difuminados a través del vidrio */}
+        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#3B82F6', width: 200, height: 200, top: -64, left: -44 }, ORB_BLUR_WEB]} />
+        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#FB923C', width: 250, height: 250, bottom: -96, left: '34%' }, ORB_BLUR_WEB]} />
+        <View pointerEvents="none" style={[cardStyles.orb, { backgroundColor: '#E11D48', width: 180, height: 180, bottom: -50, right: -52 }, ORB_BLUR_WEB]} />
+
         <View style={cardStyles.headerTop}>
           <View style={cardStyles.titleRow}>
             <Text style={cardStyles.trophy}>🏆</Text>
@@ -369,15 +376,15 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           </View>
         )}
 
-        {/* ─── POZO TOTAL — joya dorada (lingote reluciente) ───────────── */}
-        <View style={[cardStyles.prizeBox, { shadowColor: '#FFD700', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.7, shadowRadius: 22, elevation: 18 }]}>
+        {/* ─── POZO TOTAL — panel de vidrio oscuro con número dorado glowing ─── */}
+        <View style={[cardStyles.prizeBox, { shadowColor: '#FB923C', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 26, elevation: 16 }]}>
           <LinearGradient
-            colors={['rgba(255,230,128,0.72)', 'rgba(255,215,0,0.64)', 'rgba(255,165,0,0.60)', 'rgba(212,160,23,0.66)']}
+            colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[cardStyles.prizeGradient, GLASS_WEB]}
           >
             <View style={cardStyles.prizeLabelRow}>
-              <Ionicons name="trophy" size={13} color="#7B5A00" />
+              <Ionicons name="trophy" size={13} color="#FFD700" />
               <Text style={cardStyles.prizeLabel}>POZO TOTAL</Text>
             </View>
             <Text style={cardStyles.prizeValue}>
@@ -763,10 +770,6 @@ function makeCardStyles(t: typeof staticTheme) {
       width: '100%', maxWidth: 880, alignSelf: 'center',
     },
     gradientHeader: { padding: 20, paddingBottom: 14, position: 'relative', overflow: 'hidden' },
-    orb: {
-      position: 'absolute',
-      width: 120, height: 120, borderRadius: 60,
-    },
     headerTop: {
       flexDirection: 'row', alignItems: 'flex-start',
       justifyContent: 'space-between', marginBottom: 14,
@@ -795,11 +798,11 @@ function makeCardStyles(t: typeof staticTheme) {
       elevation: 10,
     },
     prizeGradient: {
-      paddingVertical: 16,
+      paddingVertical: 18,
       paddingHorizontal: 14,
       alignItems: 'center',
-      borderWidth: 1.5,
-      borderColor: 'rgba(255,255,255,0.3)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.18)',
       borderRadius: 14,
     },
     prizeLabelRow: {
@@ -810,25 +813,27 @@ function makeCardStyles(t: typeof staticTheme) {
     prizeLabel: {
       fontSize: 11,
       fontFamily: 'Poppins_800ExtraBold',
-      color: '#7B5A00',
+      color: '#FFD700',
       letterSpacing: 1.4,
     },
     prizeValue: {
       fontSize: 46,
       fontFamily: 'Poppins_800ExtraBold',
-      color: '#3D2A00',
+      color: '#FFD700',
       letterSpacing: -1.5,
       marginTop: 2,
-      textShadowColor: 'rgba(255,255,255,0.5)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 1,
+      textShadowColor: 'rgba(251,146,60,0.7)',
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 18,
     },
     prizeFormula: {
       fontSize: 11,
       fontFamily: 'Poppins_600SemiBold',
-      color: '#5B3F00',
+      color: 'rgba(255,255,255,0.7)',
       marginTop: 4,
     },
+    // Orbe de color glowing detrás del vidrio (escena glassmorphism)
+    orb: { position: 'absolute', borderRadius: 9999, opacity: 0.55 },
     prizeShine: {
       position: 'absolute',
       top: -12, bottom: -12,
