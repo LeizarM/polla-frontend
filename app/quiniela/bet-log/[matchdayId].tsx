@@ -34,6 +34,13 @@ const PICK_LABELS_VISITOR  = ['V', '2'];
 // Cuántos líderes mostrar antes de colapsar la lista (puede haber decenas empatados).
 const LEADERS_PREVIEW = 5;
 
+// Clave de orden alfabético: ignora símbolos/espacios al INICIO del nombre
+// (" José", ".Teka") para que el orden use la primera LETRA real y no el símbolo
+// (que ordena antes que las letras). No altera el nombre que se muestra.
+const sortKey = (s: any) => String(s ?? '').replace(/^[^a-zA-ZÀ-ÿ0-9]+/, '').trim();
+const byName  = (a: any, b: any) =>
+  sortKey(a).localeCompare(sortKey(b), 'es', { sensitivity: 'base' });
+
 // Tablero de Quiniela: alturas/ancho FIJOS para que la columna congelada
 // (Participante) y el panel de partidos desplazable mantengan sus filas
 // perfectamente alineadas. Escalados para legibilidad (vista web/escritorio).
@@ -265,11 +272,10 @@ export default function BetLogScreen() {
         username: p?.user?.username ?? p?.username ?? '-',
         full_name: p?.user?.full_name ?? p?.full_name ?? '-',
       }))
-      // Orden alfabético por nombre (igual que la matriz de arriba)
+      // Orden alfabético por nombre (igual que la matriz de arriba), ignorando
+      // símbolos/espacios al inicio.
       .sort((a: any, b: any) =>
-        String(a.full_name ?? a.username ?? '').localeCompare(
-          String(b.full_name ?? b.username ?? ''), 'es',
-        ),
+        byName(a.full_name ?? a.username, b.full_name ?? b.username),
       );
   }, [participants, data?.bets]);
 
@@ -322,9 +328,7 @@ export default function BetLogScreen() {
   // aparte, así que NO dependen de este orden.
   const sortedBets = useMemo(() => {
     return [...betsWithStats].sort((a: any, b: any) =>
-      String(a?.full_name ?? a?.username ?? '').localeCompare(
-        String(b?.full_name ?? b?.username ?? ''), 'es',
-      ),
+      byName(a?.full_name ?? a?.username, b?.full_name ?? b?.username),
     );
   }, [betsWithStats]);
 
