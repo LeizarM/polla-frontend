@@ -865,26 +865,26 @@ export default function BetLogScreen() {
                           {m.visitorCount   > 0 && <View style={{ flex: m.visitorCount,   backgroundColor: '#EF4444' }} />}
                           {m.skipped.length > 0 && <View style={{ flex: m.skipped.length, backgroundColor: '#64748B' }} />}
                         </View>
-                        <View style={styles.distLabels}>
-                          <View style={styles.distItem}>
+                        <View style={[styles.distLabels, isNarrow && styles.distLabelsNarrow]}>
+                          <View style={[styles.distItem, isNarrow && styles.distItemNarrow]}>
                             <TeamFlag team={m.match?.team_a} size={18} />
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                               {m.match?.team_a?.name ?? 'Local'}
                             </Text>
                             <Text style={[styles.distCount, { color: '#3B82F6' }]}>{m.localCount}</Text>
                           </View>
-                          <View style={styles.distItem}>
+                          <View style={[styles.distItem, isNarrow && styles.distItemNarrow]}>
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]}>Empate</Text>
                             <Text style={[styles.distCount, { color: '#F59E0B' }]}>{m.drawCount}</Text>
                           </View>
-                          <View style={styles.distItem}>
+                          <View style={[styles.distItem, isNarrow && styles.distItemNarrow]}>
                             <TeamFlag team={m.match?.team_b} size={18} />
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                               {m.match?.team_b?.name ?? 'Visitante'}
                             </Text>
                             <Text style={[styles.distCount, { color: '#EF4444' }]}>{m.visitorCount}</Text>
                           </View>
-                          <View style={styles.distItem}>
+                          <View style={[styles.distItem, isNarrow && styles.distItemNarrow]}>
                             <Ionicons name="remove-circle-outline" size={16} color="#94A3B8" />
                             <Text style={[styles.distName, { color: theme.colors.textSecondary }]} numberOfLines={1}>
                               No apostó
@@ -2433,17 +2433,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
   },
+  // En pantallas angostas la fila de 4 items (Local·Empate·Visitante·No apostó)
+  // no entra → envuelve en 2×2 para que no se encimen ni se corten los nombres.
+  distLabelsNarrow: {
+    flexWrap: 'wrap' as const,
+    rowGap: 10,
+  },
   distItem: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: 4,
   },
+  // 2 por fila en móvil (con el wrap del contenedor).
+  distItemNarrow: {
+    flexBasis: '46%' as const,
+  },
   distName: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    maxWidth: 130,
+    maxWidth: 110,
+    flexShrink: 1,
   },
   distCount: {
     fontSize: 17,
