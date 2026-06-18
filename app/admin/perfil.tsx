@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  Alert, Platform, Pressable,
+  Alert, Platform, Pressable, Switch,
 } from 'react-native';
 import { SafeAreaView }   from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -57,6 +57,9 @@ export default function PerfilScreen() {
 
   const [editing,  setEditing]  = useState(false);
   const [loading,  setLoading]  = useState(false);
+  // Preferencia: flip de mis pronósticos sellados (se guarda en la cuenta).
+  const flipOn = !!(user as any)?.flip_own_picks;
+  const [flipSaving, setFlipSaving] = useState(false);
   const [formData, setFormData] = useState({
     full_name: user?.full_name ?? '',
     phone:     user?.phone     ?? '',
@@ -87,6 +90,25 @@ export default function PerfilScreen() {
       showToast('error', err?.friendlyMessage || 'Error al actualizar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleFlip = async (val: boolean) => {
+    if (flipSaving) return;
+    setFlipSaving(true);
+    updateUser({ flip_own_picks: val } as any); // optimista
+    try {
+      const response = await api.patch('/api/users/me', { flip_own_picks: val });
+      if (response?.data) updateUser(response.data);
+      queryClient.invalidateQueries();
+      showToast('success', val
+        ? 'Activado · mantené presionada tu fila en Registro de Apuestas'
+        : 'Desactivado');
+    } catch (err: any) {
+      updateUser({ flip_own_picks: !val } as any); // revertir
+      showToast('error', err?.friendlyMessage || 'No se pudo guardar la preferencia');
+    } finally {
+      setFlipSaving(false);
     }
   };
 
@@ -285,6 +307,43 @@ export default function PerfilScreen() {
           />
         </Animated.View>
 
+        {/* Preferencias */}
+        <Animated.View
+          entering={FadeInDown.delay(190).duration(400)}
+          style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+        >
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.primaryLight, 'transparent']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ height: 1.5 }}
+          />
+          <View style={{ padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: theme.colors.primaryLight + '18' }]}>
+                <Ionicons name="albums-outline" size={17} color={theme.colors.primaryLight} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Preferencias</Text>
+            </View>
+            <View style={styles.prefRow}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[styles.infoValue, { color: theme.colors.textPrimary }]}>
+                  Voltear mis pronósticos sellados
+                </Text>
+                <Text style={[styles.prefDesc, { color: theme.colors.textMuted }]}>
+                  En "Registro de Apuestas", mantené presionada tu fila (o clic en web) para ver tu propio pronóstico en partidos aún sellados. Solo lo ves vos.
+                </Text>
+              </View>
+              <Switch
+                value={flipOn}
+                onValueChange={handleToggleFlip}
+                disabled={flipSaving}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primaryLight }}
+                thumbColor="#fff"
+              />
+            </View>
+          </View>
+        </Animated.View>
+
         {/* Color Palette */}
         <Animated.View
           entering={FadeInDown.delay(200).duration(400)}
@@ -428,6 +487,9 @@ const styles = StyleSheet.create({
   sectionIconWrap: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', letterSpacing: -0.2 },
   sectionSub:   { fontSize: 12, fontFamily: 'Poppins_400Regular', marginBottom: 14, marginTop: 2 },
+
+  prefRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  prefDesc: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 2, lineHeight: 15 },
 
   paletteGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   paletteOption: { borderRadius: 14, padding: 12, alignItems: 'center', borderWidth: 1, flex: 1 },
