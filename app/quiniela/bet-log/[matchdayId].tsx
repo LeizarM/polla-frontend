@@ -71,6 +71,51 @@ function computeIsCorrect(pickCode: any, matchResult: any): boolean | null {
   return false;
 }
 
+// ── Celda sellada VOLTEABLE (flip card) ────────────────────────────────────
+// Solo se usa en la fila del PROPIO usuario y solo si activó la preferencia
+// `flip_own_picks`. Front = candado; al voltear muestra el pronóstico propio
+// (bandera del equipo / "E"). Long-press en móvil, click en web. Revela SOLO
+// el dato del propio usuario (que el backend ya le envía), nunca el de otros.
+// Cuando el partido arranca deja de renderizarse (ahí el pick se ve normal).
+function FlipSealCell({ pickCode, match, theme }: { pickCode: string; match: any; theme: any }) {
+  const rot = useSharedValue(0);
+  const [flipped, setFlipped] = useState(false);
+  const toggle = () => {
+    const nv = !flipped;
+    setFlipped(nv);
+    rot.value = withTiming(nv ? 1 : 0, { duration: 320, easing: Easing.inOut(Easing.ease) });
+  };
+  const frontStyle = useAnimatedStyle(() => ({
+    transform: [{ perspective: 600 }, { rotateY: `${rot.value * 180}deg` }],
+    opacity: rot.value < 0.5 ? 1 : 0,
+  }));
+  const backStyle = useAnimatedStyle(() => ({
+    transform: [{ perspective: 600 }, { rotateY: `${rot.value * 180 + 180}deg` }],
+    opacity: rot.value < 0.5 ? 0 : 1,
+  }));
+  // web → click; móvil → mantener presionado (evita revelar de un toque casual).
+  const pressProps = Platform.OS === 'web'
+    ? { onPress: toggle }
+    : { onLongPress: toggle, delayLongPress: 220 };
+  return (
+    <Pressable
+      {...pressProps}
+      style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.primaryLight + '66' }]}
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, styles.flipFace, frontStyle]} pointerEvents="none">
+        <Ionicons name="lock-closed" size={13} color={theme.colors.primaryLight} />
+      </Animated.View>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.flipFace, backStyle]} pointerEvents="none">
+        {PICK_LABELS_LOCAL.includes(pickCode)   && <TeamFlag team={match?.team_a} size={22} />}
+        {PICK_LABELS_VISITOR.includes(pickCode) && <TeamFlag team={match?.team_b} size={22} />}
+        {PICK_LABELS_DRAW.includes(pickCode)    && (
+          <View style={styles.pivotDrawBadge}><Text style={styles.pivotDrawText}>E</Text></View>
+        )}
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function BetLogScreen() {
   const { theme }           = useTheme();
   const { user }            = useAuthStore();
@@ -184,6 +229,23 @@ export default function BetLogScreen() {
     }
     return m;
   }, [data?.bets, myTicketDetail, user?.id]);
+
+  // Preferencia del perfil: ¿voltear mis celdas selladas? (sincroniza por cuenta).
+  const flipEnabled = !!(user as any)?.flip_own_picks;
+
+  // Mis pronósticos REALES por match_id (de mi propio ticket, sin redactar) —
+  // necesario para el reverso del flip: en `picksMapByUser` mis sellados vienen
+  // con pick=null (redactados como los de todos), pero a mí el backend sí me da
+  // mi ticket completo vía /api/tickets/:id.
+  const myRealPickByMatch = useMemo(() => {
+    const m = new Map<string, string>();
+    const picks = myTicketDetail?.ticket_picks ?? myTicketDetail?.picks ?? [];
+    for (const p of picks) {
+      const mid = p?.match_id ?? p?.match?.id;
+      if (mid && p?.pick) m.set(mid, p.pick);
+    }
+    return m;
+  }, [myTicketDetail]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -1371,7 +1433,7 @@ export default function BetLogScreen() {
                   </View>
 
                   {/* Filas de datos — una por participante */}
-                  {boardRows.map(({ bet, idx, uid, userPicksList, rowBg }) => (
+                  {boardRows.map(({ bet, idx, uid, isMe, userPicksList, rowBg }) => (
                     <View
                       key={uid ?? idx}
                       style={[styles.boardDataRow, {
@@ -1397,12 +1459,19 @@ export default function BetLogScreen() {
                         // Partido aún no arranca. Distinguimos: tiene pronóstico
                         // (oculto bajo candado) VS NO pronosticó este partido (explícito).
                         if (!matchStarted) {
+                          // Mi propia fila + preferencia activa + tengo pick real →
+                          // celda VOLTEABLE para espiar mi propio pronóstico sellado.
+                          const myCode = isMe && flipEnabled ? myRealPickByMatch.get(match?.id) : undefined;
                           return (
                             <View key={mi} style={[styles.pivotCell, { height: rowH, borderRightColor: theme.colors.border }]}>
                               {pick ? (
-                                <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
-                                  <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
-                                </View>
+                                myCode ? (
+                                  <FlipSealCell pickCode={myCode} match={match} theme={theme} />
+                                ) : (
+                                  <View style={[styles.sealTile, { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }]}>
+                                    <Ionicons name="lock-closed" size={13} color={theme.colors.textMuted} />
+                                  </View>
+                                )
                               ) : (
                                 <Ionicons name="remove-circle-outline" size={18} color={theme.colors.textMuted} style={{ opacity: 0.55 }} />
                               )}
@@ -2387,6 +2456,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+  },
+  // Caras del flip card (sellado volteable): se superponen y rotan en Y.
+  flipFace: {
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backfaceVisibility: 'hidden' as const,
   },
   nextChip: {
     flexDirection: 'row' as const,

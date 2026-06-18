@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
   Pressable,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -98,6 +99,10 @@ export default function PerfilScreen() {
     old_password: '', new_password: '', confirm_password: '',
   });
 
+  // Preferencia: flip de mis pronósticos sellados (se guarda en la cuenta).
+  const flipOn = !!(user as any)?.flip_own_picks;
+  const [flipSaving, setFlipSaving] = useState(false);
+
   const hasChanges =
     formData.full_name !== (user?.full_name ?? '') ||
     formData.phone     !== (user?.phone     ?? '') ||
@@ -158,6 +163,25 @@ export default function PerfilScreen() {
       showToast('error', error?.response?.data?.message || error?.friendlyMessage || 'Error al cambiar contraseña');
     } finally {
       setPwLoading(false);
+    }
+  };
+
+  const handleToggleFlip = async (val: boolean) => {
+    if (flipSaving) return;
+    setFlipSaving(true);
+    updateUser({ flip_own_picks: val } as any); // optimista
+    try {
+      const response = await api.patch('/api/users/me', { flip_own_picks: val });
+      if (response?.data) updateUser(response.data);
+      queryClient.invalidateQueries();
+      showToast('success', val
+        ? 'Activado · mantené presionada tu fila en Registro de Apuestas'
+        : 'Desactivado');
+    } catch (error: any) {
+      updateUser({ flip_own_picks: !val } as any); // revertir
+      showToast('error', error?.friendlyMessage || 'No se pudo guardar la preferencia');
+    } finally {
+      setFlipSaving(false);
     }
   };
 
@@ -412,6 +436,35 @@ export default function PerfilScreen() {
           />
         </Animated.View>
 
+        {/* ── Preferencias ────────────────────────────────────────────────── */}
+        <Animated.View entering={FadeInDown.delay(200).duration(360)} style={styles.sectionWrap}>
+          <Text style={[styles.paletteSectionTitle, { color: theme.colors.textPrimary }]}>
+            Preferencias
+          </Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.prefRow}>
+              <View style={[styles.infoIconWrap, { backgroundColor: theme.colors.primaryLight + '16' }]}>
+                <Ionicons name="albums-outline" size={15} color={theme.colors.primaryLight} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoValue, { color: theme.colors.textPrimary }]}>
+                  Voltear mis pronósticos sellados
+                </Text>
+                <Text style={[styles.prefDesc, { color: theme.colors.textMuted }]}>
+                  En "Registro de Apuestas", mantené presionada tu fila (o clic en web) para ver tu propio pronóstico en partidos aún sellados. Solo lo ves vos.
+                </Text>
+              </View>
+              <Switch
+                value={flipOn}
+                onValueChange={handleToggleFlip}
+                disabled={flipSaving}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primaryLight }}
+                thumbColor="#fff"
+              />
+            </View>
+          </View>
+        </Animated.View>
+
         {/* ── Palette picker ──────────────────────────────────────────────── */}
         <Animated.View entering={FadeInDown.delay(220).duration(360)} style={styles.sectionWrap}>
           <Text style={[styles.paletteSectionTitle, { color: theme.colors.textPrimary }]}>
@@ -589,6 +642,21 @@ const styles = StyleSheet.create({
   sectionWrap: {
     paddingHorizontal: 20,
     marginTop: 16,
+  },
+
+  // Preferencias (toggle rows)
+  prefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  prefDesc: {
+    fontSize: 11,
+    fontFamily: 'Poppins_400Regular',
+    marginTop: 2,
+    lineHeight: 15,
   },
 
   // Password toggle
