@@ -403,6 +403,30 @@ function PollaFinalScreenInner() {
                         <Text style={[styles.wonText, { color: '#EF4444' }]}>{myBet?.total_points ?? 0} puntos · no ganaste</Text>
                       </View>
                     )}
+                    {/* Editable hasta la fecha límite — después NADIE (ni admin) puede cambiar */}
+                    {myBet?.status !== 'won' && myBet?.status !== 'lost' && (
+                      isPastDeadline ? (
+                        <View style={[styles.betButton, { backgroundColor: theme.colors.inputBg, borderWidth: 1, borderColor: theme.colors.border }]}>
+                          <Ionicons name="lock-closed" size={16} color={theme.colors.textMuted} />
+                          <Text style={[styles.betButtonText, { color: theme.colors.textMuted, fontSize: 13 }]}>Predicción bloqueada — pasó la fecha límite</Text>
+                        </View>
+                      ) : (
+                        <>
+                          <Pressable style={[styles.betButton, { backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.5)' }]} onPress={() => openBetModal(t)}>
+                            <Ionicons name="create-outline" size={18} color="#FFD700" />
+                            <Text style={[styles.betButtonText, { color: '#FFD700' }]}>Editar mi predicción</Text>
+                          </Pressable>
+                          {deadlineLabel && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }}>
+                              <Ionicons name="time-outline" size={12} color={theme.colors.textMuted} />
+                              <Text style={{ color: theme.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 11.5, textAlign: 'center' }}>
+                                Puedes cambiar tu podio hasta el {deadlineLabel}
+                              </Text>
+                            </View>
+                          )}
+                        </>
+                      )
+                    )}
                   </>
                 ) : isPastDeadline ? (
                   <View style={[styles.betButton, { backgroundColor: theme.colors.inputBg, borderWidth: 1, borderColor: theme.colors.border }]}>
@@ -427,6 +451,7 @@ function PollaFinalScreenInner() {
         <BetModal
           visible={showBetModal}
           tournament={selectedTournament}
+          existingBet={betByTournament.get(selectedTournament?.id)}
           onClose={() => setShowBetModal(false)}
           onSuccess={() => {
             setShowBetModal(false);
@@ -438,14 +463,20 @@ function PollaFinalScreenInner() {
   );
 }
 
-function BetModal({ visible, tournament, onClose, onSuccess }: { visible: boolean; tournament: any; onClose: () => void; onSuccess: () => void }) {
+function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { visible: boolean; tournament: any; existingBet?: any; onClose: () => void; onSuccess: () => void }) {
   const { theme } = useTheme();
   const modalStyles = useMemo(() => makeModalStyles(theme), [theme]);
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [picks, setPicks] = useState<{ pick_1st: string; pick_2nd: string; pick_3rd: string; pick_4th: string }>({
-    pick_1st: '', pick_2nd: '', pick_3rd: '', pick_4th: '',
-  });
+  const isEditing = !!existingBet?.id;
+  // El modal se monta/desmonta al abrir → el initializer lazy corre en cada apertura
+  // y precarga el podio actual cuando estás editando.
+  const [picks, setPicks] = useState<{ pick_1st: string; pick_2nd: string; pick_3rd: string; pick_4th: string }>(() => ({
+    pick_1st: existingBet?.pick_1st ?? '',
+    pick_2nd: existingBet?.pick_2nd ?? '',
+    pick_3rd: existingBet?.pick_3rd ?? '',
+    pick_4th: existingBet?.pick_4th ?? '',
+  }));
 
   const { data: quarterTeams, isLoading: loadingTeams } = useQuery({
     queryKey: ['quarter-teams', tournament?.id],
@@ -480,11 +511,18 @@ function BetModal({ visible, tournament, onClose, onSuccess }: { visible: boolea
     if (Platform.OS !== 'web') Haptics.notificationAsync?.(Haptics.NotificationFeedbackType.Success);
     setLoading(true);
     try {
-      await api.post('/api/final-bets', {
-        tournament_id: tournament?.id,
-        ...picks,
-      });
-      showToast('success', '¡Predicción guardada! ⭐');
+      if (isEditing) {
+        // PATCH — el backend re-valida deadline + equipos de cuartos. Si la fecha
+        // límite pasó mientras el modal estaba abierto, responde 400 y lo mostramos.
+        await api.patch(`/api/final-bets/${existingBet.id}`, { ...picks });
+        showToast('success', '¡Predicción actualizada! ⭐');
+      } else {
+        await api.post('/api/final-bets', {
+          tournament_id: tournament?.id,
+          ...picks,
+        });
+        showToast('success', '¡Predicción guardada! ⭐');
+      }
       onSuccess();
     } catch (error: any) {
       showToast('error', error?.response?.data?.message || 'Error al guardar');
@@ -496,9 +534,9 @@ function BetModal({ visible, tournament, onClose, onSuccess }: { visible: boolea
   return (
     <Modal visible={visible} onClose={onClose}>
       <View style={modalStyles.header}>
-        <Text style={modalStyles.title}>⭐ Polla Final</Text>
+        <Text style={modalStyles.title}>{isEditing ? '✏️ Editar Predicción' : '⭐ Polla Final'}</Text>
         <Text style={modalStyles.subtitle}>{tournament?.name}</Text>
-        <Text style={modalStyles.hint}>Selecciona un equipo para cada posición</Text>
+        <Text style={modalStyles.hint}>{isEditing ? 'Cambia tu podio y guarda los cambios' : 'Selecciona un equipo para cada posición'}</Text>
       </View>
 
       {loadingTeams ? (
@@ -583,7 +621,7 @@ function BetModal({ visible, tournament, onClose, onSuccess }: { visible: boolea
           )}
 
           <Button
-            title={allSelected ? '🎯 Confirmar Predicción' : `Selecciona ${4 - selectedIds.length} equipo(s) más`}
+            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - selectedIds.length} equipo(s) más`}
             variant={allSelected ? 'accent' : 'outline'}
             size="lg"
             fullWidth

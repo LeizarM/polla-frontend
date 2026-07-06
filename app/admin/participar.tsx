@@ -244,6 +244,7 @@ export default function AdminParticiparScreen() {
         <BetModal
           visible={showBetModal}
           tournament={selectedTournament}
+          existingBet={betByTournament.get(selectedTournament?.id)}
           onClose={() => setShowBetModal(false)}
           onSuccess={() => {
             setShowBetModal(false);
@@ -277,6 +278,9 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
   // botón quede bloqueado y no genere un error feo. (Blindaje doble.)
   const deadline = t?.final_bet_deadline ? new Date(t.final_bet_deadline) : null;
   const isPastDeadline = !!deadline && new Date() > deadline;
+  const deadlineLabel = deadline
+    ? `${String(deadline.getDate()).padStart(2,'0')}/${String(deadline.getMonth()+1).padStart(2,'0')}/${deadline.getFullYear()} ${String(deadline.getHours()).padStart(2,'0')}:${String(deadline.getMinutes()).padStart(2,'0')}`
+    : null;
 
   // ── Shimmer dorado que barre el pozo (efecto "lingote reluciente") ───────────
   const SCREEN_W = Dimensions.get('window').width;
@@ -505,23 +509,49 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
       {/* Bottom action */}
       <View style={cardStyles.footer}>
         {hasBet ? (
-          /* Pts summary */
-          <View style={cardStyles.ptsRow}>
-            {POSITIONS.map((pos) => (
-              <View key={pos.key} style={[cardStyles.ptsBadge, { backgroundColor: pos.bg }]}>
-                <Text style={[cardStyles.ptsValue, { color: pos.color }]}>{pos.pts}</Text>
-                <Text style={cardStyles.ptsLabel}>{pos.short}</Text>
-              </View>
-            ))}
-            {myBet?.status === 'won' && (
-              <View style={cardStyles.wonBanner}>
-                <Ionicons name="trophy" size={14} color="#FFD700" />
-                <Text style={cardStyles.wonText}>
-                  ¡Ganaste {formatMoney(myBet?.prize_won ?? 0, currency)}!
-                </Text>
-              </View>
+          <>
+            {/* Pts summary */}
+            <View style={cardStyles.ptsRow}>
+              {POSITIONS.map((pos) => (
+                <View key={pos.key} style={[cardStyles.ptsBadge, { backgroundColor: pos.bg }]}>
+                  <Text style={[cardStyles.ptsValue, { color: pos.color }]}>{pos.pts}</Text>
+                  <Text style={cardStyles.ptsLabel}>{pos.short}</Text>
+                </View>
+              ))}
+              {myBet?.status === 'won' && (
+                <View style={cardStyles.wonBanner}>
+                  <Ionicons name="trophy" size={14} color="#FFD700" />
+                  <Text style={cardStyles.wonText}>
+                    ¡Ganaste {formatMoney(myBet?.prize_won ?? 0, currency)}!
+                  </Text>
+                </View>
+              )}
+            </View>
+            {/* Editable hasta la fecha límite — después NADIE (ni admin) puede cambiar */}
+            {myBet?.status !== 'won' && myBet?.status !== 'lost' && (
+              isPastDeadline ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.3)', backgroundColor: 'rgba(148,163,184,0.08)' }}>
+                  <Ionicons name="lock-closed" size={15} color={theme.colors.textMuted} />
+                  <Text style={{ color: theme.colors.textMuted, fontFamily: 'Poppins_700Bold', fontSize: 12.5 }}>Predicción bloqueada — pasó la fecha límite</Text>
+                </View>
+              ) : (
+                <Pressable style={{ marginTop: 12 }} onPress={onBet}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.5)', backgroundColor: 'rgba(255,215,0,0.12)' }}>
+                    <Ionicons name="create-outline" size={17} color={goldText} />
+                    <Text style={{ color: goldText, fontFamily: 'Poppins_700Bold', fontSize: 13.5 }}>Editar mi predicción</Text>
+                  </View>
+                  {deadlineLabel && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 7 }}>
+                      <Ionicons name="time-outline" size={11} color={theme.colors.textMuted} />
+                      <Text style={{ color: theme.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 11 }}>
+                        Puedes cambiarla hasta el {deadlineLabel}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              )
             )}
-          </View>
+          </>
         ) : isPastDeadline ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(239,68,68,0.35)', backgroundColor: 'rgba(239,68,68,0.10)' }}>
             <Ionicons name="lock-closed" size={18} color="#EF4444" />
@@ -547,9 +577,10 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
 
 // ─── Bet Modal ────────────────────────────────────────────────────────────────
 
-function BetModal({ visible, tournament, onClose, onSuccess }: {
+function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: {
   visible: boolean;
   tournament: any;
+  existingBet?: any;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -557,9 +588,15 @@ function BetModal({ visible, tournament, onClose, onSuccess }: {
   const modalStyles = useMemo(() => makeModalStyles(theme), [theme]);
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [picks, setPicks] = useState<Record<string, string>>({
-    pick_1st: '', pick_2nd: '', pick_3rd: '', pick_4th: '',
-  });
+  const isEditing = !!existingBet?.id;
+  // Modal montado/desmontado al abrir → el initializer lazy precarga el podio
+  // actual cuando estás editando.
+  const [picks, setPicks] = useState<Record<string, string>>(() => ({
+    pick_1st: existingBet?.pick_1st ?? '',
+    pick_2nd: existingBet?.pick_2nd ?? '',
+    pick_3rd: existingBet?.pick_3rd ?? '',
+    pick_4th: existingBet?.pick_4th ?? '',
+  }));
 
   const { data: quarterTeams, isLoading: loadingTeams } = useQuery({
     queryKey: ['quarter-teams', tournament?.id],
@@ -585,8 +622,15 @@ function BetModal({ visible, tournament, onClose, onSuccess }: {
     if (Platform.OS !== 'web') Haptics.notificationAsync?.(Haptics.NotificationFeedbackType.Success);
     setLoading(true);
     try {
-      await api.post('/api/final-bets', { tournament_id: tournament?.id, ...picks });
-      showToast('success', '¡Predicción guardada! ⭐');
+      if (isEditing) {
+        // PATCH — el backend re-valida deadline + equipos de cuartos (el lock aplica
+        // también al admin: nadie cambia su podio tras la fecha límite).
+        await api.patch(`/api/final-bets/${existingBet.id}`, { ...picks });
+        showToast('success', '¡Predicción actualizada! ⭐');
+      } else {
+        await api.post('/api/final-bets', { tournament_id: tournament?.id, ...picks });
+        showToast('success', '¡Predicción guardada! ⭐');
+      }
       onSuccess();
     } catch (error: any) {
       showToast('error', error?.response?.data?.message || 'Error al guardar');
@@ -602,7 +646,7 @@ function BetModal({ visible, tournament, onClose, onSuccess }: {
         colors={['rgba(29,78,216,0.3)', 'transparent']}
         style={modalStyles.modalHeader}
       >
-        <Text style={modalStyles.modalTitle}>🏆 Polla Final</Text>
+        <Text style={modalStyles.modalTitle}>{isEditing ? '✏️ Editar Predicción' : '🏆 Polla Final'}</Text>
         <Text style={modalStyles.modalTournament}>{tournament?.name}</Text>
 
         {/* Progress pills */}
@@ -724,7 +768,7 @@ function BetModal({ visible, tournament, onClose, onSuccess }: {
           )}
 
           <Button
-            title={allSelected ? '🎯 Confirmar Predicción' : `Selecciona ${4 - filledCount} posición${4 - filledCount !== 1 ? 'es' : ''} más`}
+            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - filledCount} posición${4 - filledCount !== 1 ? 'es' : ''} más`}
             variant={allSelected ? 'accent' : 'outline'}
             size="lg"
             fullWidth
