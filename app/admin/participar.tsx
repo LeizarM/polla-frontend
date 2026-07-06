@@ -510,23 +510,17 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
       <View style={cardStyles.footer}>
         {hasBet ? (
           <>
-            {/* Pts summary */}
-            <View style={cardStyles.ptsRow}>
-              {POSITIONS.map((pos) => (
-                <View key={pos.key} style={[cardStyles.ptsBadge, { backgroundColor: pos.bg }]}>
-                  <Text style={[cardStyles.ptsValue, { color: pos.color }]}>{pos.pts}</Text>
-                  <Text style={cardStyles.ptsLabel}>{pos.short}</Text>
-                </View>
-              ))}
-              {myBet?.status === 'won' && (
-                <View style={cardStyles.wonBanner}>
-                  <Ionicons name="trophy" size={14} color="#FFD700" />
-                  <Text style={cardStyles.wonText}>
-                    ¡Ganaste {formatMoney(myBet?.prize_won ?? 0, currency)}!
-                  </Text>
-                </View>
-              )}
-            </View>
+            {/* El podio de arriba YA muestra los puntos (12/8/4/2) y la posición de
+               cada equipo → acá NO repetimos la fila de badges (era info duplicada).
+               Solo dejamos el banner de ganador cuando la polla ya se resolvió. */}
+            {myBet?.status === 'won' && (
+              <View style={cardStyles.wonBanner}>
+                <Ionicons name="trophy" size={14} color="#FFD700" />
+                <Text style={cardStyles.wonText}>
+                  ¡Ganaste {formatMoney(myBet?.prize_won ?? 0, currency)}!
+                </Text>
+              </View>
+            )}
             {/* Editable hasta la fecha límite — después NADIE (ni admin) puede cambiar */}
             {myBet?.status !== 'won' && myBet?.status !== 'lost' && (
               isPastDeadline ? (
