@@ -588,7 +588,7 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {(quarterTeams ?? []).map((team: any) => {
                       const isSelected = picks[pos.key] === team?.id;
-                      const isUsed = selectedIds.includes(team?.id) && !isSelected;
+                      const isUsed = false; // se permiten equipos repetidos en distintas posiciones
                       return (
                         <Pressable
                           key={team?.id}

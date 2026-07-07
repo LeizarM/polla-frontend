@@ -756,7 +756,7 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: {
                 <View style={modalStyles.teamGrid}>
                   {(quarterTeams ?? []).map((team: any) => {
                     const isSelected = picks[pos.key] === team?.id;
-                    const isUsed = selectedIds.includes(team?.id) && !isSelected;
+                    const isUsed = false; // se permiten equipos repetidos en distintas posiciones
                     return (
                       <Pressable
                         key={team?.id}
