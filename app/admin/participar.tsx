@@ -665,7 +665,23 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: {
   };
 
   return (
-    <Modal visible={visible} onClose={onClose}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      footer={
+        (quarterTeams?.length ?? 0) >= 4 ? (
+          <Button
+            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - filledCount} posición${4 - filledCount !== 1 ? 'es' : ''} más`}
+            variant={allSelected ? 'accent' : 'outline'}
+            size="lg"
+            fullWidth
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={!allSelected}
+          />
+        ) : undefined
+      }
+    >
       {/* Modal header */}
       <LinearGradient
         colors={['rgba(29,78,216,0.3)', 'transparent']}
@@ -792,16 +808,6 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: {
             </Animated.View>
           )}
 
-          <Button
-            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - filledCount} posición${4 - filledCount !== 1 ? 'es' : ''} más`}
-            variant={allSelected ? 'accent' : 'outline'}
-            size="lg"
-            fullWidth
-            onPress={handleSubmit}
-            loading={loading}
-            disabled={!allSelected}
-            style={{ marginTop: 16 }}
-          />
         </>
       )}
     </Modal>

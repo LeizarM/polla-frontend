@@ -552,7 +552,23 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
   };
 
   return (
-    <Modal visible={visible} onClose={onClose}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      footer={
+        (quarterTeams?.length ?? 0) >= 4 ? (
+          <Button
+            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - selectedIds.length} equipo(s) más`}
+            variant={allSelected ? 'accent' : 'outline'}
+            size="lg"
+            fullWidth
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={!allSelected}
+          />
+        ) : undefined
+      }
+    >
       <View style={modalStyles.header}>
         <Text style={modalStyles.title}>{isEditing ? '✏️ Editar Predicción' : '⭐ Polla Final'}</Text>
         <Text style={modalStyles.subtitle}>{tournament?.name}</Text>
@@ -640,16 +656,6 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
             </View>
           )}
 
-          <Button
-            title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - selectedIds.length} equipo(s) más`}
-            variant={allSelected ? 'accent' : 'outline'}
-            size="lg"
-            fullWidth
-            onPress={handleSubmit}
-            loading={loading}
-            disabled={!allSelected}
-            style={{ marginTop: 12 }}
-          />
         </>
       )}
     </Modal>

@@ -31,6 +31,9 @@ interface ModalProps {
   persistent?: boolean;
   /** Override card max-height (default '85%') */
   maxHeight?: string | number;
+  /** Contenido fijo abajo (botón de acción). Queda SIEMPRE visible: no scrollea
+   *  con el cuerpo. Evita que el CTA quede fuera de pantalla en móvil. */
+  footer?: React.ReactNode;
 }
 
 export function Modal({
@@ -39,6 +42,7 @@ export function Modal({
   children,
   persistent = false,
   maxHeight = '85%',
+  footer,
 }: ModalProps) {
   const { theme } = useTheme();
 
@@ -118,6 +122,7 @@ export function Modal({
           />
 
           <ScrollView
+            style={styles.scroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
@@ -125,6 +130,13 @@ export function Modal({
           >
             {children}
           </ScrollView>
+
+          {/* Footer fijo (CTA) — fuera del scroll, siempre visible */}
+          {footer ? (
+            <View style={[styles.footer, { borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+              {footer}
+            </View>
+          ) : null}
         </Animated.View>
       </KeyboardAvoidingView>
     </RNModal>
@@ -151,8 +163,20 @@ const styles = StyleSheet.create({
   topLine: {
     height: 1.5,
   },
+  // flexShrink permite que el ScrollView se achique cuando el contenido supera
+  // el maxHeight del card, dejando el footer fijo visible (y arreglando el scroll
+  // en web, donde sin esto el contenido desbordaba y el card lo recortaba).
+  scroll: {
+    flexShrink: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     padding: 24,
+  },
+  footer: {
+    paddingHorizontal: 24,
+    paddingTop: 14,
+    paddingBottom: 20,
+    borderTopWidth: 1,
   },
 });

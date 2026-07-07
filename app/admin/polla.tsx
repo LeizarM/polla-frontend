@@ -305,7 +305,13 @@ function ResolveModal({ visible, tournament, onClose, onSuccess }: { visible: bo
   };
 
   return (
-    <Modal visible={visible} onClose={onClose}>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      footer={
+        <Button title="Resolver Polla Final" variant="accent" size="lg" fullWidth onPress={handleResolve} loading={loading} />
+      }
+    >
       <Text style={{ ...theme.typography.h3, color: theme.colors.textPrimary, marginBottom: 4 }}>
         🏆 Resolver Polla Final
       </Text>
@@ -351,7 +357,6 @@ function ResolveModal({ visible, tournament, onClose, onSuccess }: { visible: bo
         </View>
       ))}
 
-      <Button title="Resolver Polla Final" variant="accent" size="lg" fullWidth onPress={handleResolve} loading={loading} style={{ marginTop: 8 }} />
     </Modal>
   );
 }
