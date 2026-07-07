@@ -535,11 +535,23 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
                     <Text style={{ color: goldText, fontFamily: 'Poppins_700Bold', fontSize: 13.5 }}>Editar mi predicción</Text>
                   </View>
                   {deadlineLabel && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 7 }}>
-                      <Ionicons name="time-outline" size={11} color={theme.colors.textMuted} />
-                      <Text style={{ color: theme.colors.textMuted, fontFamily: 'Poppins_400Regular', fontSize: 11 }}>
-                        Puedes cambiarla hasta el {deadlineLabel}
-                      </Text>
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 10,
+                      marginTop: 10, paddingVertical: 10, paddingHorizontal: 14,
+                      borderRadius: 12, backgroundColor: 'rgba(59,130,246,0.12)',
+                      borderWidth: 1, borderColor: 'rgba(59,130,246,0.40)',
+                    }}>
+                      <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(59,130,246,0.20)', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="time" size={17} color="#3B82F6" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 10.5, letterSpacing: 0.5 }}>
+                          PUEDES EDITAR HASTA
+                        </Text>
+                        <Text style={{ color: '#3B82F6', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
+                          {deadlineLabel}
+                        </Text>
+                      </View>
                     </View>
                   )}
                 </Pressable>
