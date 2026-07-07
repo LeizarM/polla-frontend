@@ -559,7 +559,7 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
         (quarterTeams?.length ?? 0) >= 4 ? (
           <Button
             title={allSelected ? (isEditing ? '💾 Guardar Cambios' : '🎯 Confirmar Predicción') : `Selecciona ${4 - selectedIds.length} equipo(s) más`}
-            variant={allSelected ? 'accent' : 'outline'}
+            variant="accent"
             size="lg"
             fullWidth
             onPress={handleSubmit}

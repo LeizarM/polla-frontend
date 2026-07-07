@@ -178,5 +178,12 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 20,
     borderTopWidth: 1,
+    // Sombra hacia arriba → la barra de acción se despega del contenido que
+    // scrollea, para que el CTA se note claramente (sobre todo en el APK).
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 16,
   },
 });
