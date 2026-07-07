@@ -19,6 +19,7 @@ import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Modal } from '../../components/ui/Modal';
+import { TeamFlag } from '../../components/ui/TeamFlag';
 import { useToast } from '../../components/ui/Toast';
 import { useTheme } from '../../contexts/ThemeContext';
 import { theme as staticTheme } from '../../constants/theme';
@@ -317,34 +318,36 @@ function ResolveModal({ visible, tournament, onClose, onSuccess }: { visible: bo
           <Text style={{ color: theme.colors.textSecondary, fontSize: 13, marginBottom: 6 }}>
             {pos.emoji} {pos.label}
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {(quarterTeams ?? []).map((team: any) => {
-                const isSelected = results[pos.key] === team?.id;
-                const isUsed = selectedIds.includes(team?.id) && !isSelected;
-                return (
-                  <Pressable
-                    key={team?.id}
-                    disabled={isUsed}
-                    onPress={() => setResults({ ...results, [pos.key]: isSelected ? '' : team?.id })}
-                    style={[
-                      chipStyles.chip,
-                      isSelected && chipStyles.chipSelected,
-                      isUsed && chipStyles.chipDisabled,
-                    ]}
-                  >
-                    <Text style={[
-                      chipStyles.chipText,
-                      isSelected && { color: '#FFF' },
-                      isUsed && { color: theme.colors.textMuted },
-                    ]}>
-                      {team?.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </ScrollView>
+          {/* Wrap en vez de scroll horizontal: en web el scroll se cortaba y no
+             se veían todos los equipos (p.ej. España quedaba fuera). */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {(quarterTeams ?? []).map((team: any) => {
+              const isSelected = results[pos.key] === team?.id;
+              const isUsed = selectedIds.includes(team?.id) && !isSelected;
+              return (
+                <Pressable
+                  key={team?.id}
+                  disabled={isUsed}
+                  onPress={() => setResults({ ...results, [pos.key]: isSelected ? '' : team?.id })}
+                  style={[
+                    chipStyles.chip,
+                    isSelected && chipStyles.chipSelected,
+                    isUsed && chipStyles.chipDisabled,
+                  ]}
+                >
+                  <TeamFlag team={team} size={18} />
+                  <Text style={[
+                    chipStyles.chipText,
+                    isSelected && { color: '#FFF' },
+                    isUsed && { color: theme.colors.textMuted },
+                  ]}>
+                    {team?.name}
+                  </Text>
+                  {isSelected && <Ionicons name="checkmark-circle" size={15} color="#FFF" />}
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       ))}
 
@@ -356,6 +359,9 @@ function ResolveModal({ visible, tournament, onClose, onSuccess }: { visible: bo
 function makeChipStyles(t: typeof staticTheme) {
   return StyleSheet.create({
     chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 8,

@@ -433,31 +433,39 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           <View style={cardStyles.podiumStage}>
             {POSITIONS.map((pos, idx) => {
               const team = getTeam(myBet?.[pos.key]);
-              const h = [150, 120, 100, 86][idx];
+              const h = [150, 128, 112, 100][idx];
               const first = idx === 0;
               return (
                 <View key={pos.key} style={cardStyles.podiumCol}>
-                  <View style={[
-                    cardStyles.podiumSlot,
-                    { height: h, borderColor: pos.color + '80', backgroundColor: pos.color + '1A' },
-                    first && cardStyles.podiumSlotFirst,
-                    first && { shadowColor: pos.color },
-                  ]}>
-                    <Text style={{ fontSize: first ? 26 : 20 }}>{pos.emoji}</Text>
+                  {first && <Text style={cardStyles.crown}>👑</Text>}
+                  <LinearGradient
+                    colors={[pos.color + '3A', pos.color + '12']}
+                    start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                    style={[
+                      cardStyles.podiumSlot,
+                      { height: h, borderColor: pos.color + '99' },
+                      first && [cardStyles.podiumSlotFirst, { shadowColor: pos.color }],
+                    ]}
+                  >
+                    <View style={[cardStyles.rankBadge, { backgroundColor: pos.color }, first && cardStyles.rankBadgeFirst]}>
+                      <Text style={[cardStyles.rankBadgeText, first && { fontSize: 13 }]}>{idx + 1}</Text>
+                    </View>
                     {team ? (
-                      <>
-                        <TeamFlag team={team} size={first ? 34 : 26} />
-                        <Text style={[cardStyles.podiumTeamName, { color: pos.color, fontSize: first ? 12 : 11 }]} numberOfLines={1}>
-                          {team?.name}
-                        </Text>
-                      </>
+                      <View style={[cardStyles.flagRing, { borderColor: pos.color + '77' }]}>
+                        <TeamFlag team={team} size={first ? 38 : 26} />
+                      </View>
                     ) : (
                       <Text style={cardStyles.podiumEmpty}>—</Text>
                     )}
-                    <Text style={cardStyles.podiumPts}>{pos.pts}</Text>
-                  </View>
-                  <View style={[cardStyles.plinth, { backgroundColor: pos.color + '26', borderColor: pos.color + '66' }]}>
-                    <Text style={[cardStyles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                    <View style={[cardStyles.ptsPill, { backgroundColor: pos.color + '26', borderColor: pos.color + '55' }]}>
+                      <Text style={[cardStyles.ptsPillText, { color: pos.color }]}>{pos.pts}</Text>
+                    </View>
+                  </LinearGradient>
+                  <View style={[cardStyles.podiumBase, { backgroundColor: pos.color + '24', borderColor: pos.color + '73' }]}>
+                    <Text style={[cardStyles.podiumBasePos, { color: pos.color }]}>{pos.short}</Text>
+                    <Text style={[cardStyles.podiumBaseName, { color: pos.color }]} numberOfLines={1}>
+                      {team?.name ?? '—'}
+                    </Text>
                   </View>
                 </View>
               );
@@ -468,28 +476,39 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           <Pressable onPress={isPastDeadline ? undefined : onBet} disabled={isPastDeadline}>
             <View style={cardStyles.podiumStage}>
               {POSITIONS.map((pos, idx) => {
-                const h = [150, 120, 100, 86][idx];
+                const h = [150, 128, 112, 100][idx];
                 const first = idx === 0;
                 return (
                   <View key={pos.key} style={cardStyles.podiumCol}>
-                    <View style={[
-                      cardStyles.podiumSlot, cardStyles.podiumSlotEmpty,
-                      { height: h, borderColor: pos.color + '66', backgroundColor: pos.color + '12' },
-                      first && cardStyles.podiumSlotFirst,
-                      first && { shadowColor: pos.color },
-                    ]}>
-                      <Text style={{ fontSize: first ? 30 : 22 }}>{pos.emoji}</Text>
+                    {first && <Text style={cardStyles.crown}>👑</Text>}
+                    <LinearGradient
+                      colors={[pos.color + '24', pos.color + '0A']}
+                      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                      style={[
+                        cardStyles.podiumSlot, cardStyles.podiumSlotEmpty,
+                        { height: h, borderColor: pos.color + '66' },
+                        first && [cardStyles.podiumSlotFirst, { shadowColor: pos.color }],
+                      ]}
+                    >
+                      <View style={[cardStyles.rankBadge, { backgroundColor: pos.color }, first && cardStyles.rankBadgeFirst]}>
+                        <Text style={[cardStyles.rankBadgeText, first && { fontSize: 13 }]}>{idx + 1}</Text>
+                      </View>
                       <View style={[
                         cardStyles.pickAffordance,
                         { borderColor: pos.color + '99' },
                         first && { width: 30, height: 30, borderRadius: 15 },
                       ]}>
-                        <Ionicons name="add" size={first ? 20 : 15} color={pos.color} />
+                        <Ionicons name={isPastDeadline ? 'lock-closed' : 'add'} size={first ? 20 : 15} color={pos.color} />
                       </View>
-                      <Text style={cardStyles.podiumPts}>{pos.pts}</Text>
-                    </View>
-                    <View style={[cardStyles.plinth, { backgroundColor: pos.color + '1F', borderColor: pos.color + '55' }]}>
-                      <Text style={[cardStyles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                      <View style={[cardStyles.ptsPill, { backgroundColor: pos.color + '20', borderColor: pos.color + '4D' }]}>
+                        <Text style={[cardStyles.ptsPillText, { color: pos.color }]}>{pos.pts}</Text>
+                      </View>
+                    </LinearGradient>
+                    <View style={[cardStyles.podiumBase, { backgroundColor: pos.color + '17', borderColor: pos.color + '4D' }]}>
+                      <Text style={[cardStyles.podiumBasePos, { color: pos.color }]}>{pos.short}</Text>
+                      <Text style={[cardStyles.podiumBaseName, { color: pos.color + 'AA' }]} numberOfLines={1}>
+                        —
+                      </Text>
                     </View>
                   </View>
                 );
@@ -946,34 +965,48 @@ function makeCardStyles(t: typeof staticTheme) {
       overflow: 'hidden',
     },
     podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginTop: 0 },
-    podiumCol: { flex: 1, gap: 4 },
+    podiumCol: { flex: 1, gap: 5, alignItems: 'center' },
+    crown: { fontSize: 20, marginBottom: -3, textShadowColor: 'rgba(255,215,0,0.7)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 },
     podiumSlot: {
-      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 4,
-      backgroundColor: 'rgba(255,255,255,0.08)',
-      borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
-      paddingVertical: 10, paddingHorizontal: 4,
+      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 5,
+      borderRadius: 14, borderWidth: 1,
+      paddingVertical: 7, paddingHorizontal: 4,
     },
     podiumSlotFirst: {
-      borderWidth: 1.5,
+      borderWidth: 2,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.6, shadowRadius: 14, elevation: 10,
+      shadowOpacity: 0.75, shadowRadius: 18, elevation: 14,
     },
     podiumSlotEmpty: { borderStyle: 'dashed' as 'dashed' },
-    podiumEmoji: { fontSize: 16 },
-    podiumTeamName: { fontSize: 10, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
+    rankBadge: {
+      width: 22, height: 22, borderRadius: 11,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    rankBadgeFirst: { width: 28, height: 28, borderRadius: 14 },
+    rankBadgeText: { color: '#0A0E1A', fontFamily: 'Poppins_800ExtraBold', fontSize: 11 },
+    flagRing: {
+      borderRadius: 999, borderWidth: 2, padding: 2,
+      alignItems: 'center', justifyContent: 'center',
+    },
     podiumEmpty: { fontSize: 20, color: 'rgba(255,255,255,0.25)' },
-    podiumPts: { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.65)' },
+    ptsPill: {
+      paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1,
+    },
+    ptsPillText: { fontSize: 10, fontFamily: 'Poppins_800ExtraBold' },
     pickAffordance: {
       width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
       borderStyle: 'dashed' as 'dashed',
-      alignItems: 'center', justifyContent: 'center', marginVertical: 2,
-    },
-    // Peana: base fija que unifica los escalones en un podio sobre un mismo piso
-    plinth: {
-      width: '100%', height: 34, borderRadius: 10, borderWidth: 1,
       alignItems: 'center', justifyContent: 'center',
     },
-    plinthNum: { fontSize: 18, fontFamily: 'Poppins_800ExtraBold' },
+    // Base fija con posición + NOMBRE del equipo (siempre visible, no se clipa
+    // como pasaba antes en los escalones más bajos del podio).
+    podiumBase: {
+      width: '100%', borderRadius: 10, borderWidth: 1,
+      paddingVertical: 5, paddingHorizontal: 3,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    podiumBasePos: { fontSize: 12, fontFamily: 'Poppins_800ExtraBold', lineHeight: 15 },
+    podiumBaseName: { fontSize: 11, fontFamily: 'Poppins_700Bold', textAlign: 'center', lineHeight: 14 },
     podiumHint: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       gap: 6, marginTop: 12,

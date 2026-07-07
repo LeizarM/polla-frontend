@@ -258,27 +258,30 @@ function PollaFinalScreenInner() {
             const podiumStage = (
               <View style={styles.podiumStage}>
                 {PODIUM_POS.map((pos, i) => {
-                  const h = [150, 120, 100, 86][i];
+                  const h = [150, 128, 112, 100][i];
                   const first = i === 0;
                   const team = hasBet ? getTeam(myBet?.[pos.key]) : null;
                   return (
                     <View key={pos.key} style={styles.podiumCol}>
-                      <View style={[
-                        styles.podiumSlot,
-                        !hasBet && styles.podiumSlotEmpty,
-                        { height: h, borderColor: pos.color + (hasBet ? '80' : '66'), backgroundColor: pos.color + (hasBet ? '1A' : '12') },
-                        first && styles.podiumSlotFirst,
-                        first && { shadowColor: pos.color },
-                      ]}>
-                        <Text style={{ fontSize: first ? 28 : 21 }}>{pos.emoji}</Text>
+                      {first && <Text style={styles.crown}>👑</Text>}
+                      <LinearGradient
+                        colors={[pos.color + (hasBet ? '3A' : '24'), pos.color + (hasBet ? '12' : '0A')]}
+                        start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                        style={[
+                          styles.podiumSlot,
+                          !hasBet && styles.podiumSlotEmpty,
+                          { height: h, borderColor: pos.color + (hasBet ? '99' : '66') },
+                          first && [styles.podiumSlotFirst, { shadowColor: pos.color }],
+                        ]}
+                      >
+                        <View style={[styles.rankBadge, { backgroundColor: pos.color }, first && styles.rankBadgeFirst]}>
+                          <Text style={[styles.rankBadgeText, first && { fontSize: 13 }]}>{i + 1}</Text>
+                        </View>
                         {hasBet ? (
                           team ? (
-                            <>
-                              <TeamFlag team={team} size={first ? 32 : 26} />
-                              <Text style={[styles.podiumTeamName, { color: pos.color, fontSize: first ? 12 : 11 }]} numberOfLines={1}>
-                                {team?.name}
-                              </Text>
-                            </>
+                            <View style={[styles.flagRing, { borderColor: pos.color + '77' }]}>
+                              <TeamFlag team={team} size={first ? 38 : 26} />
+                            </View>
                           ) : (
                             <Text style={styles.podiumEmpty}>—</Text>
                           )
@@ -293,10 +296,15 @@ function PollaFinalScreenInner() {
                             <Ionicons name="add" size={first ? 20 : 15} color={pos.color} />
                           </View>
                         )}
-                        <Text style={styles.podiumPts}>{pos.pts}</Text>
-                      </View>
-                      <View style={[styles.plinth, { backgroundColor: pos.color + (hasBet ? '26' : '1F'), borderColor: pos.color + (hasBet ? '66' : '55') }]}>
-                        <Text style={[styles.plinthNum, { color: pos.color }]}>{pos.short}</Text>
+                        <View style={[styles.ptsPill, { backgroundColor: pos.color + '26', borderColor: pos.color + '55' }]}>
+                          <Text style={[styles.ptsPillText, { color: pos.color }]}>{pos.pts}</Text>
+                        </View>
+                      </LinearGradient>
+                      <View style={[styles.podiumBase, { backgroundColor: pos.color + (hasBet ? '24' : '17'), borderColor: pos.color + (hasBet ? '73' : '4D') }]}>
+                        <Text style={[styles.podiumBasePos, { color: pos.color }]}>{pos.short}</Text>
+                        <Text style={[styles.podiumBaseName, { color: pos.color + (team ? 'FF' : 'AA') }]} numberOfLines={1}>
+                          {team?.name ?? '—'}
+                        </Text>
                       </View>
                     </View>
                   );
@@ -848,30 +856,47 @@ function makeStyles(t: typeof staticTheme) {
       overflow: 'hidden',
     },
     podiumStage: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
-    podiumCol: { flex: 1, gap: 4 },
+    podiumCol: { flex: 1, gap: 5, alignItems: 'center' },
+    crown: { fontSize: 20, marginBottom: -3, textShadowColor: 'rgba(255,215,0,0.7)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 },
     podiumSlot: {
-      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 4,
-      borderRadius: 12, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 4,
+      width: '100%', alignItems: 'center', justifyContent: 'center', gap: 5,
+      borderRadius: 14, borderWidth: 1, paddingVertical: 7, paddingHorizontal: 4,
     },
     podiumSlotFirst: {
-      borderWidth: 1.5,
+      borderWidth: 2,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.6, shadowRadius: 14, elevation: 10,
+      shadowOpacity: 0.75, shadowRadius: 18, elevation: 14,
     },
     podiumSlotEmpty: { borderStyle: 'dashed' as 'dashed' },
-    podiumTeamName: { fontSize: 11, fontFamily: 'Poppins_700Bold', textAlign: 'center' },
+    rankBadge: {
+      width: 22, height: 22, borderRadius: 11,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    rankBadgeFirst: { width: 28, height: 28, borderRadius: 14 },
+    rankBadgeText: { color: '#0A0E1A', fontFamily: 'Poppins_800ExtraBold', fontSize: 11 },
+    flagRing: {
+      borderRadius: 999, borderWidth: 2, padding: 2,
+      alignItems: 'center', justifyContent: 'center',
+    },
     podiumEmpty: { fontSize: 20, color: 'rgba(255,255,255,0.25)' },
-    podiumPts: { fontSize: 10, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.6)' },
+    ptsPill: {
+      paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1,
+    },
+    ptsPillText: { fontSize: 10, fontFamily: 'Poppins_800ExtraBold' },
     pickAffordance: {
       width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
       borderStyle: 'dashed' as 'dashed',
-      alignItems: 'center', justifyContent: 'center', marginVertical: 2,
-    },
-    plinth: {
-      width: '100%', height: 34, borderRadius: 10, borderWidth: 1,
       alignItems: 'center', justifyContent: 'center',
     },
-    plinthNum: { fontSize: 18, fontFamily: 'Poppins_800ExtraBold' },
+    // Base fija con posición + NOMBRE del equipo (siempre visible, no se clipa
+    // como pasaba antes en los escalones más bajos del podio).
+    podiumBase: {
+      width: '100%', borderRadius: 10, borderWidth: 1,
+      paddingVertical: 5, paddingHorizontal: 3,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    podiumBasePos: { fontSize: 12, fontFamily: 'Poppins_800ExtraBold', lineHeight: 15 },
+    podiumBaseName: { fontSize: 11, fontFamily: 'Poppins_700Bold', textAlign: 'center', lineHeight: 14 },
     podiumHint: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       gap: 6, marginTop: 12,
