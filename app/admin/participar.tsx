@@ -426,6 +426,29 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
           </Text>
         </View>
 
+        {/* Fecha límite — banner prominente, SIEMPRE visible (antes y después de
+           apostar), adapta el texto según el estado. */}
+        {deadlineLabel && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 10,
+            marginTop: 12, marginBottom: 2, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12,
+            backgroundColor: isPastDeadline ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)',
+            borderWidth: 1, borderColor: isPastDeadline ? 'rgba(239,68,68,0.40)' : 'rgba(59,130,246,0.40)',
+          }}>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isPastDeadline ? 'rgba(239,68,68,0.20)' : 'rgba(59,130,246,0.20)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={isPastDeadline ? 'lock-closed' : 'time'} size={17} color={isPastDeadline ? '#EF4444' : '#3B82F6'} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 10.5, letterSpacing: 0.5 }}>
+                {isPastDeadline ? 'APUESTAS CERRADAS' : (hasBet ? 'PUEDES EDITAR HASTA' : 'PUEDES APOSTAR HASTA')}
+              </Text>
+              <Text style={{ color: isPastDeadline ? '#EF4444' : '#3B82F6', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
+                {deadlineLabel}
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* ─── PODIO — sobre panel de vidrio OSCURO (contrasta en cualquier paleta) ──
             1° más alto, peana + numeral; la altura codifica los puntos. */}
         <View style={[cardStyles.podiumStageWrap, GLASS_WEB]}>
@@ -553,26 +576,6 @@ function PollaTournamentCard({ tournament: t, myBet, onBet }: { tournament: any;
                     <Ionicons name="create-outline" size={17} color={goldText} />
                     <Text style={{ color: goldText, fontFamily: 'Poppins_700Bold', fontSize: 13.5 }}>Editar mi predicción</Text>
                   </View>
-                  {deadlineLabel && (
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 10,
-                      marginTop: 10, paddingVertical: 10, paddingHorizontal: 14,
-                      borderRadius: 12, backgroundColor: 'rgba(59,130,246,0.12)',
-                      borderWidth: 1, borderColor: 'rgba(59,130,246,0.40)',
-                    }}>
-                      <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(59,130,246,0.20)', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="time" size={17} color="#3B82F6" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 10.5, letterSpacing: 0.5 }}>
-                          PUEDES EDITAR HASTA
-                        </Text>
-                        <Text style={{ color: '#3B82F6', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
-                          {deadlineLabel}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
                 </Pressable>
               )
             )}

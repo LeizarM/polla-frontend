@@ -360,17 +360,26 @@ function PollaFinalScreenInner() {
                   </Text>
                 </View>
 
-                {/* Fecha límite — siempre visible si existe */}
+                {/* Fecha límite — banner prominente, SIEMPRE visible (antes y
+                   después de apostar), adapta el texto según el estado. */}
                 {deadlineLabel && (
-                  <View style={styles.deadlineRow}>
-                    <Ionicons
-                      name={isPastDeadline ? 'lock-closed' : 'time-outline'}
-                      size={12}
-                      color={isPastDeadline ? '#EF4444' : theme.colors.textMuted}
-                    />
-                    <Text style={[styles.deadlineText, isPastDeadline && { color: '#EF4444' }]}>
-                      {isPastDeadline ? 'Cerrada el ' : 'Cierra: '}{deadlineLabel}
-                    </Text>
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 10,
+                    marginTop: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12,
+                    backgroundColor: isPastDeadline ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)',
+                    borderWidth: 1, borderColor: isPastDeadline ? 'rgba(239,68,68,0.40)' : 'rgba(59,130,246,0.40)',
+                  }}>
+                    <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: isPastDeadline ? 'rgba(239,68,68,0.20)' : 'rgba(59,130,246,0.20)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={isPastDeadline ? 'lock-closed' : 'time'} size={17} color={isPastDeadline ? '#EF4444' : '#3B82F6'} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 10.5, letterSpacing: 0.5 }}>
+                        {isPastDeadline ? 'APUESTAS CERRADAS' : (hasBet ? 'PUEDES EDITAR HASTA' : 'PUEDES APOSTAR HASTA')}
+                      </Text>
+                      <Text style={{ color: isPastDeadline ? '#EF4444' : '#3B82F6', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
+                        {deadlineLabel}
+                      </Text>
+                    </View>
                   </View>
                 )}
 
@@ -419,32 +428,10 @@ function PollaFinalScreenInner() {
                           <Text style={[styles.betButtonText, { color: theme.colors.textMuted, fontSize: 13 }]}>Predicción bloqueada — pasó la fecha límite</Text>
                         </View>
                       ) : (
-                        <>
-                          <Pressable style={[styles.betButton, { backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.5)' }]} onPress={() => openBetModal(t)}>
-                            <Ionicons name="create-outline" size={18} color="#FFD700" />
-                            <Text style={[styles.betButtonText, { color: '#FFD700' }]}>Editar mi predicción</Text>
-                          </Pressable>
-                          {deadlineLabel && (
-                            <View style={{
-                              flexDirection: 'row', alignItems: 'center', gap: 10,
-                              marginTop: 10, paddingVertical: 10, paddingHorizontal: 14,
-                              borderRadius: 12, backgroundColor: 'rgba(59,130,246,0.12)',
-                              borderWidth: 1, borderColor: 'rgba(59,130,246,0.40)',
-                            }}>
-                              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(59,130,246,0.20)', alignItems: 'center', justifyContent: 'center' }}>
-                                <Ionicons name="time" size={17} color="#3B82F6" />
-                              </View>
-                              <View style={{ flex: 1 }}>
-                                <Text style={{ color: theme.colors.textSecondary, fontFamily: 'Poppins_400Regular', fontSize: 10.5, letterSpacing: 0.5 }}>
-                                  PUEDES EDITAR TU PODIO HASTA
-                                </Text>
-                                <Text style={{ color: '#3B82F6', fontFamily: 'Poppins_800ExtraBold', fontSize: 14 }}>
-                                  {deadlineLabel}
-                                </Text>
-                              </View>
-                            </View>
-                          )}
-                        </>
+                        <Pressable style={[styles.betButton, { backgroundColor: 'rgba(255,215,0,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,215,0,0.5)' }]} onPress={() => openBetModal(t)}>
+                          <Ionicons name="create-outline" size={18} color="#FFD700" />
+                          <Text style={[styles.betButtonText, { color: '#FFD700' }]}>Editar mi predicción</Text>
+                        </Pressable>
                       )
                     )}
                   </>
