@@ -584,8 +584,9 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
                     <Text style={[modalStyles.ptsText, { color: pos.color }]}>{pos.pts}</Text>
                   </View>
                 </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                {/* Wrap en vez de scroll horizontal: en web no scrolleaba y se
+                   cortaban los equipos (no se veían España/Bélgica/Argentina/Suiza). */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                     {(quarterTeams ?? []).map((team: any) => {
                       const isSelected = picks[pos.key] === team?.id;
                       const isUsed = false; // se permiten equipos repetidos en distintas posiciones
@@ -614,8 +615,7 @@ function BetModal({ visible, tournament, existingBet, onClose, onSuccess }: { vi
                         </Pressable>
                       );
                     })}
-                  </View>
-                </ScrollView>
+                </View>
                 {selectedTeam && (
                   <View style={[modalStyles.selectedIndicator, { borderLeftColor: pos.color }]}>
                     <TeamFlag team={selectedTeam} size={18} />
