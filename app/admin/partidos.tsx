@@ -74,6 +74,25 @@ export default function PartidosScreen() {
     },
   });
 
+  // Set de equipos clasificados a cuartos (advanced_to_quarters). El selector
+  // "¿Quién avanzó?" solo aparece en partidos de ELIMINACIÓN (ambos equipos en
+  // cuartos). El backend además lo valida (fuente de verdad).
+  const { data: quarterTeamIds } = useQuery({
+    queryKey: ['all-quarter-team-ids'],
+    queryFn: async () => {
+      try {
+        const tRes = await api.get('/api/tournaments?status=active');
+        const tournaments = (tRes?.data ?? []) as any[];
+        const lists = await Promise.all(tournaments.map(async (t) => {
+          try { const q = await api.get(`/api/tournaments/${t?.id}/quarter-teams`); return ((q?.data ?? []) as any[]).map((tm) => tm?.id); }
+          catch { return [] as string[]; }
+        }));
+        return new Set<string>(lists.flat().filter(Boolean));
+      } catch { return new Set<string>(); }
+    },
+    staleTime: 60000,
+  });
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
@@ -223,6 +242,9 @@ export default function PartidosScreen() {
     const isEditing  = editingMatchId === item?.id;
     const hasScore   = item?.score_a != null && item?.score_b != null;
     const isFinished = item?.status === 'finished';
+    // Solo eliminación: ambos equipos clasificados a cuartos.
+    const bothInQuarters = !!(quarterTeamIds && item?.team_a?.id && item?.team_b?.id
+      && quarterTeamIds.has(item.team_a.id) && quarterTeamIds.has(item.team_b.id));
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 55).duration(340).springify()}>
@@ -281,9 +303,10 @@ export default function PartidosScreen() {
               </View>
             </View>
 
-            {/* Avance de fase — setear (editando) o mostrar (badge). El resultado
-                de 90' es para la apuesta; esto es el avance real (alargue/penales). */}
-            {isEditing ? (
+            {/* Avance de fase — setear (SOLO eliminación: ambos en cuartos) o
+                mostrar (badge). El resultado de 90' es para la apuesta; esto es el
+                avance real (alargue/penales). */}
+            {(isEditing && bothInQuarters) ? (
               <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
                 <Text style={{ fontSize: 10.5, color: theme.colors.textMuted, fontFamily: 'Poppins_700Bold', letterSpacing: 0.4, marginBottom: 6 }}>
                   ¿QUIÉN AVANZÓ?  <Text style={{ fontFamily: 'Poppins_400Regular' }}>(opcional — solo eliminación)</Text>
@@ -305,7 +328,7 @@ export default function PartidosScreen() {
                   })}
                 </View>
               </View>
-            ) : item?.advanced_team_id ? (
+            ) : (!isEditing && item?.advanced_team_id) ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)' }}>
                 <Ionicons name="arrow-forward-circle" size={15} color="#10B981" />
                 <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#10B981' }}>Avanza:</Text>
