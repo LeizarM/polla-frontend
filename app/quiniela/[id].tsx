@@ -42,6 +42,7 @@ interface MatchItem {
   score_a?: number | null;
   score_b?: number | null;
   result?: string | null;
+  advanced_team_id?: string | null;
   team_a: { id: string; name: string; country: string; shield_url?: string };
   team_b: { id: string; name: string; country: string; shield_url?: string };
 }
@@ -656,6 +657,18 @@ export default function MatchdayDetailScreen() {
                               color={myPick === match.result ? theme.colors.success : '#EF4444'}
                             />
                           )}
+                        </View>
+                      )}
+
+                      {/* Quién avanzó de fase (eliminación) — aparte del resultado de 90' */}
+                      {match?.advanced_team_id && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)' }}>
+                          <Ionicons name="arrow-forward-circle" size={15} color="#10B981" />
+                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#10B981' }}>Avanza:</Text>
+                          <TeamFlag team={match.advanced_team_id === match?.team_a?.id ? match?.team_a : match?.team_b} size={16} />
+                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: theme.colors.textPrimary }} numberOfLines={1}>
+                            {match.advanced_team_id === match?.team_a?.id ? match?.team_a?.name : match?.team_b?.name}
+                          </Text>
                         </View>
                       )}
                       </View>

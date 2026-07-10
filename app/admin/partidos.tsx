@@ -28,6 +28,7 @@ import { boliviaParts } from '../../utils/date';
 interface MatchItem {
   id: string; match_date: string; status: string;
   score_a?: number | null; score_b?: number | null; result?: string | null;
+  advanced_team_id?: string | null;
   matchday_id: string;
   matchday?: { id: string; name: string };
   team_a: { id: string; name: string; country: string };
@@ -59,6 +60,7 @@ export default function PartidosScreen() {
   const [editingMatchId,  setEditingMatchId]  = useState<string | null>(null);
   const [scoreA,          setScoreA]          = useState('');
   const [scoreB,          setScoreB]          = useState('');
+  const [advancedTeamId,  setAdvancedTeamId]  = useState<string | null>(null);
   const [refreshing,         setRefreshing]         = useState(false);
   const [selectedMatchdayId, setSelectedMatchdayId] = useState<string | null>(null);
   const [showPicker,         setShowPicker]         = useState(false);
@@ -122,8 +124,8 @@ export default function PartidosScreen() {
   }, [filtered, selectedMatchdayId, sortOrder]);
 
   const scoreMutation = useMutation({
-    mutationFn: async ({ matchId, sa, sb }: { matchId: string; sa: number; sb: number }) => {
-      const res = await api.patch(`/api/matches/${matchId}/scores`, { score_a: sa, score_b: sb });
+    mutationFn: async ({ matchId, sa, sb, adv }: { matchId: string; sa: number; sb: number; adv: string | null }) => {
+      const res = await api.patch(`/api/matches/${matchId}/scores`, { score_a: sa, score_b: sb, advanced_team_id: adv });
       return res?.data;
     },
     onSuccess: () => {
@@ -136,7 +138,7 @@ export default function PartidosScreen() {
       queryClient.invalidateQueries({ queryKey: ['bet-log'] });
       queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      setEditingMatchId(null); setScoreA(''); setScoreB('');
+      setEditingMatchId(null); setScoreA(''); setScoreB(''); setAdvancedTeamId(null);
     },
     onError: (error: any) => {
       showToast('error', error?.response?.data?.message || 'Error al guardar marcador');
@@ -147,6 +149,7 @@ export default function PartidosScreen() {
     setEditingMatchId(match?.id);
     setScoreA(match?.score_a != null ? String(match.score_a) : '');
     setScoreB(match?.score_b != null ? String(match.score_b) : '');
+    setAdvancedTeamId(match?.advanced_team_id ?? null);
   };
 
   const handleSaveScore = (matchId: string) => {
@@ -154,7 +157,7 @@ export default function PartidosScreen() {
     const sb = parseInt(scoreB, 10);
     if (isNaN(sa) || isNaN(sb) || sa < 0 || sb < 0) { showToast('error', 'Marcador inválido'); return; }
     if (Platform.OS !== 'web') Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium);
-    scoreMutation.mutate({ matchId, sa, sb });
+    scoreMutation.mutate({ matchId, sa, sb, adv: advancedTeamId });
   };
 
   const resultLabel = (r?: string | null) => {
@@ -278,6 +281,41 @@ export default function PartidosScreen() {
               </View>
             </View>
 
+            {/* Avance de fase — setear (editando) o mostrar (badge). El resultado
+                de 90' es para la apuesta; esto es el avance real (alargue/penales). */}
+            {isEditing ? (
+              <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
+                <Text style={{ fontSize: 10.5, color: theme.colors.textMuted, fontFamily: 'Poppins_700Bold', letterSpacing: 0.4, marginBottom: 6 }}>
+                  ¿QUIÉN AVANZÓ?  <Text style={{ fontFamily: 'Poppins_400Regular' }}>(opcional — solo eliminación)</Text>
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[item?.team_a, item?.team_b].map((tm: any) => {
+                    const sel = advancedTeamId === tm?.id;
+                    return (
+                      <Pressable
+                        key={tm?.id}
+                        onPress={() => setAdvancedTeamId(sel ? null : tm?.id)}
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, paddingHorizontal: 6, borderRadius: 10, borderWidth: 1.5, borderColor: sel ? '#10B981' : theme.colors.border, backgroundColor: sel ? 'rgba(16,185,129,0.14)' : theme.colors.surfaceElevated }}
+                      >
+                        <TeamFlag team={tm} size={18} />
+                        <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: sel ? '#10B981' : theme.colors.textSecondary, flexShrink: 1 }}>{tm?.name}</Text>
+                        {sel && <Ionicons name="checkmark-circle" size={15} color="#10B981" />}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : item?.advanced_team_id ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(16,185,129,0.12)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)' }}>
+                <Ionicons name="arrow-forward-circle" size={15} color="#10B981" />
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#10B981' }}>Avanza:</Text>
+                <TeamFlag team={item.advanced_team_id === item?.team_a?.id ? item?.team_a : item?.team_b} size={16} />
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: theme.colors.textPrimary }} numberOfLines={1}>
+                  {item.advanced_team_id === item?.team_a?.id ? item?.team_a?.name : item?.team_b?.name}
+                </Text>
+              </View>
+            ) : null}
+
             {/* Date + Status */}
             <View style={[styles.metaRow, { borderTopColor: theme.colors.border }]}>
               <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
@@ -291,7 +329,7 @@ export default function PartidosScreen() {
               <View style={styles.editActions}>
                 <Button
                   title="Cancelar" variant="outline" size="sm"
-                  onPress={() => { setEditingMatchId(null); setScoreA(''); setScoreB(''); }}
+                  onPress={() => { setEditingMatchId(null); setScoreA(''); setScoreB(''); setAdvancedTeamId(null); }}
                   style={{ flex: 1 }}
                 />
                 <Button
