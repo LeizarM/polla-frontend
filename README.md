@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Mundial 2026 - Quinielas Deportivas Mobile App
 
 ## 🚀 Quick Start
