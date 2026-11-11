@@ -103,7 +103,5 @@ All TypeScript checks pass. Minor version warnings from expo-doctor can be ignor
 - Pull-to-refresh on all data screens
 - Offline-first ready (React Query cache)
 - Placeholder screens show "Próximamente" message
-=======
-# polla-frontend
-polla ipx con react native expo
->>>>>>> 9f27f08aeec42ec61c4189b6d94fb36f0b8b70d7
+
+
